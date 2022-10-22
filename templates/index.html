@@ -6,7 +6,9 @@
   <script type="text/javascript">
     var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
   </script>
-  <body onload="load_duration();update_values();">
+  <body 
+  
+  ><!-- onload="load_duration();update_values();" -->
     <h1>Youtube SERVER VIDEO </h1>
     <!-- <h1>Youtube SERVER VIDEO </h1>
     <h1>Youtube SERVER VIDEO </h1> -->
@@ -27,7 +29,7 @@
         document.getElementById("result").innerHTML;
     </script> -->
 
-    <script type="text/javascript">
+    <!-- <script type="text/javascript">
       var intervalID = setInterval(update_values,600);
         var video_duration=1000000
         var current_time=0
@@ -62,7 +64,7 @@
             clearInterval(intervalID);
           }
           
-      </script>
+      </script> -->
     </body>
 
 
