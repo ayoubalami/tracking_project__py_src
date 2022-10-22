@@ -21,12 +21,15 @@ class Buffer:
         # self.cap = cv2.VideoCapture(videoplay.url)
 
         self.buffer_frames = []
-        self.buffer_size=200 # 200 frame 
+        self.batch_size=100 # 200 frame 
         self.cap = cv2.VideoCapture(self.video_src)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
         self.frames_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
-        self.frame_duration=1/self.fps
+        self.frame_duration= 1/self.fps 
+        self.video_duration = self.frames_count/ self.fps
+        self.last_loaded_frame_index=0
+        self.stream_reader=None
         # print("str(self.fps)")
         # print(str(self.fps))
         # print(str(self.frames_count))
@@ -37,14 +40,23 @@ class Buffer:
         while True:
             try:
                 print("Start loading frames !")
-                for i in range(self.buffer_size):
+                for i in range(self.batch_size):
                     success, frame = self.cap.read()
                     if success == False :
                         print(" ==== END STREAM ")
                         return
                     self.buffer_frames.append((frame,batch))
+                    self.last_loaded_frame_index=self.last_loaded_frame_index+1
+
                 print("End loading frames !")
+                if self.stream_reader!=None :
+                    if self.stream_reader.stop_reading==True :
+                        # self.stream_reader.read_from=self.last_loaded_frame_index
+                        self.stream_reader.stop_reading=False
+
+
                 batch=batch+1
+                time.sleep(7)
             except:
                 print(" ERROR ")
                 break

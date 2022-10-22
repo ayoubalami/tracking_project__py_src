@@ -1,19 +1,68 @@
 <!DOCTYPE html>
 <html>
 
-
-  <body>
+  <script type="text/javascript"
+    src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+  <script type="text/javascript">
+    var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+  </script>
+  <body onload="load_duration();update_values();">
     <h1>Youtube SERVER VIDEO </h1>
     <!-- <h1>Youtube SERVER VIDEO </h1>
     <h1>Youtube SERVER VIDEO </h1> -->
+    
     <div style="display: flex;
                 flex-direction: column;
                 width: 60%;" >
         <img src="{{ url_for('video_stream') }}"/>
-        <input type="range" min="1" max="100" value="&" class="slider" id="myRange">
+        <input type="range" min="1" max="100" value="1" class="slider" id="myRange">
     
     </div>
     
+       <!-- <h1>Dynamic Update</h1>
+      <p>
+          <span id="result">?</span>
+    
+    <script>
+        document.getElementById("result").innerHTML;
+    </script> -->
+
+    <script type="text/javascript">
+      var intervalID = setInterval(update_values,600);
+        var video_duration=1000000
+        var current_time=0
+      
+        function update_values() {
+       
+          $.getJSON($SCRIPT_ROOT + '/current_time',
+            function(data) {
+              if (data) {
+                current_time=data.result
+                $('#myRange').val(data.result)
+              }else{
+                clearInterval(intervalID);
+              }
+            }); 
+
+          if (Math.abs(video_duration-current_time)<0.1){
+            clearInterval(intervalID);
+          }
+        };
+
+          function load_duration(){
+            $.getJSON($SCRIPT_ROOT + '/video_duration',
+              function(data) {
+                
+                  video_duration=data.result
+                  $('#myRange').attr("max",data.result)
+                
+              });
+            }
+          function stopTextColor() {
+            clearInterval(intervalID);
+          }
+          
+      </script>
     </body>
 
 
