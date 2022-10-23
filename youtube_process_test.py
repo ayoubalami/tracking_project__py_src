@@ -16,6 +16,7 @@ app=Flask(__name__)
 
 def read_stream(stream_reader):
     yield from stream_reader.readStream()
+    # pass
 
 @app.route('/')
 def index():
@@ -28,7 +29,7 @@ def video_stream():
     global stream_reader
     global buffer
 
-    video_src = "highway1.mp4"
+    video_src = "highway2.mp4"
    
     buffer=Buffer(video_src)
     stream_reader=StreamReader(buffer)
