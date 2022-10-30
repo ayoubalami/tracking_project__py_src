@@ -8,20 +8,20 @@ var intervalID = setInterval(update_values, 600);
 var video_duration = 1000000
 var current_time = 0
 
-var running_stream=true;
-var startStopButton=$('#startStopButton');
+var is_running_stream=true;
 
 
 function toggleStopStart(){
     
-    if(running_stream){
+    if(is_running_stream){
         setToStopButton()
         // alert(running_stream)
     }else{
         setToStartButton()
         // alert(running_stream)
     }
-    running_stream=!running_stream
+    is_running_stream=!is_running_stream
+
     // console.log(startStopButton)
     // $("#startStopButton").html('Save');
     // alert(startStopButton.prop('value'))
@@ -35,6 +35,7 @@ function stopStream(){
         dataType: "json",
         success: function (data) {
             console.log(" stop_stream")
+            clearInterval(intervalID);
             return e
         },
         error: function (errMsg) {
@@ -50,6 +51,7 @@ function startStream(){
         dataType: "json",
         success: function (data) {
             console.log(" start_stream")
+            intervalID = setInterval(update_values, 600);
             return e
         },
         error: function (errMsg) {
@@ -60,15 +62,14 @@ function startStream(){
 
 function setToStopButton(){
     stopStream();
-    $('#startStopButton').html( 'Stop');
-    $('#startStopButton').attr("class","btn btn-danger btn-lg w-25");
+    $('#startStopButton').html( 'Start');
+    $('#startStopButton').attr("class","btn btn-success btn-lg w-25");
 }
 
 function setToStartButton(){
     startStream();
-    $('#startStopButton').html( 'Start');
-    $('#startStopButton').attr("class","btn btn-success btn-lg w-25");
-
+    $('#startStopButton').html( 'Stop');
+    $('#startStopButton').attr("class","btn btn-danger btn-lg w-25");
 }
 
 

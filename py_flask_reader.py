@@ -34,7 +34,7 @@ def video_stream():
     global stream_reader
     global buffer
     
-    video_src = "highway4.mp4"
+    video_src = "highway1.mp4"
     buffer=Buffer(video_src=video_src)
     stream_reader=StreamReader(buffer)
     buffering_thread= threading.Thread(target=buffer.downloadBuffer)
@@ -67,16 +67,16 @@ def clean_memory():
 @app.route('/stop_stream', methods = ['POST'])
 def stopStream():
     global stream_reader
-    if buffer and not stream_reader.stop_reading_user_action :
-        stream_reader.stop_reading_user_action=True
+    if buffer and not stream_reader.stop_reading_from_user_action :
+        stream_reader.stop_reading_from_user_action=True
         return jsonify(result='stream stoped')
     return jsonify(result='error server in stream stoped')
 
 @app.route('/start_stream', methods = ['POST'])
 def startStream():
     global stream_reader
-    if buffer and stream_reader.stop_reading_user_action :
-        stream_reader.stop_reading_user_action=False
+    if buffer and stream_reader.stop_reading_from_user_action :
+        stream_reader.stop_reading_from_user_action=False
         return jsonify(result='stream started')
     return jsonify(result='error server in stream started')
 
