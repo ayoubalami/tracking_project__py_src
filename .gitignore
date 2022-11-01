@@ -2,3 +2,4 @@
 fb.py
 *.tar.gz
 models/
+storages/

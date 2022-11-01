@@ -1,25 +1,27 @@
 # from turtle import shape
 from threading import Thread
-import threading
+import threading,os
 from time import sleep,time
 from flask import jsonify,stream_with_context,Flask,render_template,Response
-from buffer import Buffer
-from stream_reader import StreamReader
- 
+from classes.buffer import Buffer
+from classes.tensorflow_detection_service import TensorflowDetectionService
+from classes.stream_reader import StreamReader
+from classes.detection_service import IDetectionService
+# from classes.zoo_tensorflow_detection_service import ZooTensorflowDetectionService
  
 app=Flask(__name__)
 
 # https://github.com/r0oth3x49/Yv-dl/blob/cf52e6f8600bd9cf70c5944a2caade51eadd6a77/pafy/backend_youtube_dl.py#L88
-
 # youtube_url = "https://www.youtube.com/watch?v=KBsqQez-O4w"
 # youtube_url = "https://www.youtube.com/watch?v=QuUxHIVUoaY"
 # youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
 
 # buffer=Buffer(youtube_url=youtube_url)
-stream_reader = None
-buffer = None
+stream_reader :StreamReader = None
+buffer :Buffer= None
+detection_service :IDetectionService= None
 
-print("DOEN")
+print("DONE")
 def read_stream():
     global stream_reader    
     yield from stream_reader.readStream()
@@ -28,15 +30,27 @@ def read_stream():
 @app.route('/')
 def index():
     return render_template('index.html')
- 
+
 @app.route('/video_stream')
 def video_stream():
     global stream_reader
     global buffer
-    
-    video_src = "highway1.mp4"
+    global detection_service
+
+    detection_service=TensorflowDetectionService()
+    # detection_service=TensorflowDetectionService()
+    print( " detection_module loaded succesufuly")
+    print( "Service name : ",detection_service.service_name())
+    print( "Model name : ", detection_service.model_name())
+     
+    # youtube_url = "https://www.youtube.com/watch?v=QuUxHIVUoaY"
+    # buffer=Buffer(youtube_url=youtube_url)
+
+    video_src = "videos/highway2.mp4"
     buffer=Buffer(video_src=video_src)
-    stream_reader=StreamReader(buffer)
+
+    stream_reader=StreamReader(buffer,detection_service)
+
     buffering_thread= threading.Thread(target=buffer.downloadBuffer)
     buffering_thread.start()
 

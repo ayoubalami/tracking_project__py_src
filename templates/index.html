@@ -14,9 +14,10 @@
 
     
   </head>
-  <body 
+  <!-- <body 
     onload="load_duration();update_values();"
-  >
+  > -->
+  <body >
     <h1>Youtube SERVER VIDEO </h1>
     
     <div style="display: flex;
@@ -27,7 +28,7 @@
         <img src="{{ url_for('video_stream') }}"/>
         <input type="range" min="1" max="100" value="1" class="slider" id="myRange">
         <div>
-          <button onclick="toggleStopStart()" id="startStopButton" class="btn btn-danger btn-lg w-25"> stop </button>
+          <button onclick="toggleStopStart()" id="startStopButton" class="btn btn-success btn-lg w-25"> Start </button>
         </div>
        
     </div>

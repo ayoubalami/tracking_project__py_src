@@ -4,11 +4,11 @@
 // var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 var $SCRIPT_ROOT = "http://127.0.0.1:8000/"
        
-var intervalID = setInterval(update_values, 600);
+var intervalID = null;
 var video_duration = 1000000
 var current_time = 0
 
-var is_running_stream=true;
+var is_running_stream=false;
 
 
 function toggleStopStart(){
@@ -35,7 +35,7 @@ function stopStream(){
         dataType: "json",
         success: function (data) {
             console.log(" stop_stream")
-            clearInterval(intervalID);
+            // clearInterval(intervalID);
             return e
         },
         error: function (errMsg) {
@@ -51,8 +51,8 @@ function startStream(){
         dataType: "json",
         success: function (data) {
             console.log(" start_stream")
-            intervalID = setInterval(update_values, 600);
-            return e
+            // intervalID = setInterval(update_values, 600);
+            return data
         },
         error: function (errMsg) {
             console.log(" ERROR IN start_stream")
