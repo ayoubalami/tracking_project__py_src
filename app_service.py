@@ -1,6 +1,7 @@
 # from turtle import shape
 import threading
 from time import sleep
+from unittest import result
 from flask import jsonify,stream_with_context,Flask,render_template,Response
 from classes.buffer import Buffer
 from classes.tensorflow_detection_service import TensorflowDetectionService
@@ -27,12 +28,11 @@ class AppService:
     def __init__(self):
         print("AppService Starting ...")
 
-        # self.detection_service=TensorflowDetectionService()
+        self.detection_service=TensorflowDetectionService()
         
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
             print( "Service name : ",self.detection_service.service_name())
-            print( "Model name : ", self.detection_service.model_name())
         else :
             print( " No detection_module To load")
 
@@ -48,8 +48,8 @@ class AppService:
  
     def video_stream(self):
 
-        self.buffer=Buffer(youtube_url=self.youtube_url)
-        # self.buffer=Buffer(video_src=self.video_src)
+        # self.buffer=Buffer(youtube_url=self.youtube_url)
+        self.buffer=Buffer(video_src=self.video_src)
 
         self.stream_reader=StreamReader(self.buffer,self.detection_service)
 
@@ -87,13 +87,15 @@ class AppService:
 
     
     def get_object_detection_list(self):
-        method_list=['ssd_mobilenet_v2_320x320_coco17_tpu',
-                    'faster_rcnn_resnet50_v1_640x640_coco17_tpu',
-                    'efficientdet_d0_coco17_tpu',
-                    'ssd_mobilenet_v1_fpn_640x640_coco17_tpu',
-                    'centernet_mobilenetv2fpn_512x512_coco17_od',
-                    'centernet_resnet50_v2_512x512_coco17_tpu',
-                    'faster_rcnn_resnet101_v1_640x640_coco17']
-            
-        return jsonify(method_list)
+        if self.detection_service!=None :
+            return jsonify(self.detection_service.get_object_detection_models())
       
+    def load_detection_model(self,model=None):
+        if self.detection_service!=None :
+            try:
+                self.detection_service.load_model(model=model)
+                return jsonify(result='DONE LOADING SUCCESS')
+            except:
+                return jsonify(error='ERROR model throw exception')
+
+        return jsonify(result='ERROR model is null')

@@ -2,6 +2,7 @@
 from http import server
 import cv2,time,os,numpy as np
 from classes.detection_service import IDetectionService
+from symbol import return_stmt
 import tensorflow as tf
 from tensorflow.python.keras.utils.data_utils import get_file 
 
@@ -22,16 +23,13 @@ class TensorflowDetectionService(IDetectionService):
         self.classesList=None
         self.colorList=None
         self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
+        self.selected_model=None
 
+        self.init_object_detection_models()
+    
         # https://github.com/opencv/opencv/wiki/TensorFlow-Object-Detection-API
-        self.modelURL= "http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_mobilenet_v2_320x320_coco17_tpu-8.tar.gz"
-        # self.modelURL= "http://download.tensorflow.org/models/object_detection/tf2/20200711/faster_rcnn_resnet50_v1_640x640_coco17_tpu-8.tar.gz"
-        # self.modelURL= "http://download.tensorflow.org/models/object_detection/tf2/20200711/efficientdet_d0_coco17_tpu-32.tar.gz"
-        # self.modelURL="http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_mobilenet_v1_fpn_640x640_coco17_tpu-8.tar.gz"
-        ### self.modelURL="http://download.tensorflow.org/models/object_detection/tf2/20210210/centernet_mobilenetv2fpn_512x512_coco17_od.tar.gz"
-        # self.modelURL="http://download.tensorflow.org/models/object_detection/tf2/20200711/centernet_resnet50_v2_512x512_coco17_tpu-8.tar.gz"
-        # self.modelURL="http://download.tensorflow.org/models/object_detection/tf2/20200711/faster_rcnn_resnet101_v1_640x640_coco17_tpu-8.tar.gz"
-        self.load_model()
+       
+        # self.load_model()
 
         
     def service_name(self):
@@ -40,8 +38,9 @@ class TensorflowDetectionService(IDetectionService):
     def model_name(self):
         return self.modelName
         
-    def load_model(self):
-        self.load_or_download_model_tensorflow()
+    def load_model(self,model=None):
+
+        self.load_or_download_model_tensorflow(model=model)
         # init a random tensor to speed up start button
         inputTensor=[[[0,0,0],[0,0,0]]]
         inputTensor = tf.convert_to_tensor(inputTensor, dtype=tf.uint8) 
@@ -50,8 +49,18 @@ class TensorflowDetectionService(IDetectionService):
         # a = tf.add(inputTensor, 1)
         # print(a.numpy())
 
-    def load_or_download_model_tensorflow(self):
 
+    def get_selected_model(self):
+        return self.selected_model
+
+    def load_or_download_model_tensorflow(self,model=None):
+        
+        self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)
+        self.modelURL= self.selected_model['url']
+        print("===> selected modelURL")
+        
+        print(self.modelURL)
+ 
         fileName = os.path.basename(self.modelURL)     
         self.modelName = fileName[:fileName.index('.')]
         self.cacheDir = os.path.join("","models","tensorflow_models", self.modelName)
@@ -128,5 +137,38 @@ class TensorflowDetectionService(IDetectionService):
 
         return frame
 
- 
+    def get_object_detection_models(self):
 
+        list    =   [ 
+                        {'date':'20200711','name': 'ssd_mobilenet_v2_320x320_coco17_tpu-8' },
+                        {'date':'20200711','name': 'faster_rcnn_resnet50_v1_640x640_coco17_tpu-32' },
+                        {'date':'20200711','name': 'efficientdet_d0_coco17_tpu-8' },
+                        {'date':'20200711','name': 'ssd_mobilenet_v1_fpn_640x640_coco17_tpu-8' },
+                        {'date':'20200711','name': 'centernet_mobilenetv2fpn_512x512_coco17_od-8' },
+                        {'date':'20200711','name': 'centernet_resnet50_v2_512x512_coco17_tpu-8' },
+                        {'date':'20200711','name': 'faster_rcnn_resnet101_v1_640x640_coco17-8' },
+                    ]
+
+        url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
+
+        url_list=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in list ]
+        # print(url_list)
+        return url_list
+
+    def init_object_detection_models(self):
+        self.detection_method_list    =   [ 
+                        {'date':'20200711','name': 'ssd_mobilenet_v2_320x320_coco17_tpu-8' },
+                        {'date':'20200711','name': 'faster_rcnn_resnet50_v1_640x640_coco17_tpu-32' },
+                        {'date':'20200711','name': 'efficientdet_d0_coco17_tpu-8' },
+                        {'date':'20200711','name': 'ssd_mobilenet_v1_fpn_640x640_coco17_tpu-8' },
+                        {'date':'20200711','name': 'centernet_mobilenetv2fpn_512x512_coco17_od-8' },
+                        {'date':'20200711','name': 'centernet_resnet50_v2_512x512_coco17_tpu-8' },
+                        {'date':'20200711','name': 'faster_rcnn_resnet101_v1_640x640_coco17-8' },
+                    ]
+        url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
+        self.detection_method_list_with_url=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in self.detection_method_list ]
+  
+
+    def get_object_detection_models(self):
+        return self.detection_method_list 
+      

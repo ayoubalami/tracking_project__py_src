@@ -118,7 +118,8 @@ class StreamReader:
     def getCurrentFrame(self):   
         frame,current_batch= self.buffer.buffer_frames[self.current_frame_index] 
         if self.detection_service !=None:
-            frame = self.detection_service.detect_objects(frame, 0.4)
+            if self.detection_service.get_selected_model() !=None:
+                frame = self.detection_service.detect_objects(frame, 0.4)
         return frame,current_batch
         
  

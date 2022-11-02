@@ -49,5 +49,10 @@ def get_object_detection_list():
     return app_service.get_object_detection_list()
     
 
+@app.route('/models/load/<model>', methods = ['POST'])
+def load_detection_model(model):
+    return app_service.load_detection_model(model=model)
+    
+
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)

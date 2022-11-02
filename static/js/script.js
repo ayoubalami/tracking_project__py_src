@@ -11,8 +11,11 @@ var is_running_stream=false;
 var loadingStartStopButton=false;
 var videoInitialized=false;
 var objectDetectionList=[];
+var loadingDetectionModel=false;
+var selected_model_name=null;
 
 
+ 
 
 function initVideoStreamFrame(){
     $('#videoFrame').attr("src", "video_stream");
@@ -33,22 +36,28 @@ function onClickReset(){
 
 function toggleStopStart(){        
     if(is_running_stream){
-        setToStopButton()
+        toggleDisabledStartStopButton(true);
+        toggleDisabledDetectionMethodSelect(false);
+        toggleDisabledLoadingModelButton(false);
+        sendStopVideoRequest();
+
     }else{
-        setToStartButton()
+        toggleDisabledStartStopButton(true);
+        toggleDisabledDetectionMethodSelect(true);
+        toggleDisabledLoadingModelButton(true,showSpinner=false);
+        sendStartVideoRequest()
     }
     is_running_stream=!is_running_stream
-    // console.log(startStopButton)
-    // $("#startStopButton").html('Save');
-    // alert(startStopButton.prop('value'))
+    
 }
 
 function fillobjectDetectionSelect(methodsList){
     var objectDetectionSelect = $("#objectDetectionSelect");
+    console.log(methodsList);
     methodsList.forEach(method => {
         var el = document.createElement("option");
-        el.textContent = method;
-        el.value = method;
+        el.textContent = method.name;
+        el.value = method.name;
         objectDetectionSelect.append(el);
     });
 }
@@ -71,10 +80,29 @@ function getObjectDetectionList(){
     }
 
 
-function setToStopButton(){
+function onClickLoadModel(){
+    toggleDisabledLoadingModelButton(true);
 
-    disabledStartStopButton();
-    enableDetectionMethodSelect();
+    if (selected_model_name==null){
+        selected_model_name=$( "#objectDetectionSelect" )[0].value
+    }
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/models/load/'+selected_model_name,
+        dataType: "json",
+        success: function (data) {
+            console.log(" /models/load/"+selected_model_name)
+            // clearInterval(intervalID);
+            toggleDisabledLoadingModelButton(false);
+            // return e
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN stop_stream")
+        }
+    });
+}
+
+function sendStopVideoRequest(){
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/stop_stream',
@@ -85,18 +113,17 @@ function setToStopButton(){
             $('#startStopButton').html( 'Start');
             $('#startStopButton').removeClass("btn-danger");
             $('#startStopButton').addClass("btn-success");
-            enabledStartStopButton()
+            toggleDisabledStartStopButton(false);
             // return e
         },
         error: function (errMsg) {
             console.log(" ERROR IN stop_stream")
-            enabledStartStopButton()
+            toggleDisabledStartStopButton(false);
         }
     });
 }
-function setToStartButton(){
-    disabledDetectionMethodSelect()
-    disabledStartStopButton()
+function sendStartVideoRequest(){
+    
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/start_stream',
@@ -109,37 +136,57 @@ function setToStartButton(){
             // $('#startStopButton').attr("class","btn btn-danger btn-lg w-25");
             $('#startStopButton').removeClass("btn-success");
             $('#startStopButton').addClass("btn-danger");
-            enabledStartStopButton()
+            toggleDisabledStartStopButton(false);
             // return data
         },
         error: function (errMsg) {
             console.log(" ERROR IN start_stream")
-            enabledStartStopButton()
+            toggleDisabledStartStopButton(false)
         }
     });    
 }
 
-function disabledDetectionMethodSelect(){
-    $("#objectDetectionSelect").prop('disabled', true);
-    console.log("disabledDetectionMethodSelect");
-}
-
-function enableDetectionMethodSelect(){
-    $("#objectDetectionSelect").prop('disabled', false);
-}
-
-function disabledStartStopButton(){
-    $("#startStopButton").attr("disabled", true);
-    loadingStartStopButton=true;
-}
-
-function enabledStartStopButton(){
-    $("#startStopButton").attr("disabled", false);
-    loadingStartStopButton=false;
-
+ 
+function toggleDisabledDetectionMethodSelect(setToDisabled){
+    if(setToDisabled){
+        $("#objectDetectionSelect").prop('disabled', true);
+    }else{
+        $("#objectDetectionSelect").prop('disabled', false);
+    }
 }
 
 
+
+
+function onChangeObjectDetection(){
+    console.log($( "#objectDetectionSelect" )[0].value );
+    selected_model_name=$( "#objectDetectionSelect" )[0].value
+    
+}
+
+function toggleDisabledStartStopButton(setToDisabled){
+    if (setToDisabled){
+        $("#startStopButton").attr("disabled", true);
+        loadingStartStopButton=true;
+    }else{
+        $("#startStopButton").attr("disabled", false);
+        loadingStartStopButton=false;
+    }
+}
+
+function toggleDisabledLoadingModelButton(setToDisabled,showSpinner=true){
+    if (setToDisabled){
+        $("#loadModelButton").attr("disabled", true);
+        if(showSpinner){
+            $("#loadModelButton").children().css( "display", "inline-block" )
+        }
+        loadingDetectionModel=true;
+    }else{
+        $("#loadModelButton").attr("disabled", false);
+        $("#loadModelButton").children().css( "display", "none" )
+        loadingDetectionModel=false;
+    }
+}
 
 function update_values() {
     $.getJSON($SCRIPT_ROOT + '/current_time',
