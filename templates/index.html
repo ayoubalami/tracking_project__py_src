@@ -9,7 +9,7 @@
     </script> -->
 
     <script type="text/javascript"
-      src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+      src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/script.js') }}" ></script>
 
     
@@ -17,22 +17,64 @@
   <!-- <body 
     onload="load_duration();update_values();"
   > -->
-  <body >
-    <h1>Youtube SERVER VIDEO </h1>
-    
-    <div style="display: flex;
-                flex-direction: column;
-                width: 70%;
-                margin:20px 0 ;" 
-                >
-        <img src="{{ url_for('video_stream') }}"/>
-        <input type="range" min="1" max="100" value="1" class="slider" id="myRange">
-        <div>
-          <button onclick="toggleStopStart()" id="startStopButton" class="btn btn-success btn-lg w-25"> Start </button>
-        </div>
-       
-    </div>
+  <body onload="initData()" >
 
+    <div class="container">
+          
+        <h1 class="p-2"> OBJECT DETECTION SERVER </h1>
+
+        <div class="container px-4">
+          <div class="row gx-5 mb-3">
+            <div class="col input-group ">
+              <span class="input-group-text" id="basic-addon3">https://www.youtube.com/watch?v=</span>
+              <input type="text" class="form-control" id="basic-url" aria-describedby="basic-addon3">
+            </div>
+            <div class="col">
+              <select id="videoFileSelect" class="form-select" aria-label=" select video">
+                  
+              </select>
+            </div>
+          </div>
+
+          <div class="row gx-5">
+            <div class="col">
+              <button class="p-2 btn btn-success btn-lg w-25" onclick="toggleStopStart()" id="startStopButton" > Start </button>
+            </div>
+            <div class="col">
+              <button class="p-2 btn btn-primary btn-lg w-25" onclick="onClickReset()" id="resetButton" > Reset </button>
+            </div>
+            <div class="col">
+              <select id="objectDetectionSelect" class="p-2 form-select" aria-label="Default select example">
+              </select>
+            </div>
+          </div>
+          
+        </div>
+
+
+        <!-- <div style="display: flex;flex-direction: row;">
+          <button onclick="toggleStopStart()" id="startStopButton" class="btn btn-success btn-lg w-25"> Start </button>
+          <button onclick="onClickReset()" id="resetButton" class="btn btn-primary btn-lg w-25"> Reset </button>
+        </div> -->
+        <div style="display: flex;
+                    flex-direction: column;
+                    margin:20px 0 ;" 
+                    >
+                    <img id="videoFrame" />
+
+            <!-- {% if 1 < 0 %} -->
+            <!-- <img id="video_frame" src="{{ url_for('video_stream') }}"/> -->
+           
+            <!-- {% endif %} -->
+          
+
+
+            <!-- <input type="range" min="1" max="100" value="1" class="slider" id="myRange"> -->
+          
+          
+        </div>
+
+      </div>
     </body>
 
 

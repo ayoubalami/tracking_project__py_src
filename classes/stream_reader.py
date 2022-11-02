@@ -44,10 +44,11 @@ class StreamReader:
         time.sleep(0.1)
         current_sec=0
         t1= time.time()
-        detection_fps=1
+        detection_fps=0
+        current_fps=0
         jump_frame=0    
         print("Start READING ......")
-        
+        diff_time=0
         while True :
             
             # print("Start LOOPING READING ......")
@@ -58,8 +59,6 @@ class StreamReader:
                 time.sleep(.2)
                 continue
 
-            print("Entre To READ IMAGE ......")
-
             if (self.buffer.stop_buffring_event.is_set()):
                 self.clean_streamer()
                 print("STREAM_READER : end_of_thread")
@@ -68,13 +67,11 @@ class StreamReader:
             if self.current_frame_index>=len(self.buffer.buffer_frames) or len(self.buffer.buffer_frames)==0 :
                 continue
             
-            print("AFTER continue ......")
-
             # SENT FRAMES TO NAV
             frame,current_batch=self.getCurrentFrame() 
- 
-            frame =  ps.putBText(frame,str( "{:02d}".format(current_sec//60))+":"+str("{:02d}".format(current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,background_RGB=(0,0,0),text_RGB=(255,255,250))
-            frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,background_RGB=(0,0,0),text_RGB=(255,25,50))
+            
+            frame =  ps.putBText(frame,str( "{:02d}".format(current_sec//60))+":"+str("{:02d}".format(current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
+            frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
             
             ret,buffer=cv2.imencode('.jpg',frame)
 
@@ -90,10 +87,12 @@ class StreamReader:
             if new_sec>=current_sec+1:
                 current_sec=current_sec+1
                 new_sec=current_sec
-                detection_fps=floor(1/diff_time)
-            
+                detection_fps=current_fps
             # GO to THE NEXT FRAME
             self.current_frame_index=self.current_frame_index + floor(jump_frame) 
+            # if(diff_time>0):
+            #     detection_fps= jump_frame/diff_time 
+
             jump_frame=jump_frame-floor(jump_frame)
 
             # DELETE PREVIOUS BATCH FRAMES ALREADY PRINTED FROM MEMORY
@@ -108,12 +107,13 @@ class StreamReader:
                 print("STREAM_READER : end_of_file")
                 break;   
  
-            
+            # time.sleep(0.005)
+
             diff_time=time.time()-t1    
             jump_frame=jump_frame+diff_time/self.buffer.frame_duration
-           
+            current_fps=round(1/diff_time)
+
             # print(" ",diff_time ," ; ",jump_frame," = ",fps)
-            time.sleep(0.005)
 
     def getCurrentFrame(self):   
         frame,current_batch= self.buffer.buffer_frames[self.current_frame_index] 

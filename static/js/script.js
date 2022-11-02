@@ -7,28 +7,74 @@ var $SCRIPT_ROOT = "http://127.0.0.1:8000/"
 var intervalID = null;
 var video_duration = 1000000
 var current_time = 0
-
 var is_running_stream=false;
+var loadingStartStopButton=false;
+var videoInitialized=false;
+var objectDetectionList=[];
 
 
-function toggleStopStart(){
-    
+
+function initVideoStreamFrame(){
+    $('#videoFrame').attr("src", "video_stream");
+    videoInitialized=true;
+}
+
+function initData(){
+    getObjectDetectionList();
+    if (videoInitialized==false)
+        initVideoStreamFrame()
+
+    // src="{{ url_for('video_stream') }}"
+}
+
+function onClickReset(){
+
+}
+
+function toggleStopStart(){        
     if(is_running_stream){
         setToStopButton()
-        // alert(running_stream)
     }else{
         setToStartButton()
-        // alert(running_stream)
     }
     is_running_stream=!is_running_stream
-
     // console.log(startStopButton)
     // $("#startStopButton").html('Save');
     // alert(startStopButton.prop('value'))
 }
 
+function fillobjectDetectionSelect(methodsList){
+    var objectDetectionSelect = $("#objectDetectionSelect");
+    methodsList.forEach(method => {
+        var el = document.createElement("option");
+        el.textContent = method;
+        el.value = method;
+        objectDetectionSelect.append(el);
+    });
+}
 
-function stopStream(){
+function getObjectDetectionList(){
+        $.ajax({
+            type: "GET",
+            url: $SCRIPT_ROOT + '/get_object_detection_list',
+            dataType: "json",
+            success: function (data) {
+                // console.log(" get_object_detection_list_select")
+                // console.log(data);
+                // objectDetectionList=data;
+                fillobjectDetectionSelect(data);
+            },
+            error: function (errMsg) {
+                console.log(" ERROR IN get_object_detection_list")
+            }
+        });   
+    }
+
+
+function setToStopButton(){
+
+    disabledStartStopButton();
+    enableDetectionMethodSelect();
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/stop_stream',
@@ -36,42 +82,62 @@ function stopStream(){
         success: function (data) {
             console.log(" stop_stream")
             // clearInterval(intervalID);
-            return e
+            $('#startStopButton').html( 'Start');
+            $('#startStopButton').removeClass("btn-danger");
+            $('#startStopButton').addClass("btn-success");
+            enabledStartStopButton()
+            // return e
         },
         error: function (errMsg) {
             console.log(" ERROR IN stop_stream")
+            enabledStartStopButton()
         }
     });
 }
-
-function startStream(){
+function setToStartButton(){
+    disabledDetectionMethodSelect()
+    disabledStartStopButton()
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/start_stream',
         dataType: "json",
         success: function (data) {
             console.log(" start_stream")
+           
             // intervalID = setInterval(update_values, 600);
-            return data
+            $('#startStopButton').html( 'Stop');
+            // $('#startStopButton').attr("class","btn btn-danger btn-lg w-25");
+            $('#startStopButton').removeClass("btn-success");
+            $('#startStopButton').addClass("btn-danger");
+            enabledStartStopButton()
+            // return data
         },
         error: function (errMsg) {
             console.log(" ERROR IN start_stream")
+            enabledStartStopButton()
         }
-    });
+    });    
 }
 
-function setToStopButton(){
-    stopStream();
-    $('#startStopButton').html( 'Start');
-    $('#startStopButton').attr("class","btn btn-success btn-lg w-25");
+function disabledDetectionMethodSelect(){
+    $("#objectDetectionSelect").prop('disabled', true);
+    console.log("disabledDetectionMethodSelect");
 }
 
-function setToStartButton(){
-    startStream();
-    $('#startStopButton').html( 'Stop');
-    $('#startStopButton').attr("class","btn btn-danger btn-lg w-25");
+function enableDetectionMethodSelect(){
+    $("#objectDetectionSelect").prop('disabled', false);
 }
 
+function disabledStartStopButton(){
+    $("#startStopButton").attr("disabled", true);
+    loadingStartStopButton=true;
+}
+
+function enabledStartStopButton(){
+    $("#startStopButton").attr("disabled", false);
+    loadingStartStopButton=false;
+
+}
 
 
 

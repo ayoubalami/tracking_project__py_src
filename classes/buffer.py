@@ -35,6 +35,8 @@ class Buffer:
             print("====>>>load_from_local_video")
             self.cap=self.load_from_local_video(video_src)
             self.init_params()
+            print(" self.fps")
+            print( self.fps)
             return
 
     def __del__(self):

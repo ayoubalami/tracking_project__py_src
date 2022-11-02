@@ -37,12 +37,16 @@ def clean_memory():
     return app_service.clean_memory()
 
 @app.route('/stop_stream', methods = ['POST'])
-def stopStream():
-    return app_service.stopStream()
+def stop_stream():
+    return app_service.stop_stream()
 
 @app.route('/start_stream', methods = ['POST'])
-def startStream():
-    return app_service.startStream()
+def start_stream():
+    return app_service.start_stream()
+
+@app.route('/get_object_detection_list', methods = ['GET'])
+def get_object_detection_list():
+    return app_service.get_object_detection_list()
     
 
 if __name__=="__main__":
