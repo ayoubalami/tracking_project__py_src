@@ -48,6 +48,7 @@ function initData(){
 }
 
 function onClickReset(){
+    toggleDisabledResetButton(true);
     videoInitialized=false;
     $.ajax({
         type: "POST",
@@ -55,26 +56,42 @@ function onClickReset(){
         dataType: "json",
         success: function (data) {
             console.log("/stream/reset")
+            stopStreamOnReset()
             // if (videoInitialized==false)
             //     initVideoStreamFrame()
         },
         error: function (errMsg) {
             console.log(" ERROR IN reset")
+            toggleDisabledResetButton(false)
         }
     });  
 }
 
-function toggleStopStart(){        
+function stopStreamOnReset(){
     if(is_running_stream){
         toggleDisabledStartStopButton(true);
         toggleDisabledDetectionMethodSelect(false);
         toggleDisabledLoadingModelButton(false);
         sendStopVideoRequest();
+        is_running_stream=!is_running_stream
+    }
+    
+}
+
+function onClickToggleStopStart(){        
+    if(is_running_stream){
+        toggleDisabledStartStopButton(true);
+        toggleDisabledDetectionMethodSelect(false);
+        toggleDisabledLoadingModelButton(false);
+        toggleDisabledResetButton(false);
+        sendStopVideoRequest();
     }else{
         toggleDisabledStartStopButton(true);
         toggleDisabledDetectionMethodSelect(true);
         toggleDisabledLoadingModelButton(true,showSpinner=false);
-        sendStartVideoRequest()
+        toggleDisabledResetButton(true);
+        sendStartVideoRequest();
+        // toggleDisabledResetButton(false)
     }
     is_running_stream=!is_running_stream
     
@@ -176,13 +193,6 @@ function sendStartVideoRequest(){
 }
 
  
-function toggleDisabledDetectionMethodSelect(setToDisabled){
-    if(setToDisabled){
-        $("#objectDetectionSelect").prop('disabled', true);
-    }else{
-        $("#objectDetectionSelect").prop('disabled', false);
-    }
-}
 
 
 
@@ -191,6 +201,22 @@ function onChangeObjectDetection(){
     console.log($( "#objectDetectionSelect" )[0].value );
     selected_model_name=$( "#objectDetectionSelect" )[0].value
     
+}
+
+function toggleDisabledResetButton(setToDisabled){
+    if(setToDisabled){
+        $("#resetButton").prop('disabled', true);
+    }else{
+        $("#resetButton").prop('disabled', false);
+    }
+}
+
+function toggleDisabledDetectionMethodSelect(setToDisabled){
+    if(setToDisabled){
+        $("#objectDetectionSelect").prop('disabled', true);
+    }else{
+        $("#objectDetectionSelect").prop('disabled', false);
+    }
 }
 
 function toggleDisabledStartStopButton(setToDisabled){
