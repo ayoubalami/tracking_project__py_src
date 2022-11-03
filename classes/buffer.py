@@ -5,9 +5,27 @@ import cv2,time
 import pafy
 class Buffer:
 
+    cap=None
+
+    def reset(self, video_src=None,youtube_url=None):
+        if self.cap != None:
+            self.cap.release()
+
+        if youtube_url != None :
+            print("====>>>load_from_youtube")
+            self.cap=self.load_from_youtube(youtube_url)
+            self.init_params()
+            return
+
+        if video_src != None:
+            print("====>>>load_from_local_video")
+            self.cap=self.load_from_local_video(video_src)
+            self.init_params()
+            return
+
     def init_params(self):
         self.buffer_frames = []
-        self.batch_size=150 # 200 frame 
+        self.batch_size=50 # 200 frame 
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
         self.frames_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
@@ -20,26 +38,13 @@ class Buffer:
         self.last_frame_of_last_batch=floor(self.frames_count%self.batch_size)
         self.download_new_batch=True
         self.stop_buffring_event=threading.Event() 
+       
 
-    def __init__(self, video_src=None,youtube_url=None):
-        # print(video_src)
-        # print(youtube_url)
-
-        if youtube_url != None :
-            print("====>>>load_from_youtube")
-            self.cap=self.load_from_youtube(youtube_url)
-            self.init_params()
-            return
-
-        if video_src != None:
-            print("====>>>load_from_local_video")
-            self.cap=self.load_from_local_video(video_src)
-            self.init_params()
-            print(" self.fps")
-            print( self.fps)
-            return
+    def __init__(self, video_src=None,youtube_url=None): 
+        self.reset(video_src=video_src,youtube_url=youtube_url)
 
     def __del__(self):
+        print("DELETE DESTRUCTER")
         if  self.cap != None:
             self.cap.release()
         if  self.buffer_frames != None:
@@ -49,16 +54,12 @@ class Buffer:
         del self.buffer_frames[0:self.batch_size]
         # print("delete last batch : "+str(to_delete_batch))
 
-
     def downloadBuffer(self):
-         # self.buffer_frames = []
-        # time.sleep(15)
+        print("Start CALL downloadBuffer")
         while True:
             if self.stop_buffring_event.is_set():
                 print("BUFFER : THREAD IS SET ")
-                # del self.buffer_frames[:]
-                # del self.buffer_frames
-                self.stop_buffring_event
+                # self.stop_buffring_event
                 print("BUFFER : buffer_frames SUCCESSIFLY DELETED ")   
                 break
             try:
@@ -73,7 +74,6 @@ class Buffer:
                         # self.last_loaded_frame_index=self.last_loaded_frame_index+1
 
                     self.download_new_batch=False
-        
                     if self.stream_reader!=None :
                         if self.stream_reader.stop_reading_for_loading==True :
                             self.stream_reader.stop_reading_for_loading=False
@@ -85,6 +85,7 @@ class Buffer:
             except:
                 print(" ERROR ")
                 break
+
 
     def load_from_youtube(self,youtube_url:str):
         urlPafy = pafy.new(youtube_url)

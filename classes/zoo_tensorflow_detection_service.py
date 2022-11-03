@@ -36,9 +36,7 @@ class ZooTensorflowDetectionService(IDetectionService):
     def service_name(self):
         return "Tensorflow detection service V 2.0"
 
-    def model_name(self):
-        return self.modelName
-        
+
     def load_model(self):
         self.load_or_download_model_tensorflow()
 

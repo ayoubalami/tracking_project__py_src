@@ -7,9 +7,6 @@ class IDetectionService:
     def service_name(self):
         pass
 
-    def model_name(self):
-        pass
-
     def load_model(self,model=None):
         pass
 

@@ -14,8 +14,25 @@ var objectDetectionList=[];
 var loadingDetectionModel=false;
 var selected_model_name=null;
 
+window.onbeforeunload = function(event){
+    console.log("loading ....");
+        $.ajax({
+            type: "POST",
+            url: $SCRIPT_ROOT + '/clean_memory',
+            dataType: "json",
+            success: function (data) {
+                console.log(" memory cleaned")
+                // alert("")
+                return true
+            },
+            error: function (errMsg) {
+                console.log(" ERROR IN memory cleaning")
+            }
+        });    
+        // return true    
+        // return confirm("Confirm refresh");
+    }
 
- 
 
 function initVideoStreamFrame(){
     $('#videoFrame').attr("src", "video_stream");
@@ -31,7 +48,20 @@ function initData(){
 }
 
 function onClickReset(){
-
+    videoInitialized=false;
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/stream/reset',
+        dataType: "json",
+        success: function (data) {
+            console.log("/stream/reset")
+            // if (videoInitialized==false)
+            //     initVideoStreamFrame()
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN reset")
+        }
+    });  
 }
 
 function toggleStopStart(){        
@@ -40,7 +70,6 @@ function toggleStopStart(){
         toggleDisabledDetectionMethodSelect(false);
         toggleDisabledLoadingModelButton(false);
         sendStopVideoRequest();
-
     }else{
         toggleDisabledStartStopButton(true);
         toggleDisabledDetectionMethodSelect(true);
@@ -216,26 +245,26 @@ function load_duration() {
 
 
 
-window.onbeforeunload = function (e) {
-    var e = e || window.event;
+// window.onbeforeunload = function (e) {
+//     var e = e || window.event;
+//     alert("clean_memory")
+//     $.ajax({
+//         type: "POST",
+//         url: $SCRIPT_ROOT + '/clean_memory',
+//         // The key needs to match your method's input parameter (case-sensitive).
+//         // data: JSON.stringify({ Markers: markers }),
+//         // contentType: "application/json; charset=utf-8",
+//         dataType: "json",
+//         success: function (data) {
+//             console.log(" memory cleaned")
+//             // alert("")
+//             return e
+//         },
+//         error: function (errMsg) {
+//             console.log(" ERROR IN memory cleaning")
+//         }
+//     });
 
-    $.ajax({
-        type: "POST",
-        url: $SCRIPT_ROOT + '/clean_memory',
-        // The key needs to match your method's input parameter (case-sensitive).
-        // data: JSON.stringify({ Markers: markers }),
-        // contentType: "application/json; charset=utf-8",
-        dataType: "json",
-        success: function (data) {
-            console.log(" memory cleaned")
-            // alert("")
-            return e
-        },
-        error: function (errMsg) {
-            console.log(" ERROR IN memory cleaning")
-        }
-    });
 
-
-};
+// };
 //  </script>

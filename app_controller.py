@@ -12,8 +12,9 @@ from app_service import AppService
 app=Flask(__name__)
 app_service=AppService()
 
-def read_stream():
-    yield from app_service.read_stream()
+# def read_stream():
+#     print("read_stream")
+#     yield from app_service.read_stream()
     # pass
 
 @app.route('/')
@@ -29,8 +30,8 @@ def timer():
     return app_service.timer()
 
 @app.route('/video_duration', methods = ['GET'])
-def videoDuration():
-    return app_service.videoDuration()
+def video_duration():
+    return app_service.video_duration()
 
 @app.route('/clean_memory', methods = ['POST'])
 def clean_memory():
@@ -52,7 +53,12 @@ def get_object_detection_list():
 @app.route('/models/load/<model>', methods = ['POST'])
 def load_detection_model(model):
     return app_service.load_detection_model(model=model)
-    
+
+
+@app.route('/stream/reset', methods = ['POST'])
+def reset_stream():
+    return app_service.reset_stream() 
+
 
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)
