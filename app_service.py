@@ -1,11 +1,12 @@
 # from turtle import shape
+from enum import Enum
 import threading,cv2
 from time import sleep
 from unittest import result
 from flask import jsonify,stream_with_context,Flask,render_template,Response
 from classes.buffer import Buffer
 from classes.tensorflow_detection_service import TensorflowDetectionService
-from classes.stream_reader import StreamReader
+from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
 from classes.WebcamStream import WebcamStream
 
@@ -13,13 +14,16 @@ from classes.WebcamStream import WebcamStream
 class AppService:
     
     stream_reader :StreamReader = None
- 
     detection_service :IDetectionService= None
 
-    # video_src = "videos/highway1.mp4"
-    youtube_url=None
-    camera_src='http://10.10.23.223:9000/video'
-    video_src = None
+    file_src   =   "videos/highway1.mp4"
+    youtube_url =   "https://www.youtube.com/watch?v=nt3D26lrkho"
+    webcam_src  =   'http://10.10.23.223:9000/video'
+    # video_src = None
+
+    video_src=file_src
+    stream_source: StreamSourceEnum=StreamSourceEnum.FILE
+
 
 
     # youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
@@ -36,18 +40,25 @@ class AppService:
 
     def __init__(self):
         print("AppService Starting ...")
-
         self.detection_service=TensorflowDetectionService()
-       
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
             print( "Service name : ",self.detection_service.service_name())
         else :
             print( " No detection_module To load")
-
         print("AppService Started.")
 
-        
+
+
+    def clean_memory(self):
+        print(" START clean_memory ")
+        if self.stream_reader:
+            self.stream_reader.clean_memory()
+        if self.detection_service:
+            self.detection_service.clean_memory()
+            # del self.detection_service
+        return jsonify(result='clean_memory OK')
+
     def reset_stream(self):
         self.stream_reader.reset()
         return jsonify('reset stream')
@@ -63,7 +74,8 @@ class AppService:
         # yield from self.webcam_stream.read_from_camera()
 
     def video_stream(self):
-        self.stream_reader=StreamReader(self.detection_service, video_src=self.video_src,youtube_url=self.youtube_url,camera_src=self.camera_src)  
+
+        self.stream_reader=StreamReader(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src) 
         return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
 
       
@@ -77,16 +89,11 @@ class AppService:
     # def video_duration(self):
     #     return jsonify(result=self.buffer.video_duration)
 
-    def clean_memory(self):
-        print(" ||||||| clean_memory ")
-        # if self.buffer :
-        # # print(" ||||||| ENTER ")
-        #     self.buffer.stop_buffring_event.set()
-        return jsonify(result='DONE')
-        return jsonify(result='clean_memory ERROR')
 
     def stop_stream(self):
-        if (self.stream_reader.buffer or self.stream_reader.webcam_stream ) and not self.stream_reader.stop_reading_from_user_action :
+        # if (self.stream_reader.buffer or self.stream_reader.webcam_stream ) and not self.stream_reader.stop_reading_from_user_action :
+        if  not self.stream_reader.stop_reading_from_user_action :
+            # if (self.stream_reader.buffer or self.stream_reader.webcam_stream ):
             self.stream_reader.stop_reading_from_user_action=True
             return jsonify(result='stream stoped')
         return jsonify(result='error server in stream stoped')
@@ -95,9 +102,11 @@ class AppService:
         # wait for streamer to be created before starting
         while(True):
             sleep(0.01)
-            if self.stream_reader :
-                if (self.stream_reader.buffer or self.stream_reader.webcam_stream ) and self.stream_reader.stop_reading_from_user_action :
+            if self.stream_reader and self.stream_reader.buffer:
+                print("SET TO START °°")
+                if self.stream_reader.stop_reading_from_user_action :
                     self.stream_reader.stop_reading_from_user_action=False
+                    print("SET TO START")
                     return jsonify(result='stream started')
             # return jsonify(result='error server in stream started')
 

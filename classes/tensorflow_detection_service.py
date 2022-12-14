@@ -9,7 +9,15 @@ from tensorflow.python.keras.utils.data_utils import get_file
 class TensorflowDetectionService(IDetectionService):
 
     np.random.seed(123)
-    # threshold = 0.5
+    threshold = 0.5   
+    model=None
+    
+    def clean_memory(self):
+        print("CALL DESTRUCTER FROM TensorflowDetectionService")
+        if self.model:
+            del self.model
+        tf.keras.backend.clear_session()
+        # del self
    
     def __init__(self):
         self.perf = []
@@ -19,25 +27,31 @@ class TensorflowDetectionService(IDetectionService):
         self.classFile ="coco.names" 
         self.modelName=None
         self.cacheDir=None
-        self.model=None
         self.classesList=None
         self.colorList=None
         self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
         self.selected_model=None
+        self.detection_method_list    =   [ 
+                        {'date':'20200711','name': 'ssd_mobilenet_v2_320x320_coco17_tpu-8' },
+                        {'date':'20200711','name': 'faster_rcnn_resnet50_v1_640x640_coco17_tpu-8' },
+                        {'date':'20200711','name': 'efficientdet_d3_coco17_tpu-32' },
+                        {'date':'20200711','name': 'ssd_mobilenet_v1_fpn_640x640_coco17_tpu-8' },
+                        {'date':'20200711','name': 'centernet_mobilenetv2fpn_512x512_coco17_od-8' },
+                        {'date':'20200711','name': 'centernet_resnet50_v2_512x512_coco17_tpu-8' },
+                        {'date':'20200711','name': 'faster_rcnn_resnet101_v1_640x640_coco17-8' },
+                        {'date':'20200711','name': 'faster_rcnn_inception_resnet_v2_640x640_coco17_tpu-8' },
+                    ]
 
-        self.init_object_detection_models()
+        self.init_object_detection_models_list()
     
         # https://github.com/opencv/opencv/wiki/TensorFlow-Object-Detection-API
        
         # self.load_model()
-
         
     def service_name(self):
         return "Tensorflow detection service V 1.0"
 
-        
     def load_model(self,model=None):
-
         self.load_or_download_model_tensorflow(model=model)
         # init a random tensor to speed up start button
         inputTensor=[[[0,0,0],[0,0,0]]]
@@ -56,7 +70,6 @@ class TensorflowDetectionService(IDetectionService):
         self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)
         self.modelURL= self.selected_model['url']
         print("===> selected modelURL")
-        
         print(self.modelURL)
  
         fileName = os.path.basename(self.modelURL)     
@@ -64,6 +77,7 @@ class TensorflowDetectionService(IDetectionService):
         self.cacheDir = os.path.join("","models","tensorflow_models", self.modelName)
         os.makedirs(self.cacheDir, exist_ok=True)
         get_file(fname=fileName,origin=self.modelURL, cache_dir=self.cacheDir, cache_subdir="checkpoints",  extract=True)
+        print("===> clear_session")
         tf.keras.backend.clear_session()
         self.model = tf.saved_model.load(os.path.join(self.cacheDir, "checkpoints", self.modelName, "saved_model"))
         print("Model " + self.modelName + " loaded successfully...")
@@ -89,19 +103,15 @@ class TensorflowDetectionService(IDetectionService):
         self.colorList.insert(0,-1)
     
 
-
     def detect_objects(self, frame,threshold= 0.5):
         # return frame
         return self. detect_objects_non_max_suppression(frame,threshold)
- 
 
     def detect_objects_non_max_suppression(self, frame,threshold= 0.5):
-        
         inputTensor = cv2.cvtColor( frame.copy(), cv2.COLOR_BGR2RGB ) 
         inputTensor = tf.convert_to_tensor(inputTensor, dtype=tf.uint8) 
         inputTensor = inputTensor[tf.newaxis,...]
         detections = self.model(inputTensor)
-
         bboxs = detections['detection_boxes'][0].numpy()
         classIndexes = detections['detection_classes'][0].numpy().astype(np.int32) 
         classScores = detections['detection_scores'][0].numpy()
@@ -136,33 +146,12 @@ class TensorflowDetectionService(IDetectionService):
         return frame
 
     def get_object_detection_models(self):
-
-        list    =   [ 
-                        {'date':'20200711','name': 'ssd_mobilenet_v2_320x320_coco17_tpu-8' },
-                        {'date':'20200711','name': 'faster_rcnn_resnet50_v1_640x640_coco17_tpu-32' },
-                        {'date':'20200711','name': 'efficientdet_d0_coco17_tpu-8' },
-                        {'date':'20200711','name': 'ssd_mobilenet_v1_fpn_640x640_coco17_tpu-8' },
-                        {'date':'20200711','name': 'centernet_mobilenetv2fpn_512x512_coco17_od-8' },
-                        {'date':'20200711','name': 'centernet_resnet50_v2_512x512_coco17_tpu-8' },
-                        {'date':'20200711','name': 'faster_rcnn_resnet101_v1_640x640_coco17-8' },
-                    ]
-
         url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
-
         url_list=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in list ]
-        # print(url_list)
+
         return url_list
 
-    def init_object_detection_models(self):
-        self.detection_method_list    =   [ 
-                        {'date':'20200711','name': 'ssd_mobilenet_v2_320x320_coco17_tpu-8' },
-                        {'date':'20200711','name': 'faster_rcnn_resnet50_v1_640x640_coco17_tpu-32' },
-                        {'date':'20200711','name': 'efficientdet_d0_coco17_tpu-8' },
-                        {'date':'20200711','name': 'ssd_mobilenet_v1_fpn_640x640_coco17_tpu-8' },
-                        {'date':'20200711','name': 'centernet_mobilenetv2fpn_512x512_coco17_od-8' },
-                        {'date':'20200711','name': 'centernet_resnet50_v2_512x512_coco17_tpu-8' },
-                        {'date':'20200711','name': 'faster_rcnn_resnet101_v1_640x640_coco17-8' },
-                    ]
+    def init_object_detection_models_list(self):
         url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
         self.detection_method_list_with_url=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in self.detection_method_list ]
   

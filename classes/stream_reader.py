@@ -1,13 +1,16 @@
 
 from ast import Str
 from curses import beep
+from enum import Enum
 from math import floor
+from select import select
 import threading
 import cv2,time,os, numpy as np
-from classes.buffer import Buffer
 import pyshine as ps
 from classes.detection_service import IDetectionService
 from  classes.WebcamStream import WebcamStream
+from  classes.buffer import Buffer
+from utils.enums import StreamSourceEnum
 import tensorflow as tf
 
 class StreamReader: 
@@ -18,30 +21,41 @@ class StreamReader:
     classAllowed=[]
     colorList=[]
     buffer :Buffer= None
-    def __init__(self, detection_service:IDetectionService,video_src=None,youtube_url=None, camera_src=None):
-       
+
+    def clean_memory(self):
+        print("CALL DESTRUCTER FROM STREAM READER ")
+        if  self.buffer:
+            self.buffer.clean_memory()
+            self.stop_reading_to_clean=True
+
+    def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src=str):
         self.stop_reading_from_user_action=True
         self.current_time=0
         self.detection_service=detection_service
-
-        if camera_src !=None: 
-            self.camera_src=camera_src
-            self.webcam_stream = WebcamStream(src=self.camera_src).start()
-            return 
-
-        # self.buffer=Buffer(youtube_url=self.youtube_url)
-        self.buffer=Buffer(video_src=video_src,youtube_url=youtube_url)
-   
         self.current_frame_index=0
         self.stop_reading_for_loading=False
         self.end_of_file=False
-        self.buffer.stream_reader=self
+        self.stream_source=stream_source
         self.video_src=video_src
-        self.youtube_url=youtube_url
+        self.stop_reading_to_clean=False
 
+        if self.stream_source==StreamSourceEnum.FILE:
+            self.buffer=Buffer(stream_source=StreamSourceEnum.FILE, video_src=video_src)
+            print("StreamReader From File .....")
+
+        if self.stream_source==StreamSourceEnum.YOUTUBE:
+            self.buffer=Buffer(stream_source=StreamSourceEnum.YOUTUBE, video_src=video_src)
+            print("StreamReader From Youtube .....")
+     
+        if self.stream_source==StreamSourceEnum.WEBCAM:
+            self.webcam_stream = WebcamStream(src=self.video_src)
+            self.webcam_stream.start()
+            print("StreamReader From Camera .....")
+
+        self.buffer.stream_reader=self
         self.buffering_thread= threading.Thread(target=self.buffer.download_buffer)
         self.buffering_thread.start()
-        print("StreamReader created .....")
+
         
     def clean_streamer(self):
         print("================== >>STREAM_READER : begin clean_streamer")
@@ -52,17 +66,24 @@ class StreamReader:
 
 
     def reset(self):
-        self.buffer.reset(video_src=self.video_src,youtube_url=self.youtube_url)             
+        if self.stream_source == StreamSourceEnum.YOUTUBE :
+            self.buffer.reset_youtube_buffer(youtube_url=self.video_src)   
+
+        if self.stream_source == StreamSourceEnum.FILE:
+            self.buffer.reset_file_buffer(file_src=self.video_src)   
+
         self.current_time=0
         self.current_sec=0
         self.current_frame_index=0
 
 
     def read_stream(self):
-        if self.camera_src!=None:   
+        if self.stream_source == StreamSourceEnum.WEBCAM:   
             yield from self.read_stream_from_webcam()
         else:
             yield from self.read_stream_from_buffer()
+
+        return "NO STREAM TO READ"
 
 
     def read_stream_from_webcam(self):
@@ -98,7 +119,6 @@ class StreamReader:
                 counter = 0
                 start_time = time.time()
             
-
     def read_stream_from_buffer(self):
         # delay for buffer to load some frame
         time.sleep(0.1)
@@ -110,8 +130,10 @@ class StreamReader:
         print("Start READING FROM BUFFER ......")
         diff_time=0
         while True :
-            # print("Start LOOPING READING ......")
             t1= time.time()
+            
+            if self.stop_reading_to_clean:
+                break
             # IF BUTTON STOP PRESSED CONTINUE
             if self.stop_reading_from_user_action:
                 time.sleep(.2)
@@ -123,15 +145,10 @@ class StreamReader:
                 # print("STREAM_READER : end_of_file")
                 continue;   
 
-            if (self.buffer.stop_buffring_event.is_set()):
-                self.clean_streamer()
-                print("STREAM_READER : end_of_thread")
-                # time.sleep(.2)
-                # self.buffer.stop_buffring_event.clear()
-                break; 
 
             if self.current_frame_index>=len(self.buffer.buffer_frames) or len(self.buffer.buffer_frames)==0 :
                 continue
+            
             
             # SENT FRAMES TO NAV
             frame,current_batch=self.getCurrentFrame() 
@@ -174,6 +191,8 @@ class StreamReader:
             # jump frames in function of processing time consumtion to simulate real time detection
             jump_frame=jump_frame+diff_time/self.buffer.frame_duration
             current_fps=round(1/diff_time)
+        
+        print(" :::: END STREAM READER LOOP")
 
             # print(" ",diff_time ," ; ",jump_frame," = ",fps)
 

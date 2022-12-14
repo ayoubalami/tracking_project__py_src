@@ -128,10 +128,12 @@ function getObjectDetectionList(){
 
 function onClickLoadModel(){
     toggleDisabledLoadingModelButton(true);
+    toggleDisabledStartStopButton(true);
+    toggleDisabledResetButton(true);
 
     if (selected_model_name==null){
         selected_model_name=$( "#objectDetectionSelect" )[0].value
-    }
+    }       
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/models/load/'+selected_model_name,
@@ -140,6 +142,8 @@ function onClickLoadModel(){
             console.log(" /models/load/"+selected_model_name)
             // clearInterval(intervalID);
             toggleDisabledLoadingModelButton(false);
+            toggleDisabledStartStopButton(false);
+            toggleDisabledResetButton(false);
             // return e
         },
         error: function (errMsg) {

@@ -15,4 +15,6 @@ class IDetectionService:
 
     def get_object_detection_models(self):
         pass
-      
+
+    def clean_memory(self):
+        pass

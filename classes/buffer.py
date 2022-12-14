@@ -3,14 +3,14 @@ from math import floor
 import threading
 import cv2,time
 import pafy
+from utils.enums import StreamSourceEnum
 class Buffer:
 
     cap=None
 
-
     def init_params(self):
         self.buffer_frames = []
-        self.batch_size=150 # 200 frame 
+        self.batch_size=50 # 200 frame 
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
         self.frames_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
@@ -25,16 +25,16 @@ class Buffer:
         self.stop_buffring_event=threading.Event() 
        
 
-    def __init__(self, video_src=None,youtube_url=None): 
+    def __init__(self, stream_source : StreamSourceEnum, video_src=None): 
         self.video_play=None
-        self.reset(video_src=video_src,youtube_url=youtube_url)
+        if stream_source==StreamSourceEnum.FILE:
+            self.reset_file_buffer(file_src=video_src)
+            self.batch_size=50
+        else :
+            if stream_source==StreamSourceEnum.YOUTUBE:
+                self.reset_youtube_buffer(youtube_url=video_src)
+                self.batch_size=150
 
-    def __del__(self):
-        print("DELETE DESTRUCTER")
-        if  self.cap != None:
-            self.cap.release()
-        if  self.buffer_frames != None:
-            del self.buffer_frames
 
     def init_youtube_video_play(self,youtube_url):
         urlPafy = pafy.new(youtube_url)
@@ -51,23 +51,25 @@ class Buffer:
         print("video_play")
         print(self.video_play)
 
-    def reset(self, video_src=None,youtube_url=None):
 
+    def reset_file_buffer(self, file_src=None):
         if self.cap != None:
             self.cap.release()
+        if file_src != None:
+            print("====>>>RESET LOCAL FILE ")
+            print(self.cap)
+            self.cap=self.load_from_local_video(file_src)
+            self.init_params()
 
-        if youtube_url != None :
-            print("====>>>load_from_youtube")
+    def reset_youtube_buffer(self, youtube_url=None):
+        if self.cap != None:
+            self.cap.release()
+        if youtube_url != None:
+            print("====>>>RESET YOUTUBE STREAM ")
+            print(self.cap)
             self.cap=self.load_from_youtube(youtube_url)
             self.init_params()
-            return
-
-        if video_src != None:
-            print("====>>>load_from_local_video")
-            print(self.cap)
-            self.cap=self.load_from_local_video(video_src)
-            self.init_params()
-            return
+            
 
     def delete_last_batch(self,to_delete_batch):
         del self.buffer_frames[0:self.batch_size]
@@ -78,8 +80,6 @@ class Buffer:
         while True:
             if self.stop_buffring_event.is_set():
                 print("BUFFER : THREAD IS SET ")
-                # self.stop_buffring_event
-                print("BUFFER : buffer_frames SUCCESSIFLY DELETED ")   
                 break
             try:
                 # print("download_buffer loop")
@@ -106,6 +106,10 @@ class Buffer:
             except:
                 print(" ERROR ")
                 break
+        print(":::: END downloadBuffer LOOP")
+
+        
+
 
     # TO REVIEW RESET YOUTUBE TO FIX
     def load_from_youtube(self,youtube_url:str):
@@ -123,7 +127,11 @@ class Buffer:
         return cv2.VideoCapture(video_src)
 
     def clean_memory(self):
-        print("clean memory ====")
-        # del self.buffer_frames
+        print("CALL DESTRUCTER FROM BUFFER")
+        self.stop_buffring_event.set()
+        if  self.cap != None:
+            self.cap.release()
+            del self.cap
+        if  self.buffer_frames != None:
+            del self.buffer_frames
 
-        

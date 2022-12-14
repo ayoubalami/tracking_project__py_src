@@ -58,7 +58,9 @@ def load_detection_model(model):
 @app.route('/stream/reset', methods = ['POST'])
 def reset_stream():
     return app_service.reset_stream() 
+    # return app_service.clean_memory() 
 
 
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)
+

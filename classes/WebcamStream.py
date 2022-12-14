@@ -4,18 +4,21 @@ from threading import Condition,Thread
 
 class WebcamStream:
     def __init__(self, src=0):
-        self.stopped = False
 
-        self.stream = cv2.VideoCapture(src)
-        self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 0)
-        # self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 400)
-        # self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 600)
+            self.stopped = False
+            self.stream = cv2.VideoCapture(src)
+            if not self.stream.isOpened():
+                raise Exception("Couldn't open camera {}".format(src))
 
-        (self.grabbed, self.frame) = self.stream.read()
-    
-        self.hasNew = self.grabbed
-        self.condition = Condition()
+            self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 0)
+            # self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 400)
+            # self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 600)
 
+            (self.grabbed, self.frame) = self.stream.read()
+            self.hasNew = self.grabbed
+            self.condition = Condition()
+            print("DONE==")
+       
     def start(self):
 
         Thread(target=self.update, args=()).start()
