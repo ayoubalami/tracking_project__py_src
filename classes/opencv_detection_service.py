@@ -31,8 +31,13 @@ class OpencvDetectionService(IDetectionService):
         self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
         self.selected_model=None
         self.detection_method_list    =   [ 
+                        {'name': 'yolov2'  },
+                        {'name': 'yolov3' },
                         {'name': 'yolov4' },
-                        {'name': 'yolov4-tiny' }
+                        {'name': 'yolov7' },
+                        {'name': 'yolov3-tiny' },
+                        {'name': 'yolov4-tiny' },
+                        {'name': 'yolov7-tiny' }
                         ]
 
         self.init_object_detection_models_list()
