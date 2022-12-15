@@ -1,6 +1,7 @@
-*.mp4
+# *.mp4
 fb.py
 *.tar.gz
 *.pyc
+*.cpython-39.pyc
 models/
 storages/
