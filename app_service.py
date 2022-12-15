@@ -6,6 +6,7 @@ from unittest import result
 from flask import jsonify,stream_with_context,Flask,render_template,Response
 from classes.buffer import Buffer
 from classes.tensorflow_detection_service import TensorflowDetectionService
+from classes.opencv_detection_service import OpencvDetectionService
 from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
 from classes.WebcamStream import WebcamStream
@@ -40,7 +41,8 @@ class AppService:
 
     def __init__(self):
         print("AppService Starting ...")
-        self.detection_service=TensorflowDetectionService()
+        # self.detection_service=TensorflowDetectionService()
+        self.detection_service=OpencvDetectionService()
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
             print( "Service name : ",self.detection_service.service_name())
@@ -117,6 +119,7 @@ class AppService:
       
     def load_detection_model(self,model=None):
         if self.detection_service!=None :
+            # self.detection_service.load_model(model=model)
             try:
                 self.detection_service.load_model(model=model)
                 return jsonify(result='DONE LOADING SUCCESS')
