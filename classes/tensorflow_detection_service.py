@@ -145,11 +145,11 @@ class TensorflowDetectionService(IDetectionService):
 
         return frame
 
-    def get_object_detection_models(self):
-        url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
-        url_list=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in list ]
+    # def get_object_detection_models(self):
+    #     url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
+    #     url_list=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in list ]
 
-        return url_list
+    #     return url_list
 
     def init_object_detection_models_list(self):
         url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"

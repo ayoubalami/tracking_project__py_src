@@ -108,6 +108,17 @@ function fillobjectDetectionSelect(methodsList){
     });
 }
 
+function setModelNameText(newSelectedModel){
+    var selectModelText = $("#selectModelText");
+    selectModelText.text(newSelectedModel + " est correctement chargé");
+}
+
+function setModelNameTextToLoadState(newSelectedModel){
+    var selectModelText = $("#selectModelText");
+    selectModelText.text(newSelectedModel + " est en cours de chargement ...");
+}
+
+
 function getObjectDetectionList(){
         $.ajax({
             type: "GET",
@@ -130,10 +141,12 @@ function onClickLoadModel(){
     toggleDisabledLoadingModelButton(true);
     toggleDisabledStartStopButton(true);
     toggleDisabledResetButton(true);
-
+    
     if (selected_model_name==null){
         selected_model_name=$( "#objectDetectionSelect" )[0].value
-    }       
+    }    
+    setModelNameTextToLoadState();
+   
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/models/load/'+selected_model_name,
@@ -144,10 +157,13 @@ function onClickLoadModel(){
             toggleDisabledLoadingModelButton(false);
             toggleDisabledStartStopButton(false);
             toggleDisabledResetButton(false);
+            setModelNameText(selected_model_name)
             // return e
         },
         error: function (errMsg) {
             console.log(" ERROR IN stop_stream")
+            setModelNameText("Error in loading "+selected_model_name)
+
         }
     });
 }

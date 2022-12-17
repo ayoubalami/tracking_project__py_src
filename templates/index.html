@@ -25,7 +25,7 @@
         <h1 class="p-2"> OBJECT DETECTION SERVER </h1>
 
         <div class="container px-4">
-          <div class="row gx-5 mb-3">
+          <!-- <div class="row gx-5 mb-3">
             <div class="col input-group ">
               <span class="input-group-text" id="basic-addon3">https://www.youtube.com/watch?v=</span>
               <input type="text" class="form-control" id="basic-url" aria-describedby="basic-addon3">
@@ -39,8 +39,8 @@
               </select>
 
             </div>
-          </div>
-
+          </div> -->
+         
           <div class="row gx-5">
             <div class="col input-group">
               <div class="btn-group me-2 w-25" role="group" aria-label="First group">
@@ -49,7 +49,6 @@
               <div class="btn-group me-2 w-25 " role="group" aria-label="First group">
                 <button class="p-2 btn btn-primary btn-lg " disabled onclick="onClickReset()" id="resetButton" > Reset </button>
               </div>
-
             </div>
             <!-- <div class="col">
               <button class="p-2 btn btn-primary btn-lg w-25" onclick="onClickReset()" id="resetButton" > Reset </button>
@@ -81,6 +80,13 @@
           <button onclick="toggleStopStart()" id="startStopButton" class="btn btn-success btn-lg w-25"> Start </button>
           <button onclick="onClickReset()" id="resetButton" class="btn btn-primary btn-lg w-25"> Reset </button>
         </div> -->
+        <div class="row ">
+          <div class="col input-group">
+            <h5 id="selectModelText"> 
+              Aucun modele de detection chargé
+            </h5>
+          </div>
+        </div>
         <div style="display: flex;
                     flex-direction: column;
                     margin:20px 0 ;" 

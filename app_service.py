@@ -119,9 +119,9 @@ class AppService:
       
     def load_detection_model(self,model=None):
         if self.detection_service!=None :
-            # self.detection_service.load_model(model=model)
+            self.detection_service.load_model(model=model)
             try:
-                self.detection_service.load_model(model=model)
+                # self.detection_service.load_model(model=model)
                 return jsonify(result='DONE LOADING SUCCESS')
             except:
                 return jsonify(error='ERROR model throw exception')
