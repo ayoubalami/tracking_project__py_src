@@ -10,13 +10,14 @@ import pyshine as ps
 from classes.detection_service import IDetectionService
 from  classes.WebcamStream import WebcamStream
 from  classes.buffer import Buffer
-from utils.enums import StreamSourceEnum
+from utils_lib.enums import StreamSourceEnum
 import tensorflow as tf
 
 class StreamReader: 
 
     np.random.seed(123)
-    # threshold = 0.5
+    # threshold = 0.5   
+    # nms_threshold =0.5
     perf = []
     classAllowed=[]
     colorList=[]
@@ -28,7 +29,7 @@ class StreamReader:
             self.buffer.clean_memory()
             self.stop_reading_to_clean=True
 
-    def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src=str):
+    def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src:str,threshold:float,nms_threshold:float):
         self.stop_reading_from_user_action=True
         self.current_time=0
         self.detection_service=detection_service
@@ -38,6 +39,8 @@ class StreamReader:
         self.stream_source=stream_source
         self.video_src=video_src
         self.stop_reading_to_clean=False
+        self.nms_threshold=nms_threshold
+        self.threshold=threshold
 
         if self.stream_source==StreamSourceEnum.FILE:
             self.buffer=Buffer(stream_source=StreamSourceEnum.FILE, video_src=video_src)
@@ -104,7 +107,7 @@ class StreamReader:
 
             if self.detection_service !=None:
                 if self.detection_service.get_selected_model() !=None:
-                    frame = self.detection_service.detect_objects(frame, 0.4)
+                    frame = self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
             
             # frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
             frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
@@ -200,7 +203,7 @@ class StreamReader:
         frame,current_batch= self.buffer.buffer_frames[self.current_frame_index] 
         if self.detection_service !=None:
             if self.detection_service.get_selected_model() !=None:
-                frame = self.detection_service.detect_objects(frame, 0.4)
+                frame = self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
         return frame,current_batch
         
  

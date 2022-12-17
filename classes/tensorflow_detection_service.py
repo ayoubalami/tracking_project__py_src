@@ -9,7 +9,7 @@ from tensorflow.python.keras.utils.data_utils import get_file
 class TensorflowDetectionService(IDetectionService):
 
     np.random.seed(123)
-    threshold = 0.5   
+
     model=None
     
     def clean_memory(self):
@@ -103,11 +103,7 @@ class TensorflowDetectionService(IDetectionService):
         self.colorList.insert(0,-1)
     
 
-    def detect_objects(self, frame,threshold= 0.5):
-        # return frame
-        return self. detect_objects_non_max_suppression(frame,threshold)
-
-    def detect_objects_non_max_suppression(self, frame,threshold= 0.5):
+    def detect_objects(self, frame,threshold= 0.5,nms_threshold=0.5):
         inputTensor = cv2.cvtColor( frame.copy(), cv2.COLOR_BGR2RGB ) 
         inputTensor = tf.convert_to_tensor(inputTensor, dtype=tf.uint8) 
         inputTensor = inputTensor[tf.newaxis,...]
@@ -119,13 +115,12 @@ class TensorflowDetectionService(IDetectionService):
     
         #     NON MAX SUPRESSION
         bboxIdx = tf.image.non_max_suppression(bboxs, classScores, max_output_size=150, 
-            iou_threshold=0.2, score_threshold=threshold)
+            iou_threshold=nms_threshold, score_threshold=threshold)
  
         if len(bboxIdx) != 0: 
             for i in bboxIdx: 
                 bbox = tuple(bboxs[i].tolist())
                 classConfidence =np.round(100*classScores[i])
-
                 classIndex = classIndexes[i]
 
                 if (classIndex not in self.classAllowed ):

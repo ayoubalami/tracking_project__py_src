@@ -7,6 +7,7 @@ from flask import jsonify,stream_with_context,Flask,render_template,Response
 from classes.buffer import Buffer
 from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.opencv_detection_service import OpencvDetectionService
+from classes.pytorch_detection_service import PytorchDetectionService
 from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
 from classes.WebcamStream import WebcamStream
@@ -17,18 +18,19 @@ class AppService:
     stream_reader :StreamReader = None
     detection_service :IDetectionService= None
 
-    file_src   =   "videos/highway1.mp4"
+    file_src   =   "videos/highway2.mp4"
     youtube_url =   "https://www.youtube.com/watch?v=nt3D26lrkho"
     webcam_src  =   'http://10.10.23.223:9000/video'
     # video_src = None
 
     video_src=file_src
     stream_source: StreamSourceEnum=StreamSourceEnum.FILE
+    buffering_thread=None
 
+    
 
 
     # youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
-
     # youtube_url = "https://www.youtube.com/watch?v=QuUxHIVUoaY"
     # youtube_url = "https://www.youtube.com/watch?v=nV2aXhxoJ0Y"
     # youtube_url = "https://www.youtube.com/watch?v=TW3EH4cnFZo"
@@ -37,12 +39,14 @@ class AppService:
     # youtube_url = "https://www.youtube.com/watch?v=KBsqQez-O4w"
    
 
-    buffering_thread=None
 
     def __init__(self):
+        self.threshold = 0.5   
+        self.nms_threshold =0.5
         print("AppService Starting ...")
         # self.detection_service=TensorflowDetectionService()
         self.detection_service=OpencvDetectionService()
+        # self.detection_service=PytorchDetectionService()
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
             print( "Service name : ",self.detection_service.service_name())
@@ -76,8 +80,7 @@ class AppService:
         # yield from self.webcam_stream.read_from_camera()
 
     def video_stream(self):
-
-        self.stream_reader=StreamReader(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src) 
+        self.stream_reader=StreamReader(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
         return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
 
       
@@ -127,3 +130,17 @@ class AppService:
                 return jsonify(error='ERROR model throw exception')
 
         return jsonify(result='ERROR model is null')
+
+
+    def update_threshold_value(self,threshold):
+        self.threshold=float(threshold)
+        self.stream_reader.threshold=self.threshold
+        return jsonify(result='threshold updated ')
+
+
+    def update_nms_threshold_value(self,nms_threshold:float):
+        self.nms_threshold=float(nms_threshold)
+        self.stream_reader.nms_threshold=self.nms_threshold
+        return jsonify(result='nmsthreshold updated ')
+
+

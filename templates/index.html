@@ -73,13 +73,26 @@
             </div>
           </div>
           
-        </div>
 
 
         <!-- <div style="display: flex;flex-direction: row;">
           <button onclick="toggleStopStart()" id="startStopButton" class="btn btn-success btn-lg w-25"> Start </button>
           <button onclick="onClickReset()" id="resetButton" class="btn btn-primary btn-lg w-25"> Reset </button>
         </div> -->
+        
+        <div class="row my-4">
+          <div class="col input-group">
+            <h5 class="">threshold</h5>
+            <input type="range" onchange="updateThresholdValue()" min="0" max="1" value="0.5" step="0.1" class="mx-4 slider" id="thresholdSlider">
+            <h5 id="thresholdValueText"> 0.5 </h5>
+          </div>
+          <div class="col input-group">
+            <h5 class="">nms_threshold</h5>
+            <input type="range" onchange="updateNmsThresholdValue()"min="0" max="1" value="0.5" step="0.1" class="mx-4 slider" id="nmsThresholdSlider">
+            <h5 id="nmsThresholdValueText"> 0.5 </h5>
+
+          </div>
+        </div>
         <div class="row ">
           <div class="col input-group">
             <h5 id="selectModelText"> 
@@ -87,6 +100,8 @@
             </h5>
           </div>
         </div>
+        
+      </div>
         <div style="display: flex;
                     flex-direction: column;
                     margin:20px 0 ;" 

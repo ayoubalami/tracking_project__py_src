@@ -13,6 +13,7 @@ var videoInitialized=false;
 var objectDetectionList=[];
 var loadingDetectionModel=false;
 var selected_model_name=null;
+ 
 
 window.onbeforeunload = function(event){
     console.log("loading ....");
@@ -31,6 +32,43 @@ window.onbeforeunload = function(event){
         });    
         // return true    
         // return confirm("Confirm refresh");
+    }
+
+
+    function updateThresholdValue(){
+        var thresholdValueText =  $( "#thresholdValueText" )
+        var newThresholdValue=$( "#thresholdSlider" )[0].value;
+        thresholdValueText.text( newThresholdValue);
+        $.ajax({
+            type: "POST",
+            url: $SCRIPT_ROOT + '/models/update_threshold/'+newThresholdValue,
+            dataType: "json",
+            success: function (data) {
+                console.log("/models/threshold")
+                
+            },
+            error: function (errMsg) {
+            }
+        });  
+    }
+
+    function updateNmsThresholdValue(){
+       
+        var nmsThresholdValueText =  $( "#nmsThresholdValueText" )
+        var newNmsThresholdValue=$( "#nmsThresholdSlider" )[0].value;
+
+        nmsThresholdValueText.text( newNmsThresholdValue);
+        $.ajax({
+            type: "POST",
+            url: $SCRIPT_ROOT + '/models/update_nms_threshold/'+newNmsThresholdValue,
+            dataType: "json",
+            success: function (data) {
+                console.log("/models/nms_threshold")
+                
+            },
+            error: function (errMsg) {
+            }
+        });  
     }
 
 

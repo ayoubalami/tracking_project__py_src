@@ -9,7 +9,7 @@ import subprocess
 class OpencvDetectionService(IDetectionService):
 
     np.random.seed(123)
-    threshold = 0.5   
+   
     model=None
     
     def clean_memory(self):
@@ -118,7 +118,7 @@ class OpencvDetectionService(IDetectionService):
         self.model.setInputParams(size=(416, 416), scale=1/255, swapRB=True)
         print("Model " + self.modelName + " loaded successfully...")
         self.readClasses()
-        self.selected_model= self.model
+        # self.selected_model= self.model
 
 
     def get_selected_model(self):
@@ -144,39 +144,23 @@ class OpencvDetectionService(IDetectionService):
             [ 59.40987365, 197.51795215,  34.32644182],
             [ 42.21779254, 156.23398212,  60.88976857]]
       
-    
-
-    def detect_objects(self, frame,threshold= 0.5):
-        # return frame
-        return self. detect_objects_non_max_suppression(frame,threshold)
+     
 
 
-    def detect_objects_non_max_suppression(self, frame,threshold= 0.5):
-
+    def detect_objects(self, frame,threshold:float,nms_threshold:float):
+      
         frame=frame.copy()
         classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
-
+    
         bboxs=list(bboxs)
         confidences=list(np.array(confidences).reshape(1,-1)[0])
         confidences=list(map(float,confidences))
-        setSoftNMS=True
-
-        if setSoftNMS==False: 
-            # print("<<<NMS Methode>>>")
-            bboxIdx=cv2.dnn.NMSBoxes(bboxs,confidences,score_threshold=0.5,nms_threshold=0.5)
-        else:
-            # print("<<<SoftNMS Methode>>>")
-            SoftNMSConfidences,bboxIdx=cv2.dnn.softNMSBoxes(bboxs,confidences,score_threshold=0.5,nms_threshold=0.5)
-            confidences=list(SoftNMSConfidences)
-            
+        bboxIdx=cv2.dnn.NMSBoxes(bboxs,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
+             
         if len(bboxIdx) !=0 :
             for i in range (0,len(bboxIdx)):
                 bbox=bboxs[np.squeeze(bboxIdx[i])]
-                if setSoftNMS==False: 
-                    classConfidence = confidences[bboxIdx[i]]
-                else :
-                    classConfidence = confidences[i]
-
+                classConfidence = confidences[bboxIdx[i]]
                 classLabelID=np.squeeze(classLabelIDs[bboxIdx[i]])
         
                 if (classLabelID in self.classAllowed)==False:
@@ -186,7 +170,6 @@ class OpencvDetectionService(IDetectionService):
                 classColor = self.colorList[self.classAllowed.index(classLabelID)]
                 displayText = '{}: {:.2f}'.format(classLabel, classConfidence) 
                 
-
                 x,y,w,h=bbox
                 cv2.rectangle(frame,(x,y),(x+w,y+h),color=classColor,thickness=2)
                 cv2.putText(frame, displayText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
@@ -196,18 +179,8 @@ class OpencvDetectionService(IDetectionService):
         return frame
 
 
-    # def get_object_detection_models(self):
-    #     # url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
-    #     # url_list=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in list ]
-    #     # url_list=[  {'name' :model['name'] , 'url': model['name']}  for model in list ]
-    #     url_list=[  {'name' :model['name'] }  for model in list ]
-
-    #     return url_list
 
     def init_object_detection_models_list(self):
-        # to add network config url dynamicly
-        # url_template_cfg = "https://github.com/AlexeyAB/darknet/tree/master/cfg/{name}.cfg" 
-        # self.detection_method_list_with_url=[ { 'name' :model['name'] ,'url_weights' :model['url_weights'] , 'url_cfg': url_template_cfg.format( name=model['name']) }  for model in self.detection_method_list ]
         self.detection_method_list_with_url=self.detection_method_list
 
     def get_object_detection_models(self):

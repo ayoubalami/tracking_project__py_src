@@ -10,7 +10,7 @@ class IDetectionService:
     def load_model(self,model=None):
         pass
 
-    def detect_objects(self, frame,threshold= 0.5):
+    def detect_objects(self, frame,threshold:float,nms_threshold:float):
         pass
 
     def get_object_detection_models(self):

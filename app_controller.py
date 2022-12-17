@@ -54,6 +54,14 @@ def get_object_detection_list():
 def load_detection_model(model):
     return app_service.load_detection_model(model=model)
 
+@app.route('/models/update_threshold/<threshold>', methods = ['POST'])
+def update_threshold_value(threshold):
+    return app_service.update_threshold_value(threshold=threshold)
+
+@app.route('/models/update_nms_threshold/<nms_threshold>', methods = ['POST'])
+def update_nms_threshold_value(nms_threshold):
+    return app_service.update_nms_threshold_value(nms_threshold=nms_threshold)
+
 
 @app.route('/stream/reset', methods = ['POST'])
 def reset_stream():
