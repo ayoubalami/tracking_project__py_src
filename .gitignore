@@ -1,5 +1,6 @@
 # *.mp4
 fb.py
+*.csv
 *.tar.gz
 *.pyc
 *.cpython-39.pyc

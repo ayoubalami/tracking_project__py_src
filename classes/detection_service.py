@@ -1,6 +1,10 @@
 
-class IDetectionService:
+from asyncio import StreamReader
 
+
+class IDetectionService:
+    stream_reader:StreamReader
+    
     def get_selected_model(self):
         pass
 

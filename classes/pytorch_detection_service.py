@@ -34,29 +34,28 @@ class PytorchDetectionService(IDetectionService):
                         {'name': 'yolov5s'  },
                         {'name': 'yolov5m'  },
                         {'name': 'yolov5l'  },
-                        {'name': 'yolov5x'  }
-                        ]
+                        {'name': 'yolov5x'  },
+                        {'name': 'yolov6n','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6n.onnx'  },
+                        {'name': 'yolov6t','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6t.onnx'  },
+                        {'name': 'yolov6s','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6s.onnx'  },
+                        {'name': 'yolov6m','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6m.onnx'  },
+                        {'name': 'yolov6l','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6l.onnx'  },
+                       ]
 
         self.init_object_detection_models_list()
     
     def service_name(self):
         return "Pytorch detection service V 1.0"
 
-
     def load_model(self,model=None):
-
         self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)
         self.modelName= self.selected_model['name']
-
         modelgPath=os.path.join("","models","opencv_onnx_models",self.modelName+".onnx")
         self.model = cv2.dnn.readNetFromONNX(modelgPath)       
         self.readClasses()
 
-
     def get_selected_model(self):
         return self.selected_model
-
-          
 
     def readClasses(self): 
         with open(self.classFile, 'r') as f:
@@ -88,8 +87,10 @@ class PytorchDetectionService(IDetectionService):
 
         blob = cv2.dnn.blobFromImage(img,scalefactor= 1/255,size=(640 ,640 ),mean=[0,0,0],swapRB= True, crop= False)
         self.model.setInput(blob)
+
+        t1= time.time()
         detections = self.model.forward()[0]
-        # [0]
+        inference_time=time.time()-t1
         
         classes_ids = []
         confidences = []
@@ -99,16 +100,20 @@ class PytorchDetectionService(IDetectionService):
         img_width, img_height = img.shape[1], img.shape[0]
         x_scale = img_width/640
         y_scale = img_height/640
-
+        # print(detections)
+        # print(range(rows))
+        # input("Please enter to get confidence:\n")    
         for i in range(rows):
             row = detections[i]
-            confidence = row[4]
-            if confidence > threshold:
-                classes_score = row[5:]
-                ind = np.argmax(classes_score)
-                if classes_score[ind] > threshold:
+            box_confidence = float(row[4]) 
+            if box_confidence > threshold:
+                classes_confidences = row[5:]
+                ind = np.argmax(classes_confidences)
+                object_confidence= classes_confidences[ind]
+                if object_confidence > threshold:
                     classes_ids.append(ind)
-                    confidences.append(confidence)
+                    # confidence= classes_score[ind]*confidence
+                    confidences.append(object_confidence)
                     cx, cy, w, h = row[:4]
                     x1 = int((cx- w/2)*x_scale)
                     y1 = int((cy-h/2)*y_scale)
@@ -116,7 +121,6 @@ class PytorchDetectionService(IDetectionService):
                     height = int(h * y_scale)
                     box = np.array([x1,y1,width,height])
                     boxes.append(box)              
-
         indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
         for i in indices:
             x1,y1,w,h = boxes[i]
@@ -132,7 +136,7 @@ class PytorchDetectionService(IDetectionService):
             cv2.rectangle(img,(x1,y1),(x1+w,y1+h),color=classColor,thickness=2)
             cv2.putText(img, displayText, (x1,y1-2),cv2.FONT_HERSHEY_PLAIN, 1.5,classColor,2)
                     
-        return img
+        return img , inference_time
 
 
     # def get_object_detection_models(self):

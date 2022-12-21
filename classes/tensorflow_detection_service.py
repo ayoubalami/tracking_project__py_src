@@ -33,11 +33,12 @@ class TensorflowDetectionService(IDetectionService):
         self.selected_model=None
         self.detection_method_list    =   [ 
                         {'date':'20200711','name': 'ssd_mobilenet_v2_320x320_coco17_tpu-8' },
-                        {'date':'20200711','name': 'faster_rcnn_resnet50_v1_640x640_coco17_tpu-8' },
                         {'date':'20200711','name': 'efficientdet_d3_coco17_tpu-32' },
                         {'date':'20200711','name': 'ssd_mobilenet_v1_fpn_640x640_coco17_tpu-8' },
-                        {'date':'20200711','name': 'centernet_mobilenetv2fpn_512x512_coco17_od-8' },
-                        {'date':'20200711','name': 'centernet_resnet50_v2_512x512_coco17_tpu-8' },
+                        {'date':'20200711','name': 'centernet_resnet50_v2_512x512_kpts_coco17_tpu-8' },
+                        # {'date':'20200711','name': 'centernet_resnet50_v2_512x512_coco17_tpu-8' },
+                        {'date':'20200713','name': 'centernet_hg104_512x512_coco17_tpu-8' },
+                        {'date':'20200711','name': 'faster_rcnn_resnet50_v1_640x640_coco17_tpu-8' },
                         {'date':'20200711','name': 'faster_rcnn_resnet101_v1_640x640_coco17-8' },
                         {'date':'20200711','name': 'faster_rcnn_inception_resnet_v2_640x640_coco17_tpu-8' },
                     ]
@@ -107,7 +108,11 @@ class TensorflowDetectionService(IDetectionService):
         inputTensor = cv2.cvtColor( frame.copy(), cv2.COLOR_BGR2RGB ) 
         inputTensor = tf.convert_to_tensor(inputTensor, dtype=tf.uint8) 
         inputTensor = inputTensor[tf.newaxis,...]
+
+        t1= time.time()
         detections = self.model(inputTensor)
+        inference_time=time.time()-t1
+
         bboxs = detections['detection_boxes'][0].numpy()
         classIndexes = detections['detection_classes'][0].numpy().astype(np.int32) 
         classScores = detections['detection_scores'][0].numpy()
@@ -138,7 +143,7 @@ class TensorflowDetectionService(IDetectionService):
                 cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color=classColor, thickness=2) 
                 cv2.putText(frame, displayText, (xmin, ymin - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
 
-        return frame
+        return frame,inference_time
 
     # def get_object_detection_models(self):
     #     url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"

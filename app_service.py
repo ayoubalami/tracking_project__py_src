@@ -11,6 +11,7 @@ from classes.pytorch_detection_service import PytorchDetectionService
 from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
 from classes.WebcamStream import WebcamStream
+from classes.opencv_tensorflow_detection_service import OpencvTensorflowDetectionService
 
 
 class AppService:
@@ -44,9 +45,12 @@ class AppService:
         self.threshold = 0.5   
         self.nms_threshold =0.5
         print("AppService Starting ...")
-        # self.detection_service=TensorflowDetectionService()
-        self.detection_service=OpencvDetectionService()
+        self.detection_service=TensorflowDetectionService()
+        # self.detection_service=OpencvDetectionService()
         # self.detection_service=PytorchDetectionService()
+        # -----------------
+        # self.detection_service=OpencvTensorflowDetectionService()
+
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
             print( "Service name : ",self.detection_service.service_name())
@@ -96,6 +100,8 @@ class AppService:
 
 
     def stop_stream(self):
+
+        self.stream_reader.save_records()
         # if (self.stream_reader.buffer or self.stream_reader.webcam_stream ) and not self.stream_reader.stop_reading_from_user_action :
         if  not self.stream_reader.stop_reading_from_user_action :
             # if (self.stream_reader.buffer or self.stream_reader.webcam_stream ):

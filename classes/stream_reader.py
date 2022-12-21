@@ -2,7 +2,9 @@
 from ast import Str
 from curses import beep
 from enum import Enum
+from itertools import groupby
 from math import floor
+from operator import itemgetter
 from select import select
 import threading
 import cv2,time,os, numpy as np
@@ -11,7 +13,10 @@ from classes.detection_service import IDetectionService
 from  classes.WebcamStream import WebcamStream
 from  classes.buffer import Buffer
 from utils_lib.enums import StreamSourceEnum
-import tensorflow as tf
+import csv
+
+
+
 
 class StreamReader: 
 
@@ -22,6 +27,7 @@ class StreamReader:
     classAllowed=[]
     colorList=[]
     buffer :Buffer= None
+    records =[]
 
     def clean_memory(self):
         print("CALL DESTRUCTER FROM STREAM READER ")
@@ -33,6 +39,7 @@ class StreamReader:
         self.stop_reading_from_user_action=True
         self.current_time=0
         self.detection_service=detection_service
+        self.detection_service.stream_reader=self
         self.current_frame_index=0
         self.stop_reading_for_loading=False
         self.end_of_file=False
@@ -154,7 +161,7 @@ class StreamReader:
             
             
             # SENT FRAMES TO NAV
-            frame,current_batch=self.getCurrentFrame() 
+            frame,current_batch,inference_time=self.getCurrentFrame() 
             
             frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
             frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
@@ -193,6 +200,12 @@ class StreamReader:
             diff_time=time.time()-t1    
             # jump frames in function of processing time consumtion to simulate real time detection
             jump_frame=jump_frame+diff_time/self.buffer.frame_duration
+            # print("FPS :"  )
+            # print( float(1/diff_time) )
+          
+           
+            self.records.append({'detector': self.detection_service.get_selected_model()['name'],'fps':float(1/diff_time) ,'inference_time':inference_time})
+            
             current_fps=round(1/diff_time)
         
         print(" :::: END STREAM READER LOOP")
@@ -203,9 +216,27 @@ class StreamReader:
         frame,current_batch= self.buffer.buffer_frames[self.current_frame_index] 
         if self.detection_service !=None:
             if self.detection_service.get_selected_model() !=None:
-                frame = self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
-        return frame,current_batch
+                frame ,inference_time = self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
+        return frame,current_batch,inference_time
         
- 
+    def save_records(self):
+        csv_columns = ['detector','fps','inference_time']
+        csv_file = "/root/shared/records/"+self.detection_service.get_selected_model()['name']+".csv"
+        average_fps=0    
+        average_inference_time=0    
+           
+        with open(csv_file, 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+            writer.writeheader()
+            for index, item in enumerate(self.records):
+                if index==0:
+                    continue
+                writer.writerow(item)
+                average_fps+=item['fps']
+                average_inference_time+=item['inference_time']
 
             
+            writer.writerow({'detector':self.detection_service.get_selected_model()['name']+"-average",'fps':average_fps/(len(self.records)-1),'inference_time':average_inference_time/(len(self.records)-1)})
+            self.records= [] 
+
+    # less /proc/cpuinfo

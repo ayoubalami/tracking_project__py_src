@@ -6,14 +6,14 @@ from symbol import return_stmt
 import subprocess
 
 
-class OpencvDetectionService(IDetectionService):
+class OpencvTensorflowDetectionService(IDetectionService):
 
     np.random.seed(123)
    
     model=None
     
     def clean_memory(self):
-        print("CALL DESTRUCTER FROM OpencvDetectionService")
+        print("CALL DESTRUCTER FROM OpencvTensorflowDDetectionService")
         if self.model:
             del self.model
         # tf.keras.backend.clear_session()
@@ -32,7 +32,7 @@ class OpencvDetectionService(IDetectionService):
         self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
         self.selected_model=None
         self.detection_method_list    =   [ 
-                        # {'name': 'yolov2' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov2.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov2.weights' },
+                        {'name': 'TEST' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov2.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov2.weights' },
                         {'name': 'yolov3' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov3.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov3.weights'},
                         {'name': 'yolov4' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov4.weights' },
                         {'name': 'yolov7' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov7.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov7.weights'  },
@@ -48,7 +48,7 @@ class OpencvDetectionService(IDetectionService):
         # self.load_model()
         
     def service_name(self):
-        return "opencv detection service V 1.0"
+        return "opencv TensorflowD detection service V 1.0"
 
     def runcmd(self,cmd, verbose = False, *args, **kwargs):
 
@@ -110,24 +110,39 @@ class OpencvDetectionService(IDetectionService):
         configPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".cfg")
         modelPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".weights")
 
-        # # # =======================
-        # # modelPb=os.path.join("","models","tensorflow_models","2","frozen_inference_graph.pb")
-        # # # modelPbtxt=os.path.join("","models","ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt")
-        # # modelPbtxt=os.path.join("","models","tensorflow_models","2","faster_rcnn_resnet50_coco_2018_01_28.pbtxt")
+        # =======================
 
-        # # # modelPb=os.path.join("","models","tensorflow_models","1","frozen_inference_graph.pb")
-        # # # modelPbtxt=os.path.join("","models","tensorflow_models","1","faster_rcnn_inception_v2_coco_2018_01_28.pbtxt")
+        # modelPb=os.path.join("","models","tensorflow_models","5","efficientdet-d0.pb")
+        # modelPbtxt=os.path.join("","models","tensorflow_models","5","efficientdet-d0.pbtxt")
+  
+        # modelPb=os.path.join("","models","tensorflow_models","5","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","models","tensorflow_models","5","ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt")
+  
+        # modelPb=os.path.join("","models","tensorflow_models","4","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","models","tensorflow_models","4","ssd_mobilenet_v1_ppn_coco.pbtxt")
+  
+        # modelPb=os.path.join("","models","tensorflow_models","3","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","models","tensorflow_models","3","ssd_mobilenet_v1_coco_2017_11_17.pbtxt")
+
+        # modelPb=os.path.join("","models","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","models","ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt")
+
+        # modelPb=os.path.join("","models","tensorflow_models","2","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","models","tensorflow_models","2","faster_rcnn_resnet50_coco_2018_01_28.pbtxt")
+
+        # modelPb=os.path.join("","models","tensorflow_models","1","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","models","tensorflow_models","1","faster_rcnn_inception_v2_coco_2018_01_28.pbtxt")
         
-        # net = cv2.dnn.readNetFromTensorflow(modelPb,modelPbtxt)
+        self.model = cv2.dnn.readNetFromTensorflow(modelPb,modelPbtxt)
         
         # +++++++++++++++++++++++
 
-        net = cv2.dnn.readNet(modelPath,configPath)
+        # net = cv2.dnn.readNet(modelPath,configPath)
         # net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
         # net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
 
-        self.model=cv2.dnn_DetectionModel(net)
-        self.model.setInputParams(size=(416, 416), scale=1/255, swapRB=True)
+        # self.model=cv2.dnn_DetectionModel(net)
+        # self.model.setInputParams(size=(416, 416), scale=1/255, swapRB=True)
         print("Model " + self.modelName + " loaded successfully...")
         self.readClasses()
         # self.selected_model= self.model
@@ -156,46 +171,46 @@ class OpencvDetectionService(IDetectionService):
             [ 59.40987365, 197.51795215,  34.32644182],
             [ 42.21779254, 156.23398212,  60.88976857]]
       
-     
-
+    
 
     def detect_objects(self, frame,threshold:float,nms_threshold:float):
       
-        frame=frame.copy()
-        classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
+        img=frame.copy()
+       
+        rows = img.shape[0]
+        cols = img.shape[1]
+        confidences = []
+        boxes = []
+        self.model.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
 
-        
         t1= time.time()
-        classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
+        cvOut =  self.model.forward()
         inference_time=time.time()-t1
 
-        bboxs=list(bboxs)
-        confidences=list(np.array(confidences).reshape(1,-1)[0])
-        confidences=list(map(float,confidences))
-        bboxIdx=cv2.dnn.NMSBoxes(bboxs,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
-             
-        if len(bboxIdx) !=0 :
-            for i in range (0,len(bboxIdx)):
-                bbox=bboxs[np.squeeze(bboxIdx[i])]
-                classConfidence = confidences[bboxIdx[i]]
-                classLabelID=np.squeeze(classLabelIDs[bboxIdx[i]])
+        for detection in cvOut[0,0,:,:]:
+            score = float(detection[2]) 
+            if score > 0.5:
+                left = detection[3] * cols
+                top = detection[4] * rows
+                right = detection[5] * cols
+                bottom = detection[6] * rows
+                confidences.append(score)
+                box = np.array([detection[3],detection[4],detection[5],detection[6]])
+                boxes.append(box)       
+                cv2.rectangle(img, (int(left), int(top)), (int(right), int(bottom)), (23, 230, 210), thickness=2)
         
-                if (classLabelID in self.classAllowed)==False:
-                    continue
+        indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
 
-                classLabel = self.classesList[self.classAllowed.index(classLabelID)]
-                classColor = self.colorList[self.classAllowed.index(classLabelID)]
-                displayText = '{}: {:.2f}'.format(classLabel, classConfidence) 
-                
-                x,y,w,h=bbox
-                cv2.rectangle(frame,(x,y),(x+w,y+h),color=classColor,thickness=2)
-                cv2.putText(frame, displayText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
-
-            return frame,inference_time
-            
-        return frame,inference_time
-
-
+        for i in indices:
+            x1,y1,w,h = boxes[i]
+            x1=int(x1*cols)
+            y1=int(y1*rows)
+            w=int(w*cols)
+            h=int(h*rows) 
+            cv2.rectangle(img,(x1,y1),(w,h),  (223, 30, 10),thickness=1)
+ 
+        return img,inference_time
+         
 
     def init_object_detection_models_list(self):
         self.detection_method_list_with_url=self.detection_method_list
