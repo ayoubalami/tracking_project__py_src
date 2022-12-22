@@ -45,6 +45,10 @@ def stop_stream():
 def start_stream():
     return app_service.start_stream()
 
+@app.route('/start_offline_detection', methods = ['POST'])
+def start_offline_detection():
+    return app_service.start_offline_detection()
+
 @app.route('/get_object_detection_list', methods = ['GET'])
 def get_object_detection_list():
     return app_service.get_object_detection_list()

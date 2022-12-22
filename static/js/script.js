@@ -114,6 +114,39 @@ function stopStreamOnReset(){
         is_running_stream=!is_running_stream
     }
     
+} 
+
+function onClickStartOfflineDetection(){
+
+    toggleDisabledStartStopButton(true);
+    toggleDisabledDetectionMethodSelect(false);
+    toggleDisabledLoadingModelButton(false);
+    toggleDisabledResetButton(false);
+    
+    $("#offlineDetectionButton").attr("disabled", true);
+
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/start_offline_detection',
+        dataType: "json",
+        success: function (data) {
+            toggleDisabledStartStopButton(true);
+            toggleDisabledDetectionMethodSelect(true);
+            toggleDisabledLoadingModelButton(true,showSpinner=false);
+            toggleDisabledResetButton(true);
+            $("#offlineDetectionButton").attr("disabled", false);
+            console.log("  start_offline_detection  success")
+        },
+        error: function (errMsg) {
+            toggleDisabledStartStopButton(true);
+            toggleDisabledDetectionMethodSelect(true);
+            toggleDisabledLoadingModelButton(true,showSpinner=false);
+            toggleDisabledResetButton(true);
+            $("#offlineDetectionButton").attr("disabled", false);
+
+            console.log(" ERROR IN start_offline_detection")
+        }
+    });  
 }
 
 function onClickToggleStopStart(){        

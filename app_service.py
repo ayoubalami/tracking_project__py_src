@@ -12,6 +12,7 @@ from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
 from classes.WebcamStream import WebcamStream
 from classes.opencv_tensorflow_detection_service import OpencvTensorflowDetectionService
+from classes.offline_detector import OfflineDetector
 
 
 class AppService:
@@ -28,8 +29,6 @@ class AppService:
     stream_source: StreamSourceEnum=StreamSourceEnum.FILE
     buffering_thread=None
 
-    
-
 
     # youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
     # youtube_url = "https://www.youtube.com/watch?v=QuUxHIVUoaY"
@@ -40,13 +39,12 @@ class AppService:
     # youtube_url = "https://www.youtube.com/watch?v=KBsqQez-O4w"
    
 
-
     def __init__(self):
         self.threshold = 0.5   
         self.nms_threshold =0.5
         print("AppService Starting ...")
-        self.detection_service=TensorflowDetectionService()
-        # self.detection_service=OpencvDetectionService()
+        # self.detection_service=TensorflowDetectionService()
+        self.detection_service=OpencvDetectionService()
         # self.detection_service=PytorchDetectionService()
         # -----------------
         # self.detection_service=OpencvTensorflowDetectionService()
@@ -87,17 +85,6 @@ class AppService:
         self.stream_reader=StreamReader(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
         return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
 
-      
-  
-    # def timer(self):
-    #     if self.stream_reader != None :
-    #         return jsonify(result=self.stream_reader.current_time)
-    #     else :
-    #         return jsonify(result=1)
-
-    # def video_duration(self):
-    #     return jsonify(result=self.buffer.video_duration)
-
 
     def stop_stream(self):
 
@@ -121,7 +108,14 @@ class AppService:
                     return jsonify(result='stream started')
             # return jsonify(result='error server in stream started')
 
-    
+    def start_offline_detection(self):
+        # wait for streamer to be created before starting
+        print(" START OfflineDetection")
+        self.offline_detector=OfflineDetector(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
+        self.offline_detector.start()
+        return jsonify(result='OfflineDetector started')
+ 
+
     def get_object_detection_list(self):
         if self.detection_service!=None :
             return jsonify(self.detection_service.get_object_detection_models())

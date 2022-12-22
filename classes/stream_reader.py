@@ -200,12 +200,8 @@ class StreamReader:
             diff_time=time.time()-t1    
             # jump frames in function of processing time consumtion to simulate real time detection
             jump_frame=jump_frame+diff_time/self.buffer.frame_duration
-            # print("FPS :"  )
-            # print( float(1/diff_time) )
           
-           
             self.records.append({'detector': self.detection_service.get_selected_model()['name'],'fps':float(1/diff_time) ,'inference_time':inference_time})
-            
             current_fps=round(1/diff_time)
         
         print(" :::: END STREAM READER LOOP")
@@ -235,7 +231,6 @@ class StreamReader:
                 average_fps+=item['fps']
                 average_inference_time+=item['inference_time']
 
-            
             writer.writerow({'detector':self.detection_service.get_selected_model()['name']+"-average",'fps':average_fps/(len(self.records)-1),'inference_time':average_inference_time/(len(self.records)-1)})
             self.records= [] 
 

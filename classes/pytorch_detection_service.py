@@ -40,6 +40,7 @@ class PytorchDetectionService(IDetectionService):
                         {'name': 'yolov6s','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6s.onnx'  },
                         {'name': 'yolov6m','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6m.onnx'  },
                         {'name': 'yolov6l','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6l.onnx'  },
+                        {'name': 'object_detection_nanodet_2022nov'},
                        ]
 
         self.init_object_detection_models_list()

@@ -33,12 +33,13 @@ class OpencvDetectionService(IDetectionService):
         self.selected_model=None
         self.detection_method_list    =   [ 
                         # {'name': 'yolov2' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov2.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov2.weights' },
-                        {'name': 'yolov3' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov3.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov3.weights'},
-                        {'name': 'yolov4' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov4.weights' },
-                        {'name': 'yolov7' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov7.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov7.weights'  },
-                        {'name': 'yolov3-tiny' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov3-tiny.cfg' ,'url_weights' :'https://pjreddie.com/media/files/yolov3-tiny.weights'},
-                        {'name': 'yolov4-tiny'  , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov4-tiny.weights'},
-                        {'name': 'yolov7-tiny' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov7-tiny.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov7-tiny.weights'}
+                        {'type':'yolo','name': 'yolov3' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov3.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov3.weights'},
+                        {'type':'yolo','name': 'yolov4' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov4.weights' },
+                        {'type':'yolo','name': 'yolov7' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov7.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov7.weights'  },
+                        {'type':'yolo','name': 'yolov3-tiny' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov3-tiny.cfg' ,'url_weights' :'https://pjreddie.com/media/files/yolov3-tiny.weights'},
+                        {'type':'yolo','name': 'yolov4-tiny'  , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov4-tiny.weights'},
+                        {'type':'yolo','name': 'yolov7-tiny' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov7-tiny.cfg' ,'url_weights' :'https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov7-tiny.weights'},
+                        {'type':'ssd','name':"ssd_mobilenet_v3_large_coco_2020_01_14","url_cfg":"https://raw.githubusercontent.com/haroonshakeel/real_time_object_detection_cpu/main/model_data/ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt","url_weights":"https://github.com/haroonshakeel/real_time_object_detection_cpu/raw/main/model_data/frozen_inference_graph.pb"}
                         ]
 
         self.init_object_detection_models_list()
@@ -68,77 +69,71 @@ class OpencvDetectionService(IDetectionService):
         print("===> download_model_if_not_exists  ")
         model_url_cfg= self.selected_model['url_cfg']
         model_url_weights= self.selected_model['url_weights']
- 
-        print( self.selected_model)
-        # print( model_url_cfg)
-        # print( model_url_weights)
-        fileName = os.path.basename(model_url_cfg)     
-        self.modelName = fileName[:fileName.index('.')]
+        self.modelName =self.selected_model['name']
         cacheDir = os.path.join("","models","opencv_models", self.modelName)
 
-        # print(os.path.exists( os.path.join(cacheDir,  fileName    )))
-        # print(  os.path.join(cacheDir,  fileName   ))
         print( self.selected_model)
-        print( self.modelName+'.cfg')
-        print( self.modelName+'.weights'  )
 
-        if not os.path.exists(   os.path.join(cacheDir,  self.modelName+'.cfg'    )):
-            print("===> download_model cfg")
-            os.makedirs(cacheDir, exist_ok=True)
-            self.runcmd("wget -P " + cacheDir + "   " + model_url_cfg, verbose = True)
-        else:
-            print("===> model cfg already exist ")
+        if self.selected_model['type']=='yolo':
+            if not os.path.exists(   os.path.join(cacheDir,  self.modelName+'.cfg'   )):
+                print("===> download_model cfg")
+                os.makedirs(cacheDir, exist_ok=True)
+                self.runcmd("wget -P " + cacheDir + "   " + model_url_cfg, verbose = True)
+            else:
+                print("===> model cfg already exist ")
 
-        if not os.path.exists(   os.path.join(cacheDir,  self.modelName+'.weights'    )):
-            print("===> download_model weights")
-            os.makedirs(cacheDir, exist_ok=True)
-            self.runcmd("wget -P " + cacheDir + "   " + model_url_weights, verbose = True)
-        else:
-            print("===> model weights already exist ")
+            if not os.path.exists(   os.path.join(cacheDir,  self.modelName+'.weights'    )):
+                print("===> download_model weights")
+                os.makedirs(cacheDir, exist_ok=True)
+                self.runcmd("wget -P " + cacheDir + "   " + model_url_weights, verbose = True)
+            else:
+                print("===> model weights already exist ")
+
+            self.configPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".cfg")
+            self.weightPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".weights")
+
+        else : 
+            if self.selected_model['type']=='ssd':
+                if not os.path.exists(   os.path.join(cacheDir, self.modelName+'.pbtxt'   )):
+                    print("===> download_model cfg")
+                    os.makedirs(cacheDir, exist_ok=True)
+                    self.runcmd("wget -P " + cacheDir + "   " + model_url_cfg, verbose = True)
+                else:
+                    print("===> model cfg already exist ")
+
+                if not os.path.exists(   os.path.join(cacheDir,  'frozen_inference_graph.pb'    )):
+                    print("===> download_model weights")
+                    os.makedirs(cacheDir, exist_ok=True)
+                    self.runcmd("wget -P " + cacheDir + "   " + model_url_weights, verbose = True)
+                else:
+                    print("===> model weights already exist ")
             
+            self.configPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".pbtxt")
+            self.weightPath=os.path.join("","models","opencv_models",self.modelName,"frozen_inference_graph.pb")
+
 
     def load_model(self,model=None):
-        # self.load_or_download_model_tensorflow(model=model)
-        # model="yolov4"
-        self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)
-  
+
+        self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)  
         self.modelName= self.selected_model['name']
-        print("===> selected modelName")
-        print(self.modelName)
+        print("===> selected modelName : " +self.modelName )
         self.download_model_if_not_exists()
-
-        configPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".cfg")
-        modelPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".weights")
-
-        # # # =======================
-        # # modelPb=os.path.join("","models","tensorflow_models","2","frozen_inference_graph.pb")
-        # # # modelPbtxt=os.path.join("","models","ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt")
-        # # modelPbtxt=os.path.join("","models","tensorflow_models","2","faster_rcnn_resnet50_coco_2018_01_28.pbtxt")
-
-        # # # modelPb=os.path.join("","models","tensorflow_models","1","frozen_inference_graph.pb")
-        # # # modelPbtxt=os.path.join("","models","tensorflow_models","1","faster_rcnn_inception_v2_coco_2018_01_28.pbtxt")
-        
-        # net = cv2.dnn.readNetFromTensorflow(modelPb,modelPbtxt)
-        
-        # +++++++++++++++++++++++
-
-        net = cv2.dnn.readNet(modelPath,configPath)
+        net = cv2.dnn.readNet(self.configPath,self.weightPath)
         # net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
         # net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
-
         self.model=cv2.dnn_DetectionModel(net)
-        self.model.setInputParams(size=(416, 416), scale=1/255, swapRB=True)
-        print("Model " + self.modelName + " loaded successfully...")
         self.readClasses()
-        # self.selected_model= self.model
+        if self.selected_model['type']=='ssd':
+            self.model.setInputParams(size=(512, 512),mean=(127.5, 127.5, 127.5), scale=1.0/127.5, swapRB=True)
+            self.classesList .insert(0,"__")
+            self.colorList .insert(0,(0,0,0))
 
-
+        elif self.selected_model['type']=='yolo':
+            self.model.setInputParams(size=(416, 416), scale=1/255, swapRB=True)
+        print("Model " + self.modelName + " loaded successfully...")
+      
     def get_selected_model(self):
         return self.selected_model
-
-         
-        
-
 
     def readClasses(self): 
         with open(self.classFile, 'r') as f:
@@ -156,15 +151,11 @@ class OpencvDetectionService(IDetectionService):
             [ 59.40987365, 197.51795215,  34.32644182],
             [ 42.21779254, 156.23398212,  60.88976857]]
       
-     
 
 
     def detect_objects(self, frame,threshold:float,nms_threshold:float):
-      
-        frame=frame.copy()
-        classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
-
-        
+        # frame=frame.copy()
+        # classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
         t1= time.time()
         classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
         inference_time=time.time()-t1
@@ -191,7 +182,7 @@ class OpencvDetectionService(IDetectionService):
                 cv2.rectangle(frame,(x,y),(x+w,y+h),color=classColor,thickness=2)
                 cv2.putText(frame, displayText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
 
-            return frame,inference_time
+            # return frame,inference_time
             
         return frame,inference_time
 
