@@ -114,7 +114,7 @@ class StreamReader:
 
             if self.detection_service !=None:
                 if self.detection_service.get_selected_model() !=None:
-                    frame = self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
+                    frame , inference_time= self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
             
             # frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
             frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
@@ -201,7 +201,8 @@ class StreamReader:
             # jump frames in function of processing time consumtion to simulate real time detection
             jump_frame=jump_frame+diff_time/self.buffer.frame_duration
           
-            self.records.append({'detector': self.detection_service.get_selected_model()['name'],'fps':float(1/diff_time) ,'inference_time':inference_time})
+            if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
+                self.records.append({'detector': self.detection_service.get_selected_model()['name'],'fps':float(1/diff_time) ,'inference_time':inference_time})
             current_fps=round(1/diff_time)
         
         print(" :::: END STREAM READER LOOP")
@@ -210,28 +211,28 @@ class StreamReader:
 
     def getCurrentFrame(self):   
         frame,current_batch= self.buffer.buffer_frames[self.current_frame_index] 
-        if self.detection_service !=None:
-            if self.detection_service.get_selected_model() !=None:
-                frame ,inference_time = self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
-        return frame,current_batch,inference_time
+        if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
+            frame ,inference_time = self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
+            return frame,current_batch,inference_time
+        return frame,current_batch,-1
         
     def save_records(self):
-        csv_columns = ['detector','fps','inference_time']
-        csv_file = "/root/shared/records/"+self.detection_service.get_selected_model()['name']+".csv"
-        average_fps=0    
-        average_inference_time=0    
-           
-        with open(csv_file, 'w') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
-            writer.writeheader()
-            for index, item in enumerate(self.records):
-                if index==0:
-                    continue
-                writer.writerow(item)
-                average_fps+=item['fps']
-                average_inference_time+=item['inference_time']
 
-            writer.writerow({'detector':self.detection_service.get_selected_model()['name']+"-average",'fps':average_fps/(len(self.records)-1),'inference_time':average_inference_time/(len(self.records)-1)})
-            self.records= [] 
+        if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
+            csv_columns = ['detector','fps','inference_time']
+            csv_file = "/root/shared/records/"+self.detection_service.get_selected_model()['name']+".csv"
+            average_fps=0    
+            average_inference_time=0    
+            with open(csv_file, 'w') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+                writer.writeheader()
+                for index, item in enumerate(self.records):
+                    if index==0:
+                        continue
+                    writer.writerow(item)
+                    average_fps+=item['fps']
+                    average_inference_time+=item['inference_time']
+                writer.writerow({'detector':self.detection_service.get_selected_model()['name']+"-average",'fps':average_fps/(len(self.records)-1),'inference_time':average_inference_time/(len(self.records)-1)})
+                self.records= [] 
 
     # less /proc/cpuinfo

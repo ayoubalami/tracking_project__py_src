@@ -6,3 +6,4 @@ fb.py
 *.cpython-39.pyc
 models/
 storages/
+out_videos/

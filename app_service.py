@@ -44,8 +44,8 @@ class AppService:
         self.nms_threshold =0.5
         print("AppService Starting ...")
         # self.detection_service=TensorflowDetectionService()
-        self.detection_service=OpencvDetectionService()
-        # self.detection_service=PytorchDetectionService()
+        # self.detection_service=OpencvDetectionService()
+        self.detection_service=PytorchDetectionService()
         # -----------------
         # self.detection_service=OpencvTensorflowDetectionService()
 

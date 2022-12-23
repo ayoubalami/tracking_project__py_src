@@ -5,7 +5,6 @@ from classes.detection_service import IDetectionService
 from symbol import return_stmt
 import subprocess
 
-
 class OpencvDetectionService(IDetectionService):
 
     np.random.seed(123)

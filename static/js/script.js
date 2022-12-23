@@ -73,7 +73,10 @@ window.onbeforeunload = function(event){
 
 
 function initVideoStreamFrame(){
-    $('#videoFrame').attr("src", "video_stream");
+    $('#videoFramePrimary').attr("src", "video_stream");
+    // $('#videoFrameSecondary').attr("src", "video_stream");
+    // $('#videoFrameThird').attr("src", "video_stream");
+    
     videoInitialized=true;
 }
 
@@ -119,30 +122,33 @@ function stopStreamOnReset(){
 function onClickStartOfflineDetection(){
 
     toggleDisabledStartStopButton(true);
-    toggleDisabledDetectionMethodSelect(false);
-    toggleDisabledLoadingModelButton(false);
-    toggleDisabledResetButton(false);
-    
+    toggleDisabledDetectionMethodSelect(true);
+    toggleDisabledLoadingModelButton(true,showSpinner=false);
+    toggleDisabledResetButton(true);
+
     $("#offlineDetectionButton").attr("disabled", true);
+    $("#offlineDetectionButton").children().css( "display", "inline-block" )
 
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/start_offline_detection',
         dataType: "json",
         success: function (data) {
-            toggleDisabledStartStopButton(true);
-            toggleDisabledDetectionMethodSelect(true);
-            toggleDisabledLoadingModelButton(true,showSpinner=false);
-            toggleDisabledResetButton(true);
+            toggleDisabledStartStopButton(false);
+            toggleDisabledDetectionMethodSelect(false);
+            toggleDisabledLoadingModelButton(false,showSpinner=false);
+            toggleDisabledResetButton(false);
             $("#offlineDetectionButton").attr("disabled", false);
+            $("#offlineDetectionButton").children().css( "display", "none" )
             console.log("  start_offline_detection  success")
         },
         error: function (errMsg) {
             toggleDisabledStartStopButton(true);
             toggleDisabledDetectionMethodSelect(true);
             toggleDisabledLoadingModelButton(true,showSpinner=false);
-            toggleDisabledResetButton(true);
+            toggleDisabledResetButton(false);
             $("#offlineDetectionButton").attr("disabled", false);
+            $("#offlineDetectionButton").children().css( "display", "none" )
 
             console.log(" ERROR IN start_offline_detection")
         }

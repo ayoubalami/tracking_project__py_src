@@ -1,31 +1,21 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" >
-    
-    <!-- <script type="text/javascript"
-      var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};>
-       
-    </script> -->
 
-    <script type="text/javascript"
-      src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/script.js') }}" ></script>
+<head>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/script.js') }}"></script>
 
-    
-  </head>
-  <!-- <body 
-    onload="load_duration();update_values();"
-  > -->
-  <body onload="initData()" >
+</head>
 
-    <div class="container">
-          
-        <h1 class="p-2"> OBJECT DETECTION SERVER </h1>
+<body onload="initData()">
 
-        <div class="container px-4">
-          <!-- <div class="row gx-5 mb-3">
+  <div class="container">
+    <h1 class="p-2"> OBJECT DETECTION SERVER </h1>
+    <div class="container px-4">
+      <!-- <div class="row gx-5 mb-3">
             <div class="col input-group ">
               <span class="input-group-text" id="basic-addon3">https://www.youtube.com/watch?v=</span>
               <input type="text" class="form-control" id="basic-url" aria-describedby="basic-addon3">
@@ -37,94 +27,86 @@
                 <option value="webcam" title="Live WebCam">Live WebCam</option>
                 <option value="youtube" title="Youtube">Youtube</option>
               </select>
-
             </div>
           </div> -->
-         
-          <div class="row gx-5">
-            <div class="col input-group">
-              <div class="btn-group me-2 w-25" role="group" aria-label="First group">
-                <button class="p-2 btn btn-success btn-lg " onclick="onClickToggleStopStart()" id="startStopButton" > Start </button>
-              </div>
-              <div class="btn-group me-2 w-25 " role="group" aria-label="First group">
-                <button class="p-2 btn btn-primary btn-lg " disabled onclick="onClickReset()" id="resetButton" > Reset </button>
-              </div>
-              <div class="btn-group mx-5 w-10" role="group" aria-label="First group">
-                <button class="p-2 btn btn-warning btn-md "   onclick="onClickStartOfflineDetection()" id="offlineDetectionButton" > Start offline detection </button>
-              </div>
-            </div>
-            <!-- <div class="col">
-              <button class="p-2 btn btn-primary btn-lg w-25" onclick="onClickReset()" id="resetButton" > Reset </button>
-            </div> -->
-            <div class="col input-group">
-              <select id="objectDetectionSelect" onchange="onChangeObjectDetection()" class="p-2 form-select" aria-label="Default select example">
-              </select>
-              
-              <button class="p-2 btn btn-success btn-md w-25" type="button" onclick="onClickLoadModel()"  id="loadModelButton">
-                <span class="spinner-border spinner-border-sm " style="display: none"  role="status" aria-hidden="true"></span>
-                load model
-              </button>
-              
-              <!-- <button class="p-2 btn btn-success btn-md w-25 " onclick="loadModel()"  > -->
-                 <!-- load model -->
-                <!-- <span class="loading"></span>   -->
-                <!-- <div class="spinner-border" role="status">
-                  <span class="visually-hidden">Loading...</span>
-                </div>
-              </button> -->
 
-            </div>
+      <div class="row gx-5">
+        <div class="col input-group">
+          <div class="btn-group me-2 w-25" role="group" aria-label="First group">
+            <button class="p-2 btn btn-success btn-lg " onclick="onClickToggleStopStart()" id="startStopButton"> Start
+            </button>
           </div>
-          
-
-
-        <!-- <div style="display: flex;flex-direction: row;">
-          <button onclick="toggleStopStart()" id="startStopButton" class="btn btn-success btn-lg w-25"> Start </button>
-          <button onclick="onClickReset()" id="resetButton" class="btn btn-primary btn-lg w-25"> Reset </button>
-        </div> -->
-        
-        <div class="row my-4">
-          <div class="col input-group">
-            <h5 class="">threshold</h5>
-            <input type="range" onchange="updateThresholdValue()" min="0" max="1" value="0.5" step="0.1" class="mx-4 slider" id="thresholdSlider">
-            <h5 id="thresholdValueText"> 0.5 </h5>
+          <div class="btn-group me-2 w-25 " role="group" aria-label="First group">
+            <button class="p-2 btn btn-primary btn-lg " disabled onclick="onClickReset()" id="resetButton"> Reset
+            </button>
           </div>
-          <div class="col input-group">
-            <h5 class="">nms_threshold</h5>
-            <input type="range" onchange="updateNmsThresholdValue()"min="0" max="1" value="0.5" step="0.1" class="mx-4 slider" id="nmsThresholdSlider">
-            <h5 id="nmsThresholdValueText"> 0.5 </h5>
-
+          <div class="btn-group mx-5 w-10" role="group" aria-label="First group">
+            <button class="p-2 btn btn-warning btn-md " onclick="onClickStartOfflineDetection()"
+              id="offlineDetectionButton">
+              <span class="spinner-border spinner-border-sm " style="display: none" role="status"
+                aria-hidden="true"></span>
+              Start offline detection
+            </button>
           </div>
         </div>
-        <div class="row ">
-          <div class="col input-group">
-            <h5 id="selectModelText"> 
-              Aucun modele de detection chargé
-            </h5>
-          </div>
+        <div class="col input-group">
+          <select id="objectDetectionSelect" onchange="onChangeObjectDetection()" class="p-2 form-select"
+            aria-label="Default select example">
+          </select>
+          <button class="p-2 btn btn-success btn-md w-25" type="button" onclick="onClickLoadModel()"
+            id="loadModelButton">
+            <span class="spinner-border spinner-border-sm " style="display: none" role="status"
+              aria-hidden="true"></span>
+            load model
+          </button>
         </div>
-        
       </div>
-        <div style="display: flex;
-                    flex-direction: column;
-                    margin:20px 0 ;" 
-                    >
-                    <img id="videoFrame" />
 
-            <!-- {% if 1 < 0 %} -->
-            <!-- <img id="video_frame" src="{{ url_for('video_stream') }}"/> -->
-           
-            <!-- {% endif %} -->
-          
-
-
-            <!-- <input type="range" min="1" max="100" value="1" class="slider" id="myRange"> -->
-          
-          
+      <div class="row my-4">
+        <div class="col input-group">
+          <h5 class="">threshold</h5>
+          <input type="range" onchange="updateThresholdValue()" min="0" max="1" value="0.5" step="0.1"
+            class="mx-4 slider" id="thresholdSlider">
+          <h5 id="thresholdValueText"> 0.5 </h5>
         </div>
+        <div class="col input-group">
+          <h5 class="">nms_threshold</h5>
+          <input type="range" onchange="updateNmsThresholdValue()" min="0" max="1" value="0.5" step="0.1"
+            class="mx-4 slider" id="nmsThresholdSlider">
+          <h5 id="nmsThresholdValueText"> 0.5 </h5>
 
+        </div>
       </div>
-    </body>
+      <div class="row ">
+        <div class="col input-group">
+          <h5 id="selectModelText">
+            Aucun modele de detection chargé
+          </h5>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="row">
+      <div  class="col" style="display: flex; flex-direction: column; margin:20px 0 ;width: 100%;">
+        <img id="videoFramePrimary" />
+      </div>
+
+      <!-- <div  class="col" style="display: flex;  flex-direction: column;  width: 30%;">
+        <div  class="col" style="display: flex;  flex-direction: column;  margin:20px 0;">
+          <img id="videoFrameSecondary" />
+        </div>
+        <div  class="col" style="display: flex;  flex-direction: column; ">
+          <img id="videoFrameThird" />
+        </div>
+      </div> -->
+     
+    </div>
+   
+
+
+  </div>
+</body>
 
 
 </html>
