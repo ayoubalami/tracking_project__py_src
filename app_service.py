@@ -21,7 +21,7 @@ class AppService:
     detection_service :IDetectionService= None
 
     file_src   =   "videos/highway2.mp4"
-    youtube_url =   "https://www.youtube.com/watch?v=nt3D26lrkho"
+    youtube_url =   "https://www.youtube.com/watch?v=TW3EH4cnFZo"
     webcam_src  =   'http://10.10.23.223:9000/video'
     # video_src = None
 
@@ -56,6 +56,8 @@ class AppService:
             print( " No detection_module To load")
         print("AppService Started.")
 
+        self.stream_reader=StreamReader(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
+
 
 
     def clean_memory(self):
@@ -75,19 +77,11 @@ class AppService:
     def index(self):
         return render_template('index.html')
  
-   
-
     def return_stream(self):
         yield from self.stream_reader.read_stream()
         # yield from self.webcam_stream.read_from_camera()
 
-    def video_stream(self):
-        self.stream_reader=StreamReader(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
-        return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
-
-
     def stop_stream(self):
-
         self.stream_reader.save_records()
         # if (self.stream_reader.buffer or self.stream_reader.webcam_stream ) and not self.stream_reader.stop_reading_from_user_action :
         if  not self.stream_reader.stop_reading_from_user_action :
@@ -114,7 +108,6 @@ class AppService:
         self.offline_detector=OfflineDetector(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
         self.offline_detector.start()
         return jsonify(result='OfflineDetector started')
- 
 
     def get_object_detection_list(self):
         if self.detection_service!=None :
@@ -128,19 +121,22 @@ class AppService:
                 return jsonify(result='DONE LOADING SUCCESS')
             except:
                 return jsonify(error='ERROR model throw exception')
-
         return jsonify(result='ERROR model is null')
-
 
     def update_threshold_value(self,threshold):
         self.threshold=float(threshold)
         self.stream_reader.threshold=self.threshold
         return jsonify(result='threshold updated ')
 
-
     def update_nms_threshold_value(self,nms_threshold:float):
         self.nms_threshold=float(nms_threshold)
         self.stream_reader.nms_threshold=self.nms_threshold
         return jsonify(result='nmsthreshold updated ')
 
+    def main_video_stream(self):
+        print("=======> main_video_stream")
+        self.stream_reader=StreamReader(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold)        
+        self.stream_reader.startBuffering()
+        return Response(self.return_stream(),mimetype='text/event-stream')
+        # return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
 

@@ -14,6 +14,11 @@ class Buffer:
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
         self.frames_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
+        self.width  = self.cap.get(3)    
+        self.height = self.cap.get(4)
+        print("self.width" )
+        print(  self.width)
+        print( self.height)
         self.frame_duration= 1/self.fps 
         self.video_duration = self.frames_count/ self.fps
         # self.last_loaded_frame_index=0
@@ -30,11 +35,10 @@ class Buffer:
         if stream_source==StreamSourceEnum.FILE:
             self.reset_file_buffer(file_src=video_src)
             self.batch_size=50
-        else :
-            if stream_source==StreamSourceEnum.YOUTUBE:
+        elif stream_source==StreamSourceEnum.YOUTUBE:
                 self.reset_youtube_buffer(youtube_url=video_src)
                 self.batch_size=150
-
+        
 
     def init_youtube_video_play(self,youtube_url):
         urlPafy = pafy.new(youtube_url)

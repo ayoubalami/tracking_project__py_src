@@ -15,6 +15,8 @@ var loadingDetectionModel=false;
 var selected_model_name=null;
  
 
+ 
+
 window.onbeforeunload = function(event){
     console.log("loading ....");
         $.ajax({
@@ -63,20 +65,23 @@ window.onbeforeunload = function(event){
             url: $SCRIPT_ROOT + '/models/update_nms_threshold/'+newNmsThresholdValue,
             dataType: "json",
             success: function (data) {
-                console.log("/models/nms_threshold")
-                
+                console.log("/models/nms_threshold") 
             },
             error: function (errMsg) {
             }
         });  
     }
-
-
-function initVideoStreamFrame(){
-    $('#videoFramePrimary').attr("src", "video_stream");
-    // $('#videoFrameSecondary').attr("src", "video_stream");
-    // $('#videoFrameThird').attr("src", "video_stream");
     
+function initVideoStreamFrame(){
+    var eventSource = new EventSource('/main_video_stream');
+    eventSource.onmessage = function(event) {
+        var result = JSON.parse(event.data);
+        streamKeys=Object.keys(result)
+        streamKeys.forEach(stream => {
+            var mainVideoFrame = $('#'+stream+'Frame')
+            mainVideoFrame.attr("src", 'data:image/jpeg;base64,' + result.mainStream);
+        });        
+    };
     videoInitialized=true;
 }
 

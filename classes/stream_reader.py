@@ -14,15 +14,12 @@ from  classes.WebcamStream import WebcamStream
 from  classes.buffer import Buffer
 from utils_lib.enums import StreamSourceEnum
 import csv
-
-
-
+import json
+import base64
 
 class StreamReader: 
 
     np.random.seed(123)
-    # threshold = 0.5   
-    # nms_threshold =0.5
     perf = []
     classAllowed=[]
     colorList=[]
@@ -61,12 +58,12 @@ class StreamReader:
             self.webcam_stream = WebcamStream(src=self.video_src)
             self.webcam_stream.start()
             print("StreamReader From Camera .....")
-
         self.buffer.stream_reader=self
+
+    def startBuffering(self):
         self.buffering_thread= threading.Thread(target=self.buffer.download_buffer)
         self.buffering_thread.start()
-
-        
+ 
     def clean_streamer(self):
         print("================== >>STREAM_READER : begin clean_streamer")
         del(self.buffer.buffer_frames)
@@ -74,27 +71,21 @@ class StreamReader:
         del(self.buffer.cap)
         print("STREAM_READER : end clean_streamer")
 
-
     def reset(self):
         if self.stream_source == StreamSourceEnum.YOUTUBE :
             self.buffer.reset_youtube_buffer(youtube_url=self.video_src)   
-
         if self.stream_source == StreamSourceEnum.FILE:
             self.buffer.reset_file_buffer(file_src=self.video_src)   
-
         self.current_time=0
         self.current_sec=0
         self.current_frame_index=0
-
 
     def read_stream(self):
         if self.stream_source == StreamSourceEnum.WEBCAM:   
             yield from self.read_stream_from_webcam()
         else:
             yield from self.read_stream_from_buffer()
-
         return "NO STREAM TO READ"
-
 
     def read_stream_from_webcam(self):
           # delay for buffer to load some frame
@@ -112,13 +103,10 @@ class StreamReader:
                 continue
             ret,frame=self.webcam_stream.read()    
 
-            if self.detection_service !=None:
-                if self.detection_service.get_selected_model() !=None:
-                    frame , inference_time= self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
+            if self.detection_service !=None and self.detection_service.get_selected_model() !=None:
+                frame , inference_time= self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
             
-            # frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
             frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
-
             ret,buffer=cv2.imencode('.jpg',frame)
             frame=buffer.tobytes()
             yield(b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
@@ -151,28 +139,30 @@ class StreamReader:
             
              # END READING IN CASE OF REACHING THE LAST BATCH
             if ( self.buffer.last_frame_of_last_batch==self.current_frame_index  and current_batch==self.buffer.last_batch):
-                # self.clean_streamer()
-                # print("STREAM_READER : end_of_file")
                 continue;   
-
 
             if self.current_frame_index>=len(self.buffer.buffer_frames) or len(self.buffer.buffer_frames)==0 :
                 continue
             
-            
             # SENT FRAMES TO NAV
+            result={}
             frame,current_batch,inference_time=self.getCurrentFrame() 
-            
-            frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
-            frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
-            # print("show frame...  !! ", self.current_sec ," :: ", self.current_time)
-            ret,buffer=cv2.imencode('.jpg',frame)
-
+            frame=cv2.resize(frame, (int(self.buffer.width/1.5) ,int(self.buffer.height/1.5) ))
+            frame=self.addFrameFpsAndTime(frame,detection_fps)
+            ret,buffer=cv2.imencode('.jpg',frame, [cv2.IMWRITE_JPEG_QUALITY, 65])
             img_bytes=buffer.tobytes()
+            main_frame = base64.b64encode(img_bytes).decode()
+            result['mainStream']=main_frame
 
-            yield(b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + img_bytes + b'\r\n')
-            
-            # JUMP N FRAMES 
+            # frame1=cv2.resize(frame, (int(self.buffer.width/2) ,int(self.buffer.height/2) ))
+            # frame1 =  ps.putBText(frame1,"TEST fps",text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=5.2,text_RGB=(255,25,50))
+            # ret,buffer1=cv2.imencode('.jpg',frame1)
+            # img_bytes1=buffer1.tobytes()
+            # second_frame = base64.b64encode(img_bytes1).decode()
+            # result['secondStream']=second_frame
+
+            yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
+
             # ADD SECONDES
             self.current_time=self.current_time+self.buffer.frame_duration*(floor(jump_frame))
             new_sec=self.current_time
@@ -183,7 +173,6 @@ class StreamReader:
             # GO to THE NEXT FRAME
             self.current_frame_index=self.current_frame_index + floor(jump_frame) 
             
-
             # sleep if the FPS is too high 
             if current_fps > self.buffer.fps:
                 time.sleep(0.01)
@@ -196,7 +185,6 @@ class StreamReader:
                 self.current_frame_index=0
                 self.buffer.download_new_batch=True
         
- 
             diff_time=time.time()-t1    
             # jump frames in function of processing time consumtion to simulate real time detection
             jump_frame=jump_frame+diff_time/self.buffer.frame_duration
@@ -207,7 +195,6 @@ class StreamReader:
         
         print(" :::: END STREAM READER LOOP")
 
-            # print(" ",diff_time ," ; ",jump_frame," = ",fps)
 
     def getCurrentFrame(self):   
         frame,current_batch= self.buffer.buffer_frames[self.current_frame_index] 
@@ -217,7 +204,6 @@ class StreamReader:
         return frame,current_batch,-1
         
     def save_records(self):
-
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
             csv_columns = ['detector','fps','inference_time']
             csv_file = "/root/shared/records/"+self.detection_service.get_selected_model()['name']+".csv"
@@ -235,4 +221,9 @@ class StreamReader:
                 writer.writerow({'detector':self.detection_service.get_selected_model()['name']+"-average",'fps':average_fps/(len(self.records)-1),'inference_time':average_inference_time/(len(self.records)-1)})
                 self.records= [] 
 
+
+    def addFrameFpsAndTime(self,frame,detection_fps):
+        frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
+        frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
+        return frame
     # less /proc/cpuinfo

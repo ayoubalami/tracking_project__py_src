@@ -1,4 +1,5 @@
 # from turtle import shape
+# ps aux
 from threading import Thread
 import threading,os
 from time import sleep,time
@@ -21,9 +22,10 @@ app_service=AppService()
 def index():
     return app_service.index()
 
-@app.route('/video_stream')
-def video_stream():
-    return app_service.video_stream()
+@app.route('/main_video_stream')
+def main_video_stream():
+    return app_service.main_video_stream()
+
 
 @app.route('/current_time', methods = ['GET'])
 def timer():
