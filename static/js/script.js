@@ -71,6 +71,24 @@ window.onbeforeunload = function(event){
             }
         });  
     }
+
+    function updateBackgroundSubtractionParamValue(param){
+        var paramValueText = $( "#"+param+"ValueText" )
+        var newParamValueFromSlider= $( "#"+param+"Slider" )[0].value;
+        $.ajax({
+            type: "POST",
+            url: $SCRIPT_ROOT + '/models/update_background_subtraction_param/'+param+'/'+newParamValueFromSlider,
+            dataType: "json",
+            success: function (data) {
+                paramValueText.text( newParamValueFromSlider);
+                console.log("/models/update_background_subtraction_param is done!") 
+            },
+            error: function (errMsg) {
+                console.log(" ERROR /models/update_background_subtraction_param ") 
+            }
+        });  
+
+    }
     
 function initVideoStreamFrame(){
     var eventSource = new EventSource('/main_video_stream');
@@ -84,6 +102,8 @@ function initVideoStreamFrame(){
     };
     videoInitialized=true;
 }
+
+
 
 function initData(){
     getObjectDetectionList();

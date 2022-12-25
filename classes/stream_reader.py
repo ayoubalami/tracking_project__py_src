@@ -151,16 +151,20 @@ class StreamReader:
             # SENT FRAMES TO NAV
             result={}
 
+            
             origin_frame,current_batch=self.getCurrentFrame() 
-            detection_frame=origin_frame.copy()
-            detection_frame,inference_time=self.applyDetection(detection_frame)
-            self.addFrameFpsAndTime(detection_frame,detection_fps)
-            result['mainStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1)
+            # detection_frame=origin_frame.copy()
+            # detection_frame,inference_time=self.applyDetection(detection_frame)
+            # self.addFrameFpsAndTime(detection_frame,detection_fps)
+            # result['mainStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=80)
  
-            subtruction_frame=origin_frame.copy()
-            subtruction_frame,inference_time=self.applyBackgroundSubtraction(subtruction_frame)
-            # self.addInferenceTime(subtruction_frame,inference_time)
-            result['secondStream']=self.encodeStreamingFrame(frame=subtruction_frame,resize_ratio=1)
+            subtraction_frame=origin_frame.copy()
+            copy_frame,subtraction_frame,inference_time=self.applyBackgroundSubtraction(subtraction_frame)
+            # self.addInferenceTime(subtraction_frame,inference_time)
+            result['secondStream']=self.encodeStreamingFrame(frame=subtraction_frame,resize_ratio=1)
+
+
+            result['thirdStream']=self.encodeStreamingFrame(frame=copy_frame,resize_ratio=1)
 
             yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 
@@ -203,18 +207,17 @@ class StreamReader:
 
     def applyDetection(self,origin_frame):   
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
-            detection_frame ,inference_time = self.detection_service.detect_objects(detection_frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
+            detection_frame ,inference_time = self.detection_service.detect_objects(origin_frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
             return detection_frame,inference_time
         return origin_frame,-1
 
     def applyBackgroundSubtraction(self,origin_frame):
         return self.background_subtractor_service.apply(origin_frame)
 
-        
-    def encodeStreamingFrame(self,frame,resize_ratio=1):
+    def encodeStreamingFrame(self,frame,resize_ratio=1,jpeg_quality=100):
             if resize_ratio!=1:
-                frame=cv2.resize(frame, (int(self.buffer.width/resize_ratio) ,int(self.buffer.height/resize_ratio) ))
-            ret,buffer=cv2.imencode('.jpg',frame, [cv2.IMWRITE_JPEG_QUALITY, 65])
+                frame=cv2.resize(frame, (int(self.buffer.width*resize_ratio) ,int(self.buffer.height*resize_ratio) ))
+            ret,buffer=cv2.imencode('.jpg',frame, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
             img_bytes=buffer.tobytes()
             return  base64.b64encode(img_bytes).decode()
     

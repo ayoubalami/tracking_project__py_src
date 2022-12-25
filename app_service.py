@@ -23,8 +23,8 @@ class AppService:
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
 
-    file_src   =   "videos/highway2.mp4"
-    youtube_url =   "https://www.youtube.com/watch?v=TW3EH4cnFZo"
+    file_src   =   "videos/highway3.mp4"
+    youtube_url =   "https://www.youtube.com/watch?v=QuUxHIVUoaY"
     webcam_src  =   'http://10.10.23.223:9000/video'
     # video_src = None
 
@@ -137,6 +137,24 @@ class AppService:
         self.nms_threshold=float(nms_threshold)
         self.stream_reader.nms_threshold=self.nms_threshold
         return jsonify(result='nmsthreshold updated ')
+
+    def update_background_subtraction_param(self,param,value):
+        # self.nms_threshold=float(nms_threshold)
+        # self.stream_reader.nms_threshold=self.nms_threshold
+        if param=='varThreshold':
+            self.background_subtractor_service.background_subtractor.setVarThreshold(int(value))
+        if param=='history':
+            self.background_subtractor_service.background_subtractor.setHistory(int(value))
+        if param=='morphologicalEx':
+            self.background_subtractor_service.morphological_ex_iteration=int(value)
+        if param=='kernelSize':
+            self.background_subtractor_service.kernel_size=int(value)
+        if param=='minBoxSize':
+            self.background_subtractor_service.min_box_size=int(value)
+
+        return jsonify(result=param+' updated ')
+
+    
 
     def main_video_stream(self):
         print("=======> main_video_stream")

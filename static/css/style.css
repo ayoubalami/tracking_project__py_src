@@ -1,3 +1,8 @@
+.accordion-button{
+    background: #e0f1ff;
+    border: 1px solid rgb(153 200 239)
+
+}
 .slider{
     width: 50%;
 } 

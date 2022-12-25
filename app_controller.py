@@ -68,6 +68,10 @@ def update_threshold_value(threshold):
 def update_nms_threshold_value(nms_threshold):
     return app_service.update_nms_threshold_value(nms_threshold=nms_threshold)
 
+@app.route('/models/update_background_subtraction_param/<param>/<value>', methods = ['POST'])
+def update_background_subtraction_param(param,value):
+    return app_service.update_background_subtraction_param(param=param,value=value)
+
 
 @app.route('/stream/reset', methods = ['POST'])
 def reset_stream():
