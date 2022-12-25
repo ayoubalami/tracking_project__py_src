@@ -10,6 +10,8 @@ from classes.opencv_detection_service import OpencvDetectionService
 from classes.pytorch_detection_service import PytorchDetectionService
 from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
+from classes.background_subtractor_service import BackgroundSubtractorService
+ 
 from classes.WebcamStream import WebcamStream
 from classes.opencv_tensorflow_detection_service import OpencvTensorflowDetectionService
 from classes.offline_detector import OfflineDetector
@@ -19,6 +21,7 @@ class AppService:
     
     stream_reader :StreamReader = None
     detection_service :IDetectionService= None
+    background_subtractor_service: BackgroundSubtractorService=None
 
     file_src   =   "videos/highway2.mp4"
     youtube_url =   "https://www.youtube.com/watch?v=TW3EH4cnFZo"
@@ -49,6 +52,8 @@ class AppService:
         # -----------------
         # self.detection_service=OpencvTensorflowDetectionService()
 
+        self.background_subtractor_service=BackgroundSubtractorService()
+
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
             print( "Service name : ",self.detection_service.service_name())
@@ -56,7 +61,7 @@ class AppService:
             print( " No detection_module To load")
         print("AppService Started.")
 
-        self.stream_reader=StreamReader(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
+        # self.stream_reader=StreamReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service, stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
 
 
 
@@ -135,7 +140,7 @@ class AppService:
 
     def main_video_stream(self):
         print("=======> main_video_stream")
-        self.stream_reader=StreamReader(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold)        
+        self.stream_reader=StreamReader(detection_service=self.detection_service, background_subtractor_service=self.background_subtractor_service, stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold)        
         self.stream_reader.startBuffering()
         return Response(self.return_stream(),mimetype='text/event-stream')
         # return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')

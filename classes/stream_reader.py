@@ -12,6 +12,7 @@ import pyshine as ps
 from classes.detection_service import IDetectionService
 from  classes.WebcamStream import WebcamStream
 from  classes.buffer import Buffer
+from classes.background_subtractor_service import BackgroundSubtractorService
 from utils_lib.enums import StreamSourceEnum
 import csv
 import json
@@ -32,10 +33,11 @@ class StreamReader:
             self.buffer.clean_memory()
             self.stop_reading_to_clean=True
 
-    def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src:str,threshold:float,nms_threshold:float):
+    def __init__(self, detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService ,stream_source:StreamSourceEnum, video_src:str,threshold:float,nms_threshold:float):
         self.stop_reading_from_user_action=True
         self.current_time=0
         self.detection_service=detection_service
+        self.background_subtractor_service=background_subtractor_service
         self.detection_service.stream_reader=self
         self.current_frame_index=0
         self.stop_reading_for_loading=False
@@ -127,6 +129,8 @@ class StreamReader:
         jump_frame=0    
         print("Start READING FROM BUFFER ......")
         diff_time=0
+        backgroundSubtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
+
         while True :
             t1= time.time()
             
@@ -146,20 +150,17 @@ class StreamReader:
             
             # SENT FRAMES TO NAV
             result={}
-            frame,current_batch,inference_time=self.getCurrentFrame() 
-            frame=cv2.resize(frame, (int(self.buffer.width/1.5) ,int(self.buffer.height/1.5) ))
-            frame=self.addFrameFpsAndTime(frame,detection_fps)
-            ret,buffer=cv2.imencode('.jpg',frame, [cv2.IMWRITE_JPEG_QUALITY, 65])
-            img_bytes=buffer.tobytes()
-            main_frame = base64.b64encode(img_bytes).decode()
-            result['mainStream']=main_frame
 
-            # frame1=cv2.resize(frame, (int(self.buffer.width/2) ,int(self.buffer.height/2) ))
-            # frame1 =  ps.putBText(frame1,"TEST fps",text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=5.2,text_RGB=(255,25,50))
-            # ret,buffer1=cv2.imencode('.jpg',frame1)
-            # img_bytes1=buffer1.tobytes()
-            # second_frame = base64.b64encode(img_bytes1).decode()
-            # result['secondStream']=second_frame
+            origin_frame,current_batch=self.getCurrentFrame() 
+            detection_frame=origin_frame.copy()
+            detection_frame,inference_time=self.applyDetection(detection_frame)
+            self.addFrameFpsAndTime(detection_frame,detection_fps)
+            result['mainStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1)
+ 
+            subtruction_frame=origin_frame.copy()
+            subtruction_frame,inference_time=self.applyBackgroundSubtraction(subtruction_frame)
+            # self.addInferenceTime(subtruction_frame,inference_time)
+            result['secondStream']=self.encodeStreamingFrame(frame=subtruction_frame,resize_ratio=1)
 
             yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 
@@ -197,12 +198,27 @@ class StreamReader:
 
 
     def getCurrentFrame(self):   
-        frame,current_batch= self.buffer.buffer_frames[self.current_frame_index] 
+        origin_frame,current_batch= self.buffer.buffer_frames[self.current_frame_index] 
+        return origin_frame,current_batch
+
+    def applyDetection(self,origin_frame):   
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
-            frame ,inference_time = self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
-            return frame,current_batch,inference_time
-        return frame,current_batch,-1
+            detection_frame ,inference_time = self.detection_service.detect_objects(detection_frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
+            return detection_frame,inference_time
+        return origin_frame,-1
+
+    def applyBackgroundSubtraction(self,origin_frame):
+        return self.background_subtractor_service.apply(origin_frame)
+
         
+    def encodeStreamingFrame(self,frame,resize_ratio=1):
+            if resize_ratio!=1:
+                frame=cv2.resize(frame, (int(self.buffer.width/resize_ratio) ,int(self.buffer.height/resize_ratio) ))
+            ret,buffer=cv2.imencode('.jpg',frame, [cv2.IMWRITE_JPEG_QUALITY, 65])
+            img_bytes=buffer.tobytes()
+            return  base64.b64encode(img_bytes).decode()
+    
+
     def save_records(self):
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
             csv_columns = ['detector','fps','inference_time']
@@ -225,5 +241,11 @@ class StreamReader:
     def addFrameFpsAndTime(self,frame,detection_fps):
         frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
         frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
-        return frame
+        # return frame
+
+
+    def addInferenceTime(self, frame, inferenceTime):
+        color = 2**16-1
+        frame = cv2.putText(frame,str( "inf. time : {:02f}".format(inferenceTime)), (60, 45), cv2.FONT_HERSHEY_SIMPLEX, 3.3, color, 1, cv2.LINE_AA)
+
     # less /proc/cpuinfo

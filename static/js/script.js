@@ -79,7 +79,7 @@ function initVideoStreamFrame(){
         streamKeys=Object.keys(result)
         streamKeys.forEach(stream => {
             var mainVideoFrame = $('#'+stream+'Frame')
-            mainVideoFrame.attr("src", 'data:image/jpeg;base64,' + result.mainStream);
+            mainVideoFrame.attr("src", 'data:image/jpeg;base64,' + result[stream]);
         });        
     };
     videoInitialized=true;

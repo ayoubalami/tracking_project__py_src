@@ -8,7 +8,6 @@ import subprocess
 class OpencvDetectionService(IDetectionService):
 
     np.random.seed(123)
-   
     model=None
     
     def clean_memory(self):
