@@ -43,9 +43,9 @@ def clean_memory():
 def stop_stream():
     return app_service.stop_stream()
 
-@app.route('/start_stream', methods = ['POST'])
-def start_stream():
-    return app_service.start_stream()
+@app.route('/start_stream/<selected_video>', methods = ['POST'])
+def start_stream(selected_video):
+    return app_service.start_stream(selected_video)
 
 @app.route('/start_offline_detection', methods = ['POST'])
 def start_offline_detection():
@@ -72,6 +72,10 @@ def update_nms_threshold_value(nms_threshold):
 def update_background_subtraction_param(param,value):
     return app_service.update_background_subtraction_param(param=param,value=value)
 
+
+@app.route('/switch_client_stream/<stream>', methods = ['POST'])
+def switch_client_stream(stream):
+    return app_service.switch_client_stream(stream=stream)
 
 @app.route('/stream/reset', methods = ['POST'])
 def reset_stream():

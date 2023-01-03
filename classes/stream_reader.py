@@ -13,7 +13,7 @@ from classes.detection_service import IDetectionService
 from  classes.WebcamStream import WebcamStream
 from  classes.buffer import Buffer
 from classes.background_subtractor_service import BackgroundSubtractorService
-from utils_lib.enums import StreamSourceEnum
+from utils_lib.enums import ClientStreamTypeEnum, StreamSourceEnum
 import csv
 import json
 import base64
@@ -26,6 +26,8 @@ class StreamReader:
     colorList=[]
     buffer :Buffer= None
     records =[]
+    current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR
+    current_batch=0
 
     def clean_memory(self):
         print("CALL DESTRUCTER FROM STREAM READER ")
@@ -142,32 +144,15 @@ class StreamReader:
                 continue
             
              # END READING IN CASE OF REACHING THE LAST BATCH
-            if ( self.buffer.last_frame_of_last_batch==self.current_frame_index  and current_batch==self.buffer.last_batch):
+            if ( self.buffer.last_frame_of_last_batch==self.current_frame_index  and self.current_batch==self.buffer.last_batch):
                 continue;   
 
             if self.current_frame_index>=len(self.buffer.buffer_frames) or len(self.buffer.buffer_frames)==0 :
                 continue
             
-            # SENT FRAMES TO NAV
-            result={}
-
+            # RETURN FRAMES TO NAV
+            yield from self.yieldSelectedStream(detection_fps)
             
-            origin_frame,current_batch=self.getCurrentFrame() 
-            # detection_frame=origin_frame.copy()
-            # detection_frame,inference_time=self.applyDetection(detection_frame)
-            # self.addFrameFpsAndTime(detection_frame,detection_fps)
-            # result['mainStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=80)
- 
-            subtraction_frame=origin_frame.copy()
-            copy_frame,subtraction_frame,inference_time=self.applyBackgroundSubtraction(subtraction_frame)
-            # self.addInferenceTime(subtraction_frame,inference_time)
-            result['secondStream']=self.encodeStreamingFrame(frame=subtraction_frame,resize_ratio=1)
-
-
-            result['thirdStream']=self.encodeStreamingFrame(frame=copy_frame,resize_ratio=1)
-
-            yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
-
             # ADD SECONDES
             self.current_time=self.current_time+self.buffer.frame_duration*(floor(jump_frame))
             new_sec=self.current_time
@@ -186,7 +171,7 @@ class StreamReader:
 
             # DELETE PREVIOUS BATCH FRAMES ALREADY PRINTED FROM MEMORY
             if (self.current_frame_index>=self.buffer.batch_size):
-                self.buffer.delete_last_batch(current_batch)
+                self.buffer.delete_last_batch(self.current_batch)
                 self.current_frame_index=0
                 self.buffer.download_new_batch=True
         
@@ -202,8 +187,8 @@ class StreamReader:
 
 
     def getCurrentFrame(self):   
-        origin_frame,current_batch= self.buffer.buffer_frames[self.current_frame_index] 
-        return origin_frame,current_batch
+        origin_frame,self.current_batch= self.buffer.buffer_frames[self.current_frame_index] 
+        return origin_frame,self.current_batch
 
     def applyDetection(self,origin_frame):   
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
@@ -211,8 +196,8 @@ class StreamReader:
             return detection_frame,inference_time
         return origin_frame,-1
 
-    def applyBackgroundSubtraction(self,origin_frame):
-        return self.background_subtractor_service.apply(origin_frame)
+    # def applyBackgroundSubtraction(self,origin_frame):
+    #     return self.background_subtractor_service.apply(origin_frame)
 
     def encodeStreamingFrame(self,frame,resize_ratio=1,jpeg_quality=100):
             if resize_ratio!=1:
@@ -250,5 +235,35 @@ class StreamReader:
     def addInferenceTime(self, frame, inferenceTime):
         color = 2**16-1
         frame = cv2.putText(frame,str( "inf. time : {:02f}".format(inferenceTime)), (60, 45), cv2.FONT_HERSHEY_SIMPLEX, 3.3, color, 1, cv2.LINE_AA)
+
+
+    def change_video_file(self,new_video_file): 
+        if self.stream_source == StreamSourceEnum.FILE:
+            self.video_src=new_video_file
+            self.buffer.reset_file_buffer(file_src=self.video_src)   
+            self.current_time=0
+            self.current_sec=0
+            self.current_frame_index=0
+    
+    def yieldSelectedStream(self,detection_fps):
+        result={}
+        origin_frame,self.current_batch=self.getCurrentFrame() 
+
+        if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
+            # origin_frame,self.current_batch=self.getCurrentFrame() 
+            detection_frame=origin_frame.copy()
+            detection_frame,inference_time=self.applyDetection(detection_frame)
+            self.addFrameFpsAndTime(detection_frame,detection_fps)
+            result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=80)
+
+        elif self.current_selected_stream== ClientStreamTypeEnum.BACKGROUND_SUBTRACTION:
+            subtraction_frame=origin_frame.copy()
+            copy_frame,subtraction_frame,inference_time=self.background_subtractor_service.apply(origin_frame)
+            # self.addInferenceTime(subtraction_frame,inference_time)
+            self.addFrameFpsAndTime(copy_frame,detection_fps)
+            result['backgroundSubStream_first']=self.encodeStreamingFrame(frame=subtraction_frame,resize_ratio=1)
+            result['backgroundSubStream_second']=self.encodeStreamingFrame(frame=copy_frame,resize_ratio=1)
+
+        yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 
     # less /proc/cpuinfo

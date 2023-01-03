@@ -13,7 +13,7 @@ var videoInitialized=false;
 var objectDetectionList=[];
 var loadingDetectionModel=false;
 var selected_model_name=null;
- 
+var showBackgroundSubtractionStream=false;
 
  
 
@@ -96,8 +96,8 @@ function initVideoStreamFrame(){
         var result = JSON.parse(event.data);
         streamKeys=Object.keys(result)
         streamKeys.forEach(stream => {
-            var mainVideoFrame = $('#'+stream+'Frame')
-            mainVideoFrame.attr("src", 'data:image/jpeg;base64,' + result[stream]);
+            var videoFrame = $('#'+stream)
+            videoFrame.attr("src", 'data:image/jpeg;base64,' + result[stream]);
         });        
     };
     videoInitialized=true;
@@ -132,6 +132,7 @@ function onClickReset(){
         }
     });  
 }
+
 
 function stopStreamOnReset(){
     if(is_running_stream){
@@ -291,13 +292,13 @@ function sendStopVideoRequest(){
     });
 }
 function sendStartVideoRequest(){
-    
-    $.ajax({
+    selectedVideo=$('#inputVideoFile').find(":selected").val();
+      $.ajax({
         type: "POST",
-        url: $SCRIPT_ROOT + '/start_stream',
+        url: $SCRIPT_ROOT + '/start_stream/'+selectedVideo,
         dataType: "json",
         success: function (data) {
-            console.log(" start_stream")
+            console.log(" start_stream "+selectedVideo)
            
             // intervalID = setInterval(update_values, 600);
             $('#startStopButton').html( 'Stop');
@@ -391,7 +392,45 @@ function load_duration() {
         });
 }
 
+function toggleDisabledBackgroundSubtractionStream(){
+    if (showBackgroundSubtractionStream ){
+        $("#accordionFlushBackgroundSubtraction").css("display", "block");
+    }else{
+        $("#accordionFlushBackgroundSubtraction").css("display", "none");
+    }
+}
 
+function onClickSwitchTab(stream){
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/switch_client_stream/'+stream,
+        dataType: "json",
+        success: function (data) {
+            console.log("  onClickSwitchTab  "+stream)
+        },
+        error: function (errMsg) {
+            console.log(" error onClickSwitchTab true"+stream)
+        }
+    });  
+}
+
+// function onCheckedBackgroundSubtractionService(){
+//     showBackgroundSubtractionStream=$("#backgroundSubtractionCheckChecked").prop("checked")
+//     toggleDisabledBackgroundSubtractionStream();
+
+//     $.ajax({
+//         type: "POST",
+//         url: $SCRIPT_ROOT + '/background_subtraction/show_stream/'+showBackgroundSubtractionStream,
+//         dataType: "json",
+//         success: function (data) {
+//             console.log("  toggleDisabledBackgroundSubtractionStream  ")
+//         },
+//         error: function (errMsg) {
+//             console.log(" error toggleDisabledBackgroundSubtractionStream true")
+//         }
+//     });  
+
+// }
 
 // window.onbeforeunload = function (e) {
 //     var e = e || window.event;

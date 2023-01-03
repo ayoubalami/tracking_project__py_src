@@ -15,6 +15,7 @@ from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.WebcamStream import WebcamStream
 from classes.opencv_tensorflow_detection_service import OpencvTensorflowDetectionService
 from classes.offline_detector import OfflineDetector
+from utils_lib.enums import ClientStreamTypeEnum
 
 
 class AppService:
@@ -23,7 +24,7 @@ class AppService:
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
 
-    file_src   =   "videos/highway3.mp4"
+    file_src   =   "videos/highway2.mp4"
     youtube_url =   "https://www.youtube.com/watch?v=QuUxHIVUoaY"
     webcam_src  =   'http://10.10.23.223:9000/video'
     # video_src = None
@@ -95,8 +96,11 @@ class AppService:
             return jsonify(result='stream stoped')
         return jsonify(result='error server in stream stoped')
 
-    def start_stream(self):
-        # wait for streamer to be created before starting
+    def start_stream(self,selected_video):
+        selected_video="videos/"+selected_video
+        if (selected_video!= self.stream_reader.video_src):
+            self.stream_reader.change_video_file(selected_video)
+             
         while(True):
             sleep(0.01)
             if self.stream_reader and self.stream_reader.buffer:
@@ -154,8 +158,6 @@ class AppService:
 
         return jsonify(result=param+' updated ')
 
-    
-
     def main_video_stream(self):
         print("=======> main_video_stream")
         self.stream_reader=StreamReader(detection_service=self.detection_service, background_subtractor_service=self.background_subtractor_service, stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold)        
@@ -163,3 +165,12 @@ class AppService:
         return Response(self.return_stream(),mimetype='text/event-stream')
         # return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
+    def switch_client_stream(self, stream):
+        if  self.stream_reader!=None:
+            if stream == 'detectorStream':
+                self.stream_reader.current_selected_stream= ClientStreamTypeEnum.CNN_DETECTOR
+            elif  stream == 'backgroundSubtractionStream':
+                self.stream_reader.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
+
+        return jsonify(result=stream)

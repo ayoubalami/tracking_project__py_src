@@ -32,21 +32,24 @@ class TensorflowDetectionService(IDetectionService):
         self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
         self.selected_model=None
         self.detection_method_list    =   [ 
-                        {'date':'20200711','name': 'ssd_mobilenet_v2_320x320_coco17_tpu-8' },
-                        {'date':'20200711','name': 'efficientdet_d3_coco17_tpu-32' },
                         {'date':'20200711','name': 'ssd_mobilenet_v1_fpn_640x640_coco17_tpu-8' },
+                        {'date':'20200711','name': 'ssd_mobilenet_v2_320x320_coco17_tpu-8' },
+                        {'date':'20200711','name': 'efficientdet_d0_coco17_tpu-32' },
+                        {'date':'20200711','name': 'efficientdet_d1_coco17_tpu-32' },
+                        {'date':'20200711','name': 'efficientdet_d3_coco17_tpu-32' },
+                        {'date':'20200711','name': 'efficientdet_d7_coco17_tpu-32' },
                         {'date':'20200711','name': 'centernet_resnet50_v2_512x512_kpts_coco17_tpu-8' },
-                        # {'date':'20200711','name': 'centernet_resnet50_v2_512x512_coco17_tpu-8' },
                         {'date':'20200713','name': 'centernet_hg104_512x512_coco17_tpu-8' },
                         {'date':'20200711','name': 'faster_rcnn_resnet50_v1_640x640_coco17_tpu-8' },
-                        {'date':'20200711','name': 'faster_rcnn_resnet101_v1_640x640_coco17-8' },
-                        {'date':'20200711','name': 'faster_rcnn_inception_resnet_v2_640x640_coco17_tpu-8' },
+                        {'date':'20200711','name': 'faster_rcnn_inception_resnet_v2_640x640_coco17_tpu-8' }
+                        # {'date':'20200711','name': 'faster_rcnn_resnet101_v1_640x640_coco17_tpu-8' },
+                        # {'date':'20200711','name': 'faster_rcnn_inception_resnet_v2_640x640_coco17_tpu-8' },
                     ]
-
         self.init_object_detection_models_list()
     
+        # https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md
         # https://github.com/opencv/opencv/wiki/TensorFlow-Object-Detection-API
-       
+
         # self.load_model()
         
     def service_name(self):

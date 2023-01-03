@@ -1,3 +1,13 @@
+.form-check-input{
+    width: 50px !important;
+    height: 24px;
+}
+.accordion-flush .accordion-item:last-child {
+    border-bottom: 0;
+    border-left: 1px solid #99c8ef;
+    border-right: 1px solid #99c8ef;
+    border-bottom: 1px solid #99c8ef;
+}
 .accordion-button{
     background: #e0f1ff;
     border: 1px solid rgb(153 200 239)
@@ -8,4 +18,17 @@
 } 
 .container{
     max-width: 1500px;
+}
+
+.nav-link{
+    font-size: x-large;
+    border: 1px solid #0a1f6c33;
+    color: #4a515c;
+}
+.container .nav-link.active{
+    color: #0d6efd;
+    font-weight: 600;
+    background-color: #fff;
+    border-color: #aab2b9 #acb8c5 #e4efff;
+    background: #62a0fd2b;
 }
