@@ -11,6 +11,7 @@ from classes.pytorch_detection_service import PytorchDetectionService
 from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
 from classes.background_subtractor_service import BackgroundSubtractorService
+from classes.tracking_service import TrackingService
  
 from classes.WebcamStream import WebcamStream
 from classes.opencv_tensorflow_detection_service import OpencvTensorflowDetectionService
@@ -23,6 +24,7 @@ class AppService:
     stream_reader :StreamReader = None
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
+    tracking_service: TrackingService=None
 
     file_src   =   "videos/highway2.mp4"
     youtube_url =   "https://www.youtube.com/watch?v=QuUxHIVUoaY"
@@ -44,16 +46,19 @@ class AppService:
    
 
     def __init__(self):
-        self.threshold = 0.5   
-        self.nms_threshold =0.5
+      
         print("AppService Starting ...")
         # self.detection_service=TensorflowDetectionService()
-        # self.detection_service=OpencvDetectionService()
-        self.detection_service=PytorchDetectionService()
+        self.detection_service=OpencvDetectionService()
+        # self.detection_service=PytorchDetectionService()
         # -----------------
         # self.detection_service=OpencvTensorflowDetectionService()
 
+        #--------------
+        # INIT SERVICES
         self.background_subtractor_service=BackgroundSubtractorService()
+        self.tracking_service=TrackingService()
+        #--------------
 
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
@@ -72,6 +77,7 @@ class AppService:
             self.stream_reader.clean_memory()
         if self.detection_service:
             self.detection_service.clean_memory()
+            self.detection_service.init_selected_model()
             # del self.detection_service
         return jsonify(result='clean_memory OK')
 
@@ -88,10 +94,9 @@ class AppService:
         # yield from self.webcam_stream.read_from_camera()
 
     def stop_stream(self):
-        self.stream_reader.save_records()
-        # if (self.stream_reader.buffer or self.stream_reader.webcam_stream ) and not self.stream_reader.stop_reading_from_user_action :
+        # self.stream_reader.save_records()
+
         if  not self.stream_reader.stop_reading_from_user_action :
-            # if (self.stream_reader.buffer or self.stream_reader.webcam_stream ):
             self.stream_reader.stop_reading_from_user_action=True
             return jsonify(result='stream stoped')
         return jsonify(result='error server in stream stoped')
@@ -114,7 +119,9 @@ class AppService:
     def start_offline_detection(self):
         # wait for streamer to be created before starting
         print(" START OfflineDetection")
-        self.offline_detector=OfflineDetector(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
+        self.offline_detector=OfflineDetector(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src ) 
+        self.offline_detector.threshold= self.stream_reader.threshold  
+        self.offline_detector.nms_threshold=self.stream_reader.nms_threshold
         self.offline_detector.start()
         return jsonify(result='OfflineDetector started')
 
@@ -133,13 +140,11 @@ class AppService:
         return jsonify(result='ERROR model is null')
 
     def update_threshold_value(self,threshold):
-        self.threshold=float(threshold)
-        self.stream_reader.threshold=self.threshold
+        self.stream_reader.threshold=float(threshold)
         return jsonify(result='threshold updated ')
 
     def update_nms_threshold_value(self,nms_threshold:float):
-        self.nms_threshold=float(nms_threshold)
-        self.stream_reader.nms_threshold=self.nms_threshold
+        self.stream_reader.nms_threshold=float(nms_threshold)
         return jsonify(result='nmsthreshold updated ')
 
     def update_background_subtraction_param(self,param,value):
@@ -160,17 +165,21 @@ class AppService:
 
     def main_video_stream(self):
         print("=======> main_video_stream")
-        self.stream_reader=StreamReader(detection_service=self.detection_service, background_subtractor_service=self.background_subtractor_service, stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold)        
+        self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
+        self.stream_reader.background_subtractor_service=self.background_subtractor_service
+        self.stream_reader.tracking_service=self.tracking_service
+
         self.stream_reader.startBuffering()
         return Response(self.return_stream(),mimetype='text/event-stream')
         # return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
 
-
     def switch_client_stream(self, stream):
         if  self.stream_reader!=None:
-            if stream == 'detectorStream':
+            if stream == 'CNN_DETECTOR':
                 self.stream_reader.current_selected_stream= ClientStreamTypeEnum.CNN_DETECTOR
-            elif  stream == 'backgroundSubtractionStream':
+            elif  stream == 'BACKGROUND_SUBTRACTION':
                 self.stream_reader.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
+            elif stream == 'TRACKING_STREAM':
+                self.stream_reader.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
 
         return jsonify(result=stream)

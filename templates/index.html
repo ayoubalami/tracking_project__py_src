@@ -88,13 +88,13 @@
       
       <ul class="nav nav-tabs">
         <li class="nav-item">
-          <a class="nav-link active" data-bs-toggle="tab" onclick="onClickSwitchTab('detectorStream')" href="#detectorStreamTab">CNN Detector Stream</a>
+          <a class="nav-link active" data-bs-toggle="tab" onclick="onClickSwitchTab('CNN_DETECTOR')" href="#detectorStreamTab">CNN Detector Stream</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="tab" onclick="onClickSwitchTab('backgroundSubtractionStream')" href="#backgroundSubtractionStreamTab">Background Subtraction Stream</a>
+          <a class="nav-link" data-bs-toggle="tab" onclick="onClickSwitchTab('BACKGROUND_SUBTRACTION')" href="#backgroundSubtractionStreamTab">Background Subtraction Stream</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="tab" href="#menu2">__</a>
+          <a class="nav-link" data-bs-toggle="tab" onclick="onClickSwitchTab('TRACKING_STREAM')" href="#trackingStream">trackingStream</a>
         </li>
       </ul>
       
@@ -233,11 +233,16 @@
             </div>
           </div>
           <div  class="col" style="display: flex; flex-direction: column;width: 76%;">
-            <img id="backgroundSubStream_first" />
-            <img id="backgroundSubStream_second" />
+            <img id="backgroundSubStream_1" />
+            <img id="backgroundSubStream_2" />
           </div>
         </div>
-        <div class="tab-pane container fade" id="menu2">...</div>
+        <div class="tab-pane container fade" id="trackingStream"> 
+          <div  class="col" style="display: flex; flex-direction: column;width: 90%;">
+            <img id="trackingStream_1" />
+            <img id="trackingStream_2" />
+          </div>
+        </div>
       </div>
   
 

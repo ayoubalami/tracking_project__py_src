@@ -20,26 +20,27 @@ import base64
 
 class StreamReader: 
 
+    nms_threshold=0.5
+    threshold=0.5
     np.random.seed(123)
-    perf = []
-    classAllowed=[]
-    colorList=[]
-    buffer :Buffer= None
-    records =[]
-    current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR
-    current_batch=0
-
+   
     def clean_memory(self):
         print("CALL DESTRUCTER FROM STREAM READER ")
         if  self.buffer:
             self.buffer.clean_memory()
             self.stop_reading_to_clean=True
 
-    def __init__(self, detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService ,stream_source:StreamSourceEnum, video_src:str,threshold:float,nms_threshold:float):
+    def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src:str ):
+        self.perf = []
+        self.classAllowed= []
+        self.colorList= []
+        self.records = []
+        self.current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR
+        self.current_batch=0
         self.stop_reading_from_user_action=True
+        self.buffer :Buffer= None 
         self.current_time=0
         self.detection_service=detection_service
-        self.background_subtractor_service=background_subtractor_service
         self.detection_service.stream_reader=self
         self.current_frame_index=0
         self.stop_reading_for_loading=False
@@ -47,8 +48,8 @@ class StreamReader:
         self.stream_source=stream_source
         self.video_src=video_src
         self.stop_reading_to_clean=False
-        self.nms_threshold=nms_threshold
-        self.threshold=threshold
+        self.tracking_service=None
+        self.background_subtractor_service=None
 
         if self.stream_source==StreamSourceEnum.FILE:
             self.buffer=Buffer(stream_source=StreamSourceEnum.FILE, video_src=video_src)
@@ -179,9 +180,13 @@ class StreamReader:
             # jump frames in function of processing time consumtion to simulate real time detection
             jump_frame=jump_frame+diff_time/self.buffer.frame_duration
           
-            if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
-                self.records.append({'detector': self.detection_service.get_selected_model()['name'],'fps':float(1/diff_time) ,'inference_time':inference_time})
+            # UPDATE FPS
             current_fps=round(1/diff_time)
+
+            # SAVE RECORDES CSV
+            # if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
+            #     self.records.append({'detector': self.detection_service.get_selected_model()['name'],'fps':float(1/diff_time) ,'inference_time':inference_time})
+          
         
         print(" :::: END STREAM READER LOOP")
 
@@ -205,7 +210,6 @@ class StreamReader:
             ret,buffer=cv2.imencode('.jpg',frame, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
             img_bytes=buffer.tobytes()
             return  base64.b64encode(img_bytes).decode()
-    
 
     def save_records(self):
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
@@ -261,9 +265,45 @@ class StreamReader:
             copy_frame,subtraction_frame,inference_time=self.background_subtractor_service.apply(origin_frame)
             # self.addInferenceTime(subtraction_frame,inference_time)
             self.addFrameFpsAndTime(copy_frame,detection_fps)
-            result['backgroundSubStream_first']=self.encodeStreamingFrame(frame=subtraction_frame,resize_ratio=1)
-            result['backgroundSubStream_second']=self.encodeStreamingFrame(frame=copy_frame,resize_ratio=1)
-
+            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=subtraction_frame,resize_ratio=1,jpeg_quality=80)
+            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=copy_frame,resize_ratio=1,jpeg_quality=80)
+        
+        elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
+            subtraction_frame=origin_frame.copy()
+            copy_frame,tracking_frame,inference_time=self.background_subtractor_service.apply(origin_frame)
+            result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
+            result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
+            # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)
+           
         yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 
+    i=0
+    def test_stream(self,frame,detection_fps):
+
+        # frame,inference_time=self.applyDetection(frame)
+       
+        height, width = frame.shape[:2]
+        # (x, y, w, h) = (int) (100), (int)(height/4),  (int)(width)-200 ,150
+        (x, y, w, h) =    400 , 200,  160 , 160
+        cv2.rectangle(frame, (x, y), (x + w, y + h), 2**16-1, 2)
+    
+        detection_region = frame[y:y+h, x:x+w]
+
+        self.i+=1
+        if self.i%20 ==0 :
+            detection_region,inference_time=self.applyDetection(detection_region)
+
+        white_rect = np.zeros(detection_region.shape, dtype=np.uint8) 
+        white_rect[:, :, 0] = 255
+
+        res = cv2.addWeighted(detection_region, 1, white_rect, 0.5, 1.0)
+        frame[y:y+h, x:x+w] = res
+        cv2.rectangle(frame, (x, y), (x + w, y + h),  (255, 0, 0), 1)
+
+        self.addFrameFpsAndTime(frame,detection_fps)
+        return self.encodeStreamingFrame(frame=frame,resize_ratio=1,jpeg_quality=90)
+     
+    
+    
+    
     # less /proc/cpuinfo

@@ -73,11 +73,10 @@ class Buffer:
             print(self.cap)
             self.cap=self.load_from_youtube(youtube_url)
             self.init_params()
-            
 
     def delete_last_batch(self,to_delete_batch):
-        del self.buffer_frames[0:self.batch_size]
-        # print("delete last batch : "+str(to_delete_batch))
+        if self.buffer_frames:
+            del self.buffer_frames[0:self.batch_size]
 
     def download_buffer(self):
         print("Start CALL downloadBuffer")

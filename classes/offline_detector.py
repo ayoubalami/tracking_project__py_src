@@ -4,12 +4,12 @@ from utils_lib.enums import StreamSourceEnum
 import math
 
 class OfflineDetector:
-    def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src:str,threshold:float,nms_threshold:float ):
+    nms_threshold=0.5
+    threshold=0.5
 
+    def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src:str):
         self.detection_service=detection_service
-        self.video_src=video_src
-        self.nms_threshold=nms_threshold
-        self.threshold=threshold
+        self.video_src=video_src 
         self.stream_source=stream_source
         self.cap=None
         # out = cv2.VideoWriter('outpy.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 10, (frame_width,frame_height))
@@ -29,7 +29,7 @@ class OfflineDetector:
     def start(self):
         print("Record started .....")
         i=0
-        last_frame=100
+        last_frame=300
         # last_frame=self.video_length
         step=math.ceil(last_frame/10)
         while True:

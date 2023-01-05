@@ -10,4 +10,5 @@ class StreamSourceEnum(Enum):
 class ClientStreamTypeEnum(Enum):
     CNN_DETECTOR = 1
     BACKGROUND_SUBTRACTION = 2
+    TRACKING_STREAM=3
  

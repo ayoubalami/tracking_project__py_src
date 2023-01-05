@@ -4,7 +4,11 @@ from asyncio import StreamReader
 
 class IDetectionService:
     stream_reader:StreamReader
+    selected_model=None
     
+    def init_selected_model(self):
+        self.selected_model=None
+
     def get_selected_model(self):
         pass
 

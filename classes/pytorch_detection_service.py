@@ -28,7 +28,7 @@ class PytorchDetectionService(IDetectionService):
         self.classesList=None
         self.colorList=None
         self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
-        self.selected_model=None
+
         self.detection_method_list    =   [ 
                         {'name': 'yolov5n'  },
                         {'name': 'yolov5s'  },
@@ -82,11 +82,14 @@ class PytorchDetectionService(IDetectionService):
 
 
     def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5):
+        
+        if  self.model ==None:
+            return None,0
 
         img=frame.copy()
+        blob_size=640
         # img = cv2.resize(img, (1280 ,1280 ))
-
-        blob = cv2.dnn.blobFromImage(img,scalefactor= 1/255,size=(640 ,640 ),mean=[0,0,0],swapRB= True, crop= False)
+        blob = cv2.dnn.blobFromImage(img,scalefactor= 1/255,size=(blob_size ,blob_size ),mean=[0,0,0],swapRB= True, crop= False)
         self.model.setInput(blob)
 
         t1= time.time()
@@ -99,8 +102,8 @@ class PytorchDetectionService(IDetectionService):
         rows = detections.shape[0]
 
         img_width, img_height = img.shape[1], img.shape[0]
-        x_scale = img_width/640
-        y_scale = img_height/640
+        x_scale = img_width/blob_size
+        y_scale = img_height/blob_size
         # print(detections)
         # print(range(rows))
         # input("Please enter to get confidence:\n")    
