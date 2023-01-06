@@ -12,3 +12,7 @@ class ClientStreamTypeEnum(Enum):
     BACKGROUND_SUBTRACTION = 2
     TRACKING_STREAM=3
  
+class SurveillanceRegionEnum(Enum):
+    DETECTION_REGION = 1
+    TRACKING_REGION = 2
+

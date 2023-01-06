@@ -2,8 +2,10 @@
 
 //  <script type="text/javascript">
 // var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-var $SCRIPT_ROOT = "http://127.0.0.1:8000/"
-       
+
+var $SCRIPT_ROOT = "http://Raspberrypi.local:8000/"
+// var $SCRIPT_ROOT = "http://127.0.0.1:8000/"
+
 var intervalID = null;
 var video_duration = 1000000
 var current_time = 0

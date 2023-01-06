@@ -6,7 +6,6 @@ import numpy as np
 
 class BackgroundSubtractorService():
    
-    
     def __init__(self):
         self.morphological_ex_iteration=0
         self.kernel_size=5

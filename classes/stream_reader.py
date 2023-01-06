@@ -261,47 +261,47 @@ class StreamReader:
             result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=80)
 
         elif self.current_selected_stream== ClientStreamTypeEnum.BACKGROUND_SUBTRACTION:
-            subtraction_frame=origin_frame.copy()
-            copy_frame,subtraction_frame,inference_time=self.background_subtractor_service.apply(origin_frame)
+            copy_frame=origin_frame.copy()
+            foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(copy_frame)
             # self.addInferenceTime(subtraction_frame,inference_time)
-            self.addFrameFpsAndTime(copy_frame,detection_fps)
-            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=subtraction_frame,resize_ratio=1,jpeg_quality=80)
-            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=copy_frame,resize_ratio=1,jpeg_quality=80)
+            self.addFrameFpsAndTime(foreground_detection_frame,detection_fps)
+            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=80)
+            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=80)
         
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
-            subtraction_frame=origin_frame.copy()
-            copy_frame,tracking_frame,inference_time=self.background_subtractor_service.apply(origin_frame)
+            tracking_frame=origin_frame.copy()
+            tracking_frame,inference_time=self.tracking_service.apply(tracking_frame)
             result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
-            result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
+            # result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
             # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)
            
         yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 
-    i=0
-    def test_stream(self,frame,detection_fps):
+    # i=0
+    # def test_stream(self,frame,detection_fps):
 
-        # frame,inference_time=self.applyDetection(frame)
+    #     # frame,inference_time=self.applyDetection(frame)
        
-        height, width = frame.shape[:2]
-        # (x, y, w, h) = (int) (100), (int)(height/4),  (int)(width)-200 ,150
-        (x, y, w, h) =    400 , 200,  160 , 160
-        cv2.rectangle(frame, (x, y), (x + w, y + h), 2**16-1, 2)
+    #     height, width = frame.shape[:2]
+    #     # (x, y, w, h) = (int) (100), (int)(height/4),  (int)(width)-200 ,150
+    #     (x, y, w, h) =    400 , 200,  160 , 160
+    #     cv2.rectangle(frame, (x, y), (x + w, y + h), 2**16-1, 2)
     
-        detection_region = frame[y:y+h, x:x+w]
+    #     detection_region = frame[y:y+h, x:x+w]
 
-        self.i+=1
-        if self.i%20 ==0 :
-            detection_region,inference_time=self.applyDetection(detection_region)
+    #     self.i+=1
+    #     if self.i%20 ==0 :
+    #         detection_region,inference_time=self.applyDetection(detection_region)
 
-        white_rect = np.zeros(detection_region.shape, dtype=np.uint8) 
-        white_rect[:, :, 0] = 255
+    #     white_rect = np.zeros(detection_region.shape, dtype=np.uint8) 
+    #     white_rect[:, :, 0] = 255
 
-        res = cv2.addWeighted(detection_region, 1, white_rect, 0.5, 1.0)
-        frame[y:y+h, x:x+w] = res
-        cv2.rectangle(frame, (x, y), (x + w, y + h),  (255, 0, 0), 1)
+    #     res = cv2.addWeighted(detection_region, 1, white_rect, 0.5, 1.0)
+    #     frame[y:y+h, x:x+w] = res
+    #     cv2.rectangle(frame, (x, y), (x + w, y + h),  (255, 0, 0), 1)
 
-        self.addFrameFpsAndTime(frame,detection_fps)
-        return self.encodeStreamingFrame(frame=frame,resize_ratio=1,jpeg_quality=90)
+    #     self.addFrameFpsAndTime(frame,detection_fps)
+    #     return self.encodeStreamingFrame(frame=frame,resize_ratio=1,jpeg_quality=90)
      
     
     

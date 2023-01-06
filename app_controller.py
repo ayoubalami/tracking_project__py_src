@@ -9,8 +9,12 @@ from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.stream_reader import StreamReader
 from classes.detection_service import IDetectionService
 from app_service import AppService
+from flask_cors import CORS
 
+# last change
 app=Flask(__name__)
+CORS(app)
+
 app_service=AppService()
 
 # def read_stream():

@@ -3,8 +3,8 @@ from http import server
 import cv2,time,os,numpy as np
 from classes.detection_service import IDetectionService
 from symbol import return_stmt
-import tensorflow as tf
-from tensorflow.python.keras.utils.data_utils import get_file 
+# import tensorflow as tf
+# from tensorflow.python.keras.utils.data_utils import get_file 
 
 class TensorflowDetectionService(IDetectionService):
 
