@@ -1,21 +1,25 @@
 # from turtle import shape
+import threading
 from enum import Enum
-import threading,cv2
 from time import sleep
 from unittest import result
-from flask import jsonify,stream_with_context,Flask,render_template,Response
-from classes.buffer import Buffer
-from classes.tensorflow_detection_service import TensorflowDetectionService
-from classes.opencv_detection_service import OpencvDetectionService
-from classes.pytorch_detection_service import PytorchDetectionService
-from classes.stream_reader import StreamSourceEnum, StreamReader
-from classes.detection_service import IDetectionService
-from classes.background_subtractor_service import BackgroundSubtractorService
-from classes.tracking_service import TrackingService
 
-from classes.WebcamStream import WebcamStream
-from classes.opencv_tensorflow_detection_service import OpencvTensorflowDetectionService
+import cv2
+from flask import (Flask, Response, jsonify, render_template,
+                   stream_with_context)
+
+from classes.background_subtractor_service import BackgroundSubtractorService
+from classes.buffer import Buffer
+from classes.detection_service import IDetectionService
 from classes.offline_detector import OfflineDetector
+from classes.opencv_detection_service import OpencvDetectionService
+from classes.opencv_tensorflow_detection_service import \
+    OpencvTensorflowDetectionService
+from classes.pytorch_detection_service import PytorchDetectionService
+from classes.stream_reader import StreamReader, StreamSourceEnum
+from classes.tensorflow_detection_service import TensorflowDetectionService
+from classes.tracking_service import TrackingService
+from classes.WebcamStream import WebcamStream
 from utils_lib.enums import ClientStreamTypeEnum
 
 
@@ -28,14 +32,16 @@ class AppService:
     stream_source: StreamSourceEnum=None
     buffering_thread=None   
     save_detectors_results=False
+    api_server='localhost'
 
-    def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str,save_detectors_results:bool):
+    def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str,save_detectors_results:bool,api_server:str):
         
         self.detection_service=detection_service
         self.stream_source=stream_source
         self.video_src=video_src
         self.save_detectors_results=save_detectors_results
-
+        self.api_server=api_server
+        
         print("AppService from "+str(self.stream_source) +" Starting ...")
         
         self.background_subtractor_service=BackgroundSubtractorService()
@@ -66,7 +72,8 @@ class AppService:
   
 
     def index(self):
-        return render_template('index.html')
+
+        return render_template('index.html',api_server=self.api_server)
  
     def return_stream(self):
         yield from self.stream_reader.read_stream()

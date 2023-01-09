@@ -6,7 +6,6 @@ from classes.detection_service import IDetectionService
 class PytorchDetectionService(IDetectionService):
 
     np.random.seed(123)
-    
     model=None
     
     def clean_memory(self):

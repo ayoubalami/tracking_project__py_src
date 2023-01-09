@@ -4,7 +4,7 @@
 // var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
 // var $SCRIPT_ROOT = "http://Raspberrypi.local:8000/"
-var $SCRIPT_ROOT = "http://127.0.0.1:8000/"
+var $SCRIPT_ROOT = "http://"+api_server+":8000/"
 
 var intervalID = null;
 var video_duration = 1000000
@@ -17,9 +17,8 @@ var loadingDetectionModel=false;
 var selected_model_name=null;
 var showBackgroundSubtractionStream=false;
 
- 
-
 window.onbeforeunload = function(event){
+
     console.log("loading ....");
         $.ajax({
             type: "POST",
