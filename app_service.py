@@ -27,30 +27,20 @@ class AppService:
     tracking_service: TrackingService=None
     stream_source: StreamSourceEnum=None
     buffering_thread=None   
+    save_detectors_results=False
 
-    def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str):
+    def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str,save_detectors_results:bool):
         
         self.detection_service=detection_service
         self.stream_source=stream_source
         self.video_src=video_src
+        self.save_detectors_results=save_detectors_results
 
         print("AppService from "+str(self.stream_source) +" Starting ...")
-
-#         # self.detection_service=TensorflowDetectionService()
-#         self.detection_service=OpencvDetectionService()
-# #        self.detection_service=PytorchDetectionService()
-#         # -----------------
-#         # self.detection_service=OpencvTensorflowDetectionService()
-        
-        #--------------
-        # INIT SERVICES
         
         self.background_subtractor_service=BackgroundSubtractorService()
         self.tracking_service=TrackingService(self.background_subtractor_service)
        
-
-        #--------------
-
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
             print( "Service name : ",self.detection_service.service_name())
@@ -59,8 +49,6 @@ class AppService:
         print("AppService Started.")
 
         # self.stream_reader=StreamReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service, stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
-
-
 
     def clean_memory(self):
         print(" START clean_memory ")
@@ -85,7 +73,8 @@ class AppService:
         # yield from self.webcam_stream.read_from_camera()
 
     def stop_stream(self):
-        self.stream_reader.save_records()
+        if self.save_detectors_results:
+            self.stream_reader.save_records()
 
         if  not self.stream_reader.stop_reading_from_user_action :
             self.stream_reader.stop_reading_from_user_action=True

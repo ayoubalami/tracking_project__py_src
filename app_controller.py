@@ -22,8 +22,11 @@ def pars_args():
     webcam_src  =   'http://192.168.43.1:9000/video'
     stream_source: StreamSourceEnum=StreamSourceEnum.FILE
     parser = argparse.ArgumentParser()
+    save_detectors_results=False
+    
     parser.add_argument("-s", "--stream_source", help = "Select stream source FILE, WEBCAM")
     parser.add_argument("-d", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
+    parser.add_argument("-r", "--save_detectors_results", help = "save_detectors_results inference fps to results.csv")
     
     args = parser.parse_args()
     if args:
@@ -48,14 +51,18 @@ def pars_args():
         else:
             stream_source=StreamSourceEnum.FILE
             video_src=file_src
+
+        if args.save_detectors_results:
+            save_detectors_results=True
+
             
-    return detection_service,stream_source,video_src
+    return detection_service,stream_source,video_src,save_detectors_results
 
 app=Flask(__name__)
 CORS(app)
 
-detection_service,stream_source,video_src=pars_args()
-app_service=AppService(detection_service=detection_service,stream_source=stream_source,video_src=video_src)
+detection_service,stream_source,video_src,save_detectors_results=pars_args()
+app_service=AppService(detection_service=detection_service,stream_source=stream_source,video_src=video_src,save_detectors_results=save_detectors_results)
 
 
 # def read_stream():

@@ -227,7 +227,7 @@ class StreamReader:
 
     def save_records(self):
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
-            csv_file = "/home/pi/projects/results.csv"
+            csv_file = "results.csv"
             average_fps=0    
             average_inference_time=0    
             with open(csv_file, 'a') as csvfile:
