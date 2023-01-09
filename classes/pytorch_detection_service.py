@@ -3,7 +3,6 @@ from http import server
 import cv2,time,os,numpy as np
 from classes.detection_service import IDetectionService
 
-
 class PytorchDetectionService(IDetectionService):
 
     np.random.seed(123)
@@ -30,7 +29,10 @@ class PytorchDetectionService(IDetectionService):
         self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
 
         self.detection_method_list    =   [ 
+                        {'name': 'nanodet-plus-m-1.5x_320'  },
+                        {'name': 'nanodet-plus-m_320'  },
                         {'name': 'yolov5n'  },
+                        {'name': 'yolov5n_err'  },
                         {'name': 'yolov5s'  },
                         {'name': 'yolov5m'  },
                         {'name': 'yolov5l'  },
@@ -40,6 +42,7 @@ class PytorchDetectionService(IDetectionService):
                         {'name': 'yolov6s','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6s.onnx'  },
                         {'name': 'yolov6m','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6m.onnx'  },
                         {'name': 'yolov6l','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6l.onnx'  },
+                       
                         # {'name': 'object_detection_nanodet_2022nov'},
                        ]
 
@@ -73,13 +76,8 @@ class PytorchDetectionService(IDetectionService):
             [138.42940829, 219.02379358, 166.29923782],
             [ 59.40987365, 197.51795215,  34.32644182],
             [ 42.21779254, 156.23398212,  60.88976857]]
-      
     
-
-    # def detect_objects(self, frame,threshold= 0.5):
-    #     # return frame
-    #     return self. detect_objects_non_max_suppression(frame,threshold)
-
+          
 
     def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5):
         
@@ -87,11 +85,11 @@ class PytorchDetectionService(IDetectionService):
             return None,0
 
         img=frame.copy()
+        # img = cv2.resize(img, (int(1280/4) ,int(720/4) ))
         blob_size=640
         # img = cv2.resize(img, (1280 ,1280 ))
         blob = cv2.dnn.blobFromImage(img,scalefactor= 1/255,size=(blob_size ,blob_size ),mean=[0,0,0],swapRB= True, crop= False)
         self.model.setInput(blob)
-
         t1= time.time()
         detections = self.model.forward()[0]
         inference_time=time.time()-t1
@@ -99,6 +97,7 @@ class PytorchDetectionService(IDetectionService):
         classes_ids = []
         confidences = []
         boxes = []
+        
         rows = detections.shape[0]
 
         img_width, img_height = img.shape[1], img.shape[0]
@@ -139,22 +138,13 @@ class PytorchDetectionService(IDetectionService):
 
             cv2.rectangle(img,(x1,y1),(x1+w,y1+h),color=classColor,thickness=2)
             cv2.putText(img, displayText, (x1,y1-2),cv2.FONT_HERSHEY_PLAIN, 1.5,classColor,2)
-                    
+                
+        # print(round(inference_time,2))
+            
         return img , inference_time
 
 
-    # def get_object_detection_models(self):
-    #     # url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
-    #     # url_list=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in list ]
-    #     # url_list=[  {'name' :model['name'] , 'url': model['name']}  for model in list ]
-    #     url_list=[  {'name' :model['name'] }  for model in list ]
-
-    #     return url_list
-
     def init_object_detection_models_list(self):
-        # to add network config url dynamicly
-        # url_template_cfg = "https://github.com/AlexeyAB/darknet/tree/master/cfg/{name}.cfg" 
-        # self.detection_method_list_with_url=[ { 'name' :model['name'] ,'url_weights' :model['url_weights'] , 'url_cfg': url_template_cfg.format( name=model['name']) }  for model in self.detection_method_list ]
         self.detection_method_list_with_url=self.detection_method_list
 
     def get_object_detection_models(self):

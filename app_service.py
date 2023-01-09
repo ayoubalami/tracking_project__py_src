@@ -12,7 +12,7 @@ from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
 from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.tracking_service import TrackingService
- 
+
 from classes.WebcamStream import WebcamStream
 from classes.opencv_tensorflow_detection_service import OpencvTensorflowDetectionService
 from classes.offline_detector import OfflineDetector
@@ -25,37 +25,26 @@ class AppService:
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
     tracking_service: TrackingService=None
+    stream_source: StreamSourceEnum=None
+    buffering_thread=None   
 
-    file_src   =   "videos/highway2.mp4"
-    youtube_url =   "https://www.youtube.com/watch?v=QuUxHIVUoaY"
-    webcam_src  =   'http://10.10.23.223:9000/video'
-    # video_src = None
+    def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str):
+        
+        self.detection_service=detection_service
+        self.stream_source=stream_source
+        self.video_src=video_src
 
-    video_src=file_src
-    stream_source: StreamSourceEnum=StreamSourceEnum.FILE
-    buffering_thread=None
+        print("AppService from "+str(self.stream_source) +" Starting ...")
 
-
-    # youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
-    # youtube_url = "https://www.youtube.com/watch?v=QuUxHIVUoaY"
-    # youtube_url = "https://www.youtube.com/watch?v=nV2aXhxoJ0Y"
-    # youtube_url = "https://www.youtube.com/watch?v=TW3EH4cnFZo"
-    # youtube_url = "https://www.youtube.com/watch?v=7y2oOsucOdc"
-    # youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
-    # youtube_url = "https://www.youtube.com/watch?v=KBsqQez-O4w"
-   
-
-    def __init__(self):
-      
-        print("AppService Starting ...")
-        # self.detection_service=TensorflowDetectionService()
-        self.detection_service=OpencvDetectionService()
-        # self.detection_service=PytorchDetectionService()
-        # -----------------
-        # self.detection_service=OpencvTensorflowDetectionService()
-
+#         # self.detection_service=TensorflowDetectionService()
+#         self.detection_service=OpencvDetectionService()
+# #        self.detection_service=PytorchDetectionService()
+#         # -----------------
+#         # self.detection_service=OpencvTensorflowDetectionService()
+        
         #--------------
         # INIT SERVICES
+        
         self.background_subtractor_service=BackgroundSubtractorService()
         self.tracking_service=TrackingService(self.background_subtractor_service)
        
@@ -96,7 +85,7 @@ class AppService:
         # yield from self.webcam_stream.read_from_camera()
 
     def stop_stream(self):
-        # self.stream_reader.save_records()
+        self.stream_reader.save_records()
 
         if  not self.stream_reader.stop_reading_from_user_action :
             self.stream_reader.stop_reading_from_user_action=True
@@ -110,7 +99,7 @@ class AppService:
              
         while(True):
             sleep(0.01)
-            if self.stream_reader and self.stream_reader.buffer:
+            if self.stream_reader and (self.stream_reader.buffer or self.stream_source == StreamSourceEnum.WEBCAM)  :
                 print("SET TO START °°")
                 if self.stream_reader.stop_reading_from_user_action :
                     self.stream_reader.stop_reading_from_user_action=False
@@ -172,11 +161,14 @@ class AppService:
         self.stream_reader.tracking_service=self.tracking_service
         
         d_start,d_height,tr_start,tr_height= 200,100,300,500
-        width,height=int(self.stream_reader.buffer.width),int(self.stream_reader.buffer.height)
-        self.stream_reader.tracking_service.init_regions(width,height, d_start,d_height,tr_start,tr_height)
+        width,height=800,800
+        if self.stream_reader.buffer :
+            width,height=int(self.stream_reader.buffer.width),int(self.stream_reader.buffer.height)
+            self.stream_reader.tracking_service.init_regions(width,height, d_start,d_height,tr_start,tr_height)
+
+            self.stream_reader.startBuffering()
 
 
-        self.stream_reader.startBuffering()
         return Response(self.return_stream(),mimetype='text/event-stream')
         # return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
 

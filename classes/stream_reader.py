@@ -17,6 +17,7 @@ from utils_lib.enums import ClientStreamTypeEnum, StreamSourceEnum
 import csv
 import json
 import base64
+from csv import writer
 
 class StreamReader: 
 
@@ -34,7 +35,9 @@ class StreamReader:
         self.perf = []
         self.classAllowed= []
         self.colorList= []
-        self.records = []
+        self.inference_time_records = []
+        self.fps_records = []
+        
         self.current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR
         self.current_batch=0
         self.stop_reading_from_user_action=True
@@ -54,16 +57,19 @@ class StreamReader:
         if self.stream_source==StreamSourceEnum.FILE:
             self.buffer=Buffer(stream_source=StreamSourceEnum.FILE, video_src=video_src)
             print("StreamReader From File .....")
+            self.buffer.stream_reader=self
 
         if self.stream_source==StreamSourceEnum.YOUTUBE:
             self.buffer=Buffer(stream_source=StreamSourceEnum.YOUTUBE, video_src=video_src)
-            print("StreamReader From Youtube .....")
-     
+            print("StreamReader From Youtube .....") 
+            self.buffer.stream_reader=self
+
         if self.stream_source==StreamSourceEnum.WEBCAM:
             self.webcam_stream = WebcamStream(src=self.video_src)
             self.webcam_stream.start()
             print("StreamReader From Camera .....")
-        self.buffer.stream_reader=self
+ 
+
 
     def startBuffering(self):
         self.buffering_thread= threading.Thread(target=self.buffer.download_buffer)
@@ -106,19 +112,22 @@ class StreamReader:
             if self.stop_reading_from_user_action:
                 time.sleep(.2)
                 continue
-            ret,frame=self.webcam_stream.read()    
+           
+            # ret,frame=self.webcam_stream.read()    
 
-            if self.detection_service !=None and self.detection_service.get_selected_model() !=None:
-                frame , inference_time= self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
+            # if self.detection_service !=None and self.detection_service.get_selected_model() !=None:
+            #     frame , inference_time= self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
             
-            frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
-            ret,buffer=cv2.imencode('.jpg',frame)
-            frame=buffer.tobytes()
-            yield(b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-         
+            # frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
+            # ret,buffer=cv2.imencode('.jpg',frame)
+            # frame=buffer.tobytes()
+            yield from self.yieldSelectedStream(detection_fps)
+
+        #     yield(b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        #  d"
             counter+=1
             if (time.time() - start_time) > refresh_rate :
-                detection_fps= round(counter / (time.time() - start_time))
+                detection_fps= round(counter / (time.time() - start_time),2)
                 counter = 0
                 start_time = time.time()
             
@@ -181,18 +190,23 @@ class StreamReader:
             jump_frame=jump_frame+diff_time/self.buffer.frame_duration
           
             # UPDATE FPS
-            current_fps=round(1/diff_time)
+            current_fps=round(1/diff_time,2)
 
             # SAVE RECORDES CSV
             # if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
-            #     self.records.append({'detector': self.detection_service.get_selected_model()['name'],'fps':float(1/diff_time) ,'inference_time':inference_time})
+            # self.records.append({'detector': self.detection_service.get_selected_model()['name'],'fps':float(1/diff_time) ,'inference_time':inference_time})
+            self.fps_records.append(float(1/diff_time) )
           
         
         print(" :::: END STREAM READER LOOP")
 
-
     def getCurrentFrame(self):   
-        origin_frame,self.current_batch= self.buffer.buffer_frames[self.current_frame_index] 
+
+        if self.stream_source ==StreamSourceEnum.FILE:
+            origin_frame,self.current_batch= self.buffer.buffer_frames[self.current_frame_index] 
+        elif self.stream_source == StreamSourceEnum.WEBCAM:
+            ret,origin_frame=self.webcam_stream.read()  
+
         return origin_frame,self.current_batch
 
     def applyDetection(self,origin_frame):   
@@ -213,28 +227,33 @@ class StreamReader:
 
     def save_records(self):
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
-            csv_columns = ['detector','fps','inference_time']
-            csv_file = "/root/shared/records/"+self.detection_service.get_selected_model()['name']+".csv"
+            csv_file = "/home/pi/projects/results.csv"
             average_fps=0    
             average_inference_time=0    
-            with open(csv_file, 'w') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
-                writer.writeheader()
-                for index, item in enumerate(self.records):
+            with open(csv_file, 'a') as csvfile:
+                writer_object = writer(csvfile)                
+                for index, item in enumerate(self.fps_records):
                     if index==0:
                         continue
-                    writer.writerow(item)
-                    average_fps+=item['fps']
-                    average_inference_time+=item['inference_time']
-                writer.writerow({'detector':self.detection_service.get_selected_model()['name']+"-average",'fps':average_fps/(len(self.records)-1),'inference_time':average_inference_time/(len(self.records)-1)})
-                self.records= [] 
+                    average_fps+=item
 
+                for index, item in enumerate(self.inference_time_records):
+                    if index==0:
+                        continue
+                    average_inference_time+=item
 
+                average_fps/=(len(self.fps_records)-1)
+                average_inference_time/=(len(self.inference_time_records)-1)
+                writer_object.writerow([self.detection_service.get_selected_model()['name'],average_fps,average_inference_time])
+                self.inference_time_records=[]
+                self.fps_records=[]
+
+                 
     def addFrameFpsAndTime(self,frame,detection_fps):
-        frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
+        if self.stream_source!=StreamSourceEnum.WEBCAM :
+            frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
         frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
         # return frame
-
 
     def addInferenceTime(self, frame, inferenceTime):
         color = 2**16-1
@@ -253,10 +272,13 @@ class StreamReader:
         result={}
         origin_frame,self.current_batch=self.getCurrentFrame() 
 
+            # origin_frame,self.current_batch=self.getCurrentFrame() 
+
         if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
             # origin_frame,self.current_batch=self.getCurrentFrame() 
             detection_frame=origin_frame.copy()
             detection_frame,inference_time=self.applyDetection(detection_frame)
+            self.inference_time_records.append(inference_time)
             self.addFrameFpsAndTime(detection_frame,detection_fps)
             result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=80)
 

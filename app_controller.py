@@ -6,16 +6,57 @@ from time import sleep,time
 from flask import jsonify,stream_with_context,Flask,render_template,Response
 from classes.buffer import Buffer
 from classes.tensorflow_detection_service import TensorflowDetectionService
-from classes.stream_reader import StreamReader
+from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
 from app_service import AppService
 from flask_cors import CORS
+import sys,argparse
 
-# last change
+from classes.tensorflow_detection_service import TensorflowDetectionService
+from classes.opencv_detection_service import OpencvDetectionService
+from classes.pytorch_detection_service import PytorchDetectionService
+
+def pars_args():
+    file_src   =   "videos/highway2.mp4"
+    # youtube_url =   "https://www.youtube.com/watch?v=QuUxHIVUoaY"
+    webcam_src  =   'http://192.168.43.1:9000/video'
+    stream_source: StreamSourceEnum=StreamSourceEnum.FILE
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--stream_source", help = "Select stream source FILE, WEBCAM")
+    parser.add_argument("-d", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
+    
+    args = parser.parse_args()
+    if args:
+        detection_service:IDetectionService=None
+        if args.detection_service:
+            if args.detection_service in( 'OPENCV' ,'o') :
+                detection_service=OpencvDetectionService()
+            elif args.detection_service in( 'PYTORCH' ,'p')  :
+                detection_service=PytorchDetectionService()
+            elif args.detection_service in( 'TENSORFLOW' ,'t') :
+                detection_service=TensorflowDetectionService()
+        else:
+            detection_service=OpencvDetectionService()
+
+        if args.stream_source:
+            if args.stream_source in( 'FILE' ,'f') :
+                stream_source=StreamSourceEnum.FILE
+                video_src=file_src
+            elif args.stream_source in( 'WEBCAM' ,'w')  :
+                stream_source=StreamSourceEnum.WEBCAM
+                video_src=webcam_src
+        else:
+            stream_source=StreamSourceEnum.FILE
+            video_src=file_src
+            
+    return detection_service,stream_source,video_src
+
 app=Flask(__name__)
 CORS(app)
 
-app_service=AppService()
+detection_service,stream_source,video_src=pars_args()
+app_service=AppService(detection_service=detection_service,stream_source=stream_source,video_src=video_src)
+
 
 # def read_stream():
 #     print("read_stream")
@@ -90,3 +131,12 @@ def reset_stream():
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)
 
+ 
+
+# youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
+# youtube_url = "https://www.youtube.com/watch?v=QuUxHIVUoaY"
+# youtube_url = "https://www.youtube.com/watch?v=nV2aXhxoJ0Y"
+# youtube_url = "https://www.youtube.com/watch?v=TW3EH4cnFZo"
+# youtube_url = "https://www.youtube.com/watch?v=7y2oOsucOdc"
+# youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
+# youtube_url = "https://www.youtube.com/watch?v=KBsqQez-O4w"

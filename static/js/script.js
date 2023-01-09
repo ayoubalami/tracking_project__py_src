@@ -213,9 +213,9 @@ function fillobjectDetectionSelect(methodsList){
     });
 }
 
-function setModelNameText(newSelectedModel){
+function setModelNameText(text){
     var selectModelText = $("#selectModelText");
-    selectModelText.text(newSelectedModel + " est correctement chargé");
+    selectModelText.text(text);
 }
 
 function setModelNameTextToLoadState(newSelectedModel){
@@ -262,12 +262,12 @@ function onClickLoadModel(){
             toggleDisabledLoadingModelButton(false);
             toggleDisabledStartStopButton(false);
             toggleDisabledResetButton(false);
-            setModelNameText(selected_model_name)
+            setModelNameText(""+selected_model_name +" est chargé correctement.") 
             // return e
         },
         error: function (errMsg) {
             console.log(" ERROR IN stop_stream")
-            setModelNameText("Error in loading "+selected_model_name)
+            setModelNameText("Error in loading "+selected_model_name +"!!")
 
         }
     });
