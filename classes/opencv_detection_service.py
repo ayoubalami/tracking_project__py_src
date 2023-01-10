@@ -27,7 +27,8 @@ class OpencvDetectionService(IDetectionService):
         # self.cacheDir=None
         self.classesList=None
         self.colorList=None
-        self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
+        # self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
+        self.classAllowed=range(0, 80)
         self.selected_model=None
         self.detection_method_list    =   [ 
                         # {'name': 'yolov2' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov2.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov2.weights' },

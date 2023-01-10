@@ -25,8 +25,8 @@ class PytorchDetectionService(IDetectionService):
         # self.cacheDir=None
         self.classesList=None
         self.colorList=None
-        self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
-
+        # self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
+        self.classAllowed=range(0, 80)
         self.detection_method_list    =   [ 
                         {'name': 'nanodet-plus-m-1.5x_320'  },
                         {'name': 'nanodet-plus-m_320'  },

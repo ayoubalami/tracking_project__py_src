@@ -230,13 +230,10 @@ function getObjectDetectionList(){
             url: $SCRIPT_ROOT + '/get_object_detection_list',
             dataType: "json",
             success: function (data) {
-                // console.log(" get_object_detection_list_select")
-                // console.log(data);
-                // objectDetectionList=data;
                 fillobjectDetectionSelect(data);
             },
             error: function (errMsg) {
-                console.log(" ERROR IN get_object_detection_list")
+                console.log(" ERROR IN get_object_detection_list changing server ...")
                 changeServerApi()
             },
             timeout:1200
