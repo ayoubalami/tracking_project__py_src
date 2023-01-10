@@ -5,6 +5,7 @@
 
 // var $SCRIPT_ROOT = "http://Raspberrypi.local:8000/"
 var $SCRIPT_ROOT = "http://"+api_server+":8000/"
+var secondApiIpChecked=false
 
 var intervalID = null;
 var video_duration = 1000000
@@ -236,7 +237,9 @@ function getObjectDetectionList(){
             },
             error: function (errMsg) {
                 console.log(" ERROR IN get_object_detection_list")
-            }
+                changeServerApi()
+            },
+            timeout:1200
         });   
     }
 
@@ -415,6 +418,23 @@ function onClickSwitchTab(stream){
     });  
 }
 
+
+function changeServerApi(){
+
+    if  (secondApiIpChecked==false){
+        if (api_server=='localhost'){
+            api_server='raspberrypi.local'
+        }
+        else if (api_server=='raspberrypi.local'){
+            api_server='localhost'
+        }
+        $SCRIPT_ROOT = "http://"+api_server+":8000/"
+        secondApiIpChecked=true
+        getObjectDetectionList()
+
+    }
+
+}
 // function onCheckedBackgroundSubtractionService(){
 //     showBackgroundSubtractionStream=$("#backgroundSubtractionCheckChecked").prop("checked")
 //     toggleDisabledBackgroundSubtractionStream();
