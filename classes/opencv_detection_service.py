@@ -27,8 +27,8 @@ class OpencvDetectionService(IDetectionService):
         # self.cacheDir=None
         self.classesList=None
         self.colorList=None
-        # self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
-        self.classAllowed=range(0, 80)
+        self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
+        # self.classAllowed=range(0, 80)
         self.selected_model=None
         self.detection_method_list    =   [ 
                         # {'name': 'yolov2' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov2.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov2.weights' },
@@ -138,8 +138,8 @@ class OpencvDetectionService(IDetectionService):
         with open(self.classFile, 'r') as f:
             self.classesList = f.read().splitlines()
         #   delete all class except person and vehiccule 
-        self.classesList=self.classesList[0:8]
-        self.classesList.pop(4)
+        # self.classesList=self.classesList[0:8]
+        # self.classesList.pop(4)
         print(self.classesList)
         # set Color of box for each object
         self.colorList =  [[23.82390253, 213.55385765, 104.61775798],
@@ -169,12 +169,14 @@ class OpencvDetectionService(IDetectionService):
                 bbox=bboxs[np.squeeze(bboxIdx[i])]
                 classConfidence = confidences[bboxIdx[i]]
                 classLabelID=np.squeeze(classLabelIDs[bboxIdx[i]])
-        
-                if (classLabelID in self.classAllowed)==False:
-                    continue
 
-                classLabel = self.classesList[self.classAllowed.index(classLabelID)]
-                classColor = self.colorList[self.classAllowed.index(classLabelID)]
+
+                classLabel = self.classesList[classLabelID]
+                classColor = (236,106,240)
+                if (classLabelID in self.classAllowed)==True:
+                    classLabel = self.classesList[classLabelID]
+                    classColor = self.colorList[self.classAllowed.index(classLabelID)]
+
                 displayText = '{}: {:.2f}'.format(classLabel, classConfidence) 
                 
                 x,y,w,h=bbox

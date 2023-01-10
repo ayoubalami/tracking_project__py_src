@@ -25,8 +25,8 @@ class PytorchDetectionService(IDetectionService):
         # self.cacheDir=None
         self.classesList=None
         self.colorList=None
-        # self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
-        self.classAllowed=range(0, 80)
+        self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
+        # self.classAllowed=range(0, 80)
         self.detection_method_list    =   [ 
                         {'name': 'nanodet-plus-m-1.5x_320'  },
                         {'name': 'nanodet-plus-m_320'  },
@@ -64,9 +64,9 @@ class PytorchDetectionService(IDetectionService):
         with open(self.classFile, 'r') as f:
             self.classesList = f.read().splitlines()
         #   delete all class except person and vehiccule 
-        self.classesList=self.classesList[0:8]
-        self.classesList.pop(4)
-        # print(self.classesList)
+        # self.classesList=self.classesList[0:8]
+        # self.classesList.pop(4)
+        print(self.classesList)
         # set Color of box for each object
         self.colorList =  [[23.82390253, 213.55385765, 104.61775798],
             [168.73771775, 240.51614241,  62.50830085],
@@ -126,13 +126,15 @@ class PytorchDetectionService(IDetectionService):
         indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
         for i in indices:
             x1,y1,w,h = boxes[i]
-            if (classes_ids[i] in self.classAllowed)==False:
-                continue
-            # label = self.classesList[classes_ids[i]]
-            label = self.classesList[self.classAllowed.index(classes_ids[i])]
-            classColor = self.colorList[self.classAllowed.index(classes_ids[i])]
+           
+            label = self.classesList[classes_ids[i]]
+            classColor = (236,106,240)
+           
+            if (classes_ids[i] in self.classAllowed)==True:
+                label = self.classesList[classes_ids[i]]
+                classColor = self.colorList[self.classAllowed.index(classes_ids[i])]
+
             conf = confidences[i]
-                            
             displayText = '{}: {:.2f}'.format(label, conf) 
 
             cv2.rectangle(img,(x1,y1),(x1+w,y1+h),color=classColor,thickness=2)
