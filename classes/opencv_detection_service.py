@@ -2,6 +2,7 @@
 from http import server
 import cv2,time,os,numpy as np
 from classes.detection_service import IDetectionService
+from utils_lib.utils_functions import runcmd
 from symbol import return_stmt
 import subprocess
 
@@ -50,20 +51,6 @@ class OpencvDetectionService(IDetectionService):
     def service_name(self):
         return "opencv detection service V 1.0"
 
-    def runcmd(self,cmd, verbose = False, *args, **kwargs):
-
-        process = subprocess.Popen(
-            cmd,
-            stdout = subprocess.PIPE,
-            stderr = subprocess.PIPE,
-            text = True,
-            shell = True
-        )
-        std_out, std_err = process.communicate()
-        if verbose:
-            print(std_out.strip(), std_err)
-        pass
-
     def download_model_if_not_exists(self):
         print("===> download_model_if_not_exists  ")
         model_url_cfg= self.selected_model['url_cfg']
@@ -77,14 +64,14 @@ class OpencvDetectionService(IDetectionService):
             if not os.path.exists(   os.path.join(cacheDir,  self.modelName+'.cfg'   )):
                 print("===> download_model cfg")
                 os.makedirs(cacheDir, exist_ok=True)
-                self.runcmd("wget -P " + cacheDir + "   " + model_url_cfg, verbose = True)
+                runcmd("wget -P " + cacheDir + "   " + model_url_cfg, verbose = True)
             else:
                 print("===> model cfg already exist ")
 
             if not os.path.exists(   os.path.join(cacheDir,  self.modelName+'.weights'    )):
                 print("===> download_model weights")
                 os.makedirs(cacheDir, exist_ok=True)
-                self.runcmd("wget -P " + cacheDir + "   " + model_url_weights, verbose = True)
+                runcmd("wget -P " + cacheDir + "   " + model_url_weights, verbose = True)
             else:
                 print("===> model weights already exist ")
 
@@ -96,14 +83,14 @@ class OpencvDetectionService(IDetectionService):
                 if not os.path.exists(   os.path.join(cacheDir, self.modelName+'.pbtxt'   )):
                     print("===> download_model cfg")
                     os.makedirs(cacheDir, exist_ok=True)
-                    self.runcmd("wget -P " + cacheDir + "   " + model_url_cfg, verbose = True)
+                    runcmd("wget -P " + cacheDir + "   " + model_url_cfg, verbose = True)
                 else:
                     print("===> model cfg already exist ")
 
                 if not os.path.exists(   os.path.join(cacheDir,  'frozen_inference_graph.pb'    )):
                     print("===> download_model weights")
                     os.makedirs(cacheDir, exist_ok=True)
-                    self.runcmd("wget -P " + cacheDir + "   " + model_url_weights, verbose = True)
+                    runcmd("wget -P " + cacheDir + "   " + model_url_weights, verbose = True)
                 else:
                     print("===> model weights already exist ")
             

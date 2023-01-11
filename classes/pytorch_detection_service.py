@@ -2,6 +2,7 @@
 from http import server
 import cv2,time,os,numpy as np
 from classes.detection_service import IDetectionService
+from utils_lib.utils_functions import runcmd
 
 class PytorchDetectionService(IDetectionService):
 
@@ -28,21 +29,22 @@ class PytorchDetectionService(IDetectionService):
         self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
         # self.classAllowed=range(0, 80)
         self.detection_method_list    =   [ 
-                        {'name': 'nanodet-plus-m-1.5x_320'  },
-                        {'name': 'nanodet-plus-m_320'  },
-                        {'name': 'yolov5n'  },
-                        {'name': 'yolov5n_err'  },
-                        {'name': 'yolov5s'  },
-                        {'name': 'yolov5m'  },
-                        {'name': 'yolov5l'  },
-                        {'name': 'yolov5x'  },
+                        # {'name': 'nanodet-plus-m-1.5x_320'  },
+                        # {'name': 'nanodet-plus-m_320'  },
+                        # {'name': 'yolov5n_err2'  },
+
+                        {'name': 'yolov5n' , 'url':'https://github.com/ayoubalami/flask_python/releases/download/v0.1.0/yolov5n.onnx'  },
+                        {'name': 'yolov5s' , 'url':'https://github.com/ayoubalami/flask_python/releases/download/v0.1.0/yolov5s.onnx' },
+                        {'name': 'yolov5m' , 'url':'https://github.com/ayoubalami/flask_python/releases/download/v0.1.0/yolov5m.onnx' },
+                        {'name': 'yolov5l' , 'url':'https://github.com/ayoubalami/flask_python/releases/download/v0.1.0/yolov5l.onnx' },
+                        {'name': 'yolov5x' , 'url':'https://github.com/ayoubalami/flask_python/releases/download/v0.1.0/yolov5x.onnx' },
                         {'name': 'yolov6n','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6n.onnx'  },
                         {'name': 'yolov6t','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6t.onnx'  },
                         {'name': 'yolov6s','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6s.onnx'  },
                         {'name': 'yolov6m','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6m.onnx'  },
                         {'name': 'yolov6l','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6l.onnx'  },
+                        # {'name': 'yolov8n','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6l.onnx'  },
                        
-                        # {'name': 'object_detection_nanodet_2022nov'},
                        ]
 
         self.init_object_detection_models_list()
@@ -50,12 +52,28 @@ class PytorchDetectionService(IDetectionService):
     def service_name(self):
         return "Pytorch detection service V 1.0"
 
+    def download_model_if_not_exists(self):
+        print("===> download_model_if_not_exists  ")
+        remote_onnx_file= self.selected_model['url']
+        self.modelName =self.selected_model['name']
+        cacheDir = os.path.join("","models","opencv_onnx_models")
+        print("downloading",remote_onnx_file," ..")
+        if not os.path.exists(   os.path.join(cacheDir,  self.modelName+'.onnx'   )):
+            print("===> download_model onnx")
+            os.makedirs(cacheDir, exist_ok=True)
+            runcmd("wget -P " + cacheDir + "   " + remote_onnx_file, verbose = True)   
+        else:
+            print("===> model onnx already exist ")
+        self.modelPath=os.path.join("","models","opencv_onnx_models",self.modelName+".onnx")
+
+
     def load_model(self,model=None):
         self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)
         self.modelName= self.selected_model['name']
-        modelgPath=os.path.join("","models","opencv_onnx_models",self.modelName+".onnx")
-        self.model = cv2.dnn.readNetFromONNX(modelgPath)       
+        self.download_model_if_not_exists()
+        self.model = cv2.dnn.readNetFromONNX(self.modelPath)       
         self.readClasses()
+
 
     def get_selected_model(self):
         return self.selected_model
