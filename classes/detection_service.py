@@ -1,5 +1,6 @@
 
 from asyncio import StreamReader
+import cv2
 
 
 class IDetectionService:
@@ -26,3 +27,7 @@ class IDetectionService:
 
     def clean_memory(self):
         pass
+
+    def addFrameFps(self,img,detection_fps):
+        cv2.putText(img, f'FPS: {round(detection_fps,2)}', (320,50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255,25,50), 2)
+  

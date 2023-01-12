@@ -142,9 +142,9 @@ class OpencvDetectionService(IDetectionService):
     def detect_objects(self, frame,threshold:float,nms_threshold:float):
         # frame=frame.copy()
         # classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
-        t1= time.time()
+        start_time= time.perf_counter()
         classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
-        inference_time=time.time()-t1
+        inference_time=np.round(time.perf_counter()-start_time,3)
 
         bboxs=list(bboxs)
         confidences=list(np.array(confidences).reshape(1,-1)[0])
@@ -170,10 +170,9 @@ class OpencvDetectionService(IDetectionService):
                 cv2.rectangle(frame,(x,y),(x+w,y+h),color=classColor,thickness=2)
                 cv2.putText(frame, displayText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
 
-            # return frame,inference_time
-            
+        fps = 1 / np.round(time.perf_counter()-start_time,3)
+        self.addFrameFps(frame,fps)
         return frame,inference_time
-
 
 
     def init_object_detection_models_list(self):

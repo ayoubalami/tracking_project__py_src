@@ -3,13 +3,13 @@ from http import server
 import cv2,time,os,numpy as np
 from classes.detection_service import IDetectionService
 from symbol import return_stmt
+
 # import tensorflow as tf
 # from tensorflow.python.keras.utils.data_utils import get_file 
 
 class TensorflowDetectionService(IDetectionService):
 
     np.random.seed(123)
-
     model=None
     
     def clean_memory(self):
@@ -62,20 +62,15 @@ class TensorflowDetectionService(IDetectionService):
         inputTensor = tf.convert_to_tensor(inputTensor, dtype=tf.uint8) 
         inputTensor = inputTensor[tf.newaxis,...]
         self.model(inputTensor)
-        # a = tf.add(inputTensor, 1)
-        # print(a.numpy())
-
-
+        
     def get_selected_model(self):
         return self.selected_model
 
     def load_or_download_model_tensorflow(self,model=None):
-        
         self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)
         self.modelURL= self.selected_model['url']
         print("===> selected modelURL")
         print(self.modelURL)
- 
         fileName = os.path.basename(self.modelURL)     
         self.modelName = fileName[:fileName.index('.')]
         self.cacheDir = os.path.join("","models","tensorflow_models", self.modelName)
@@ -86,7 +81,6 @@ class TensorflowDetectionService(IDetectionService):
         self.model = tf.saved_model.load(os.path.join(self.cacheDir, "checkpoints", self.modelName, "saved_model"))
         print("Model " + self.modelName + " loaded successfully...")
         self.readClasses()
-
 
     def readClasses(self): 
         with open(self.classFile, 'r') as f:
@@ -112,9 +106,9 @@ class TensorflowDetectionService(IDetectionService):
         inputTensor = tf.convert_to_tensor(inputTensor, dtype=tf.uint8) 
         inputTensor = inputTensor[tf.newaxis,...]
 
-        t1= time.time()
+        start_time= time.perf_counter()
         detections = self.model(inputTensor)
-        inference_time=time.time()-t1
+        inference_time=round(time.perf_counter()-start_time,3)
 
         bboxs = detections['detection_boxes'][0].numpy()
         classIndexes = detections['detection_classes'][0].numpy().astype(np.int32) 
@@ -146,18 +140,13 @@ class TensorflowDetectionService(IDetectionService):
                 cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color=classColor, thickness=2) 
                 cv2.putText(frame, displayText, (xmin, ymin - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
 
+        fps=1/ round( time.perf_counter()-start_time,3)
+        self.addFrameFps(frame,fps)
         return frame,inference_time
-
-    # def get_object_detection_models(self):
-    #     url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
-    #     url_list=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in list ]
-
-    #     return url_list
 
     def init_object_detection_models_list(self):
         url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
         self.detection_method_list_with_url=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in self.detection_method_list ]
-  
 
     def get_object_detection_models(self):
         return self.detection_method_list 

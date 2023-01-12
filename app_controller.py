@@ -14,7 +14,9 @@ import sys,argparse
 
 from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.opencv_detection_service import OpencvDetectionService
-from classes.pytorch_detection_service import PytorchDetectionService
+from classes.onnx_detection_service import OnnxDetectionService
+from classes.yolov5_detection_service import Yolov5DetectionService
+from classes.trash.yolov8_detection_service import Yolov8DetectionService
 
 def pars_args():
     file_src   =   "videos/highway2.mp4"
@@ -34,12 +36,17 @@ def pars_args():
     if args:
         detection_service:IDetectionService=None
         if args.detection_service:
-            if args.detection_service in( 'OPENCV' ,'o') :
+            if args.detection_service in( 'OPENCV' ,'opencv') :
                 detection_service=OpencvDetectionService()
-            elif args.detection_service in( 'PYTORCH' ,'p')  :
-                detection_service=PytorchDetectionService()
-            elif args.detection_service in( 'TENSORFLOW' ,'t') :
+            elif args.detection_service in( 'ONNX' ,'onnx')  :
+                detection_service=OnnxDetectionService()
+            elif args.detection_service in( 'TENSORFLOW' ,'tf') :
                 detection_service=TensorflowDetectionService()
+            elif args.detection_service in( 'YOLOV5' ,'yv5') :
+                detection_service=Yolov5DetectionService()
+            # elif args.detection_service in( 'YOLOV8' ,'yv8') :
+            #     detection_service=Yolov8DetectionService()
+
         else:
             detection_service=OpencvDetectionService()
 

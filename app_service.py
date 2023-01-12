@@ -13,9 +13,7 @@ from classes.buffer import Buffer
 from classes.detection_service import IDetectionService
 from classes.offline_detector import OfflineDetector
 from classes.opencv_detection_service import OpencvDetectionService
-from classes.opencv_tensorflow_detection_service import \
-    OpencvTensorflowDetectionService
-from classes.pytorch_detection_service import PytorchDetectionService
+from classes.onnx_detection_service import OnnxDetectionService
 from classes.stream_reader import StreamReader, StreamSourceEnum
 from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.tracking_service import TrackingService

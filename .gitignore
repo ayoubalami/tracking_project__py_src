@@ -8,3 +8,4 @@ models/
 storages/
 out_videos/
 __pycache__/
+*.pt

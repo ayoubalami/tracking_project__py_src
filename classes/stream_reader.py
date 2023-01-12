@@ -105,7 +105,7 @@ class StreamReader:
         print("Start READING FROM webcam ......")
         refresh_rate=1
         counter=0
-        start_time = time.time() 
+        start_time = time.perf_counter() 
         while True: 
 
             # IF BUTTON STOP PRESSED CONTINUE
@@ -126,16 +126,16 @@ class StreamReader:
         #     yield(b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
         #  d"
             counter+=1
-            if (time.time() - start_time) > refresh_rate :
-                detection_fps= round(counter / (time.time() - start_time),2)
+            if (time.perf_counter() - start_time) > refresh_rate :
+                detection_fps= round(counter / (time.perf_counter() - start_time),2)
                 counter = 0
-                start_time = time.time()
+                start_time = time.perf_counter()
             
     def read_stream_from_buffer(self):
         # delay for buffer to load some frame
         time.sleep(0.1)
         self.current_sec=0
-        t1= time.time()
+        t1= time.perf_counter()
         detection_fps=0
         current_fps=0
         jump_frame=0    
@@ -144,7 +144,7 @@ class StreamReader:
         backgroundSubtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
 
         while True :
-            t1= time.time()
+            t1= time.perf_counter()
             
             if self.stop_reading_to_clean:
                 break
@@ -185,7 +185,7 @@ class StreamReader:
                 self.current_frame_index=0
                 self.buffer.download_new_batch=True
         
-            diff_time=time.time()-t1    
+            diff_time=time.perf_counter()-t1    
             # jump frames in function of processing time consumtion to simulate real time detection
             jump_frame=jump_frame+diff_time/self.buffer.frame_duration
           
@@ -252,7 +252,7 @@ class StreamReader:
     def addFrameFpsAndTime(self,frame,detection_fps):
         if self.stream_source!=StreamSourceEnum.WEBCAM :
             frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
-        frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
+        # frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
         # return frame
 
     def addInferenceTime(self, frame, inferenceTime):
