@@ -11,6 +11,7 @@ import cv2,time,os, numpy as np
 import pyshine as ps
 from classes.detection_service import IDetectionService
 from  classes.WebcamStream import WebcamStream
+from  classes.RaspberryCamStream import RaspberryCamStream
 from  classes.buffer import Buffer
 from classes.background_subtractor_service import BackgroundSubtractorService
 from utils_lib.enums import ClientStreamTypeEnum, StreamSourceEnum
@@ -53,6 +54,8 @@ class StreamReader:
         self.stop_reading_to_clean=False
         self.tracking_service=None
         self.background_subtractor_service=None
+        self.raspberry_camera=RaspberryCamStream()
+     
 
         if self.stream_source==StreamSourceEnum.FILE:
             self.buffer=Buffer(stream_source=StreamSourceEnum.FILE, video_src=video_src)
@@ -93,13 +96,27 @@ class StreamReader:
 
     def read_stream(self):
         if self.stream_source == StreamSourceEnum.WEBCAM:   
-            yield from self.read_stream_from_webcam()
+            # yield from self.read_stream_from_webcam()
+            yield from self.read_stream_from_raspberry_cam()
         else:
             yield from self.read_stream_from_buffer()
         return "NO STREAM TO READ"
 
+
+    def read_stream_from_raspberry_cam(self):
+        print("Start READING FROM raspberry webcam ......")
+
+        for frame in self.raspberry_camera.camera.capture_continuous(self.raspberry_camera.rawCapture, format="bgr", use_video_port=True):
+            if self.stop_reading_from_user_action:
+                time.sleep(.2)
+                break
+            image = frame.array
+            yield from self.ProcessAndYieldFrame(image,3)
+            self.raspberry_camera.rawCapture.truncate(0)
+ 
+
     def read_stream_from_webcam(self):
-          # delay for buffer to load some frame
+        # delay for buffer to load some frame
 
         detection_fps=1
         print("Start READING FROM webcam ......")
@@ -107,7 +124,6 @@ class StreamReader:
         counter=0
         start_time = time.perf_counter() 
         while True: 
-
             # IF BUTTON STOP PRESSED CONTINUE
             if self.stop_reading_from_user_action:
                 time.sleep(.2)
@@ -121,10 +137,10 @@ class StreamReader:
             # frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
             # ret,buffer=cv2.imencode('.jpg',frame)
             # frame=buffer.tobytes()
-            yield from self.yieldSelectedStream(detection_fps)
-
-        #     yield(b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        #  d"
+            # yield from self.yieldSelectedStream(detection_fps)
+            frame=self.getNextFrame()
+            yield from self.ProcessAndYieldFrame(frame,detection_fps)
+            
             counter+=1
             if (time.perf_counter() - start_time) > refresh_rate :
                 detection_fps= round(counter / (time.perf_counter() - start_time),2)
@@ -141,7 +157,7 @@ class StreamReader:
         jump_frame=0    
         print("Start READING FROM BUFFER ......")
         diff_time=0
-        backgroundSubtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
+        # backgroundSubtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
 
         while True :
             t1= time.perf_counter()
@@ -161,7 +177,8 @@ class StreamReader:
                 continue
             
             # RETURN FRAMES TO NAV
-            yield from self.yieldSelectedStream(detection_fps)
+            frame=self.getNextFrame()
+            yield from self.ProcessAndYieldFrame(frame,detection_fps)
             
             # ADD SECONDES
             self.current_time=self.current_time+self.buffer.frame_duration*(floor(jump_frame))
@@ -268,22 +285,22 @@ class StreamReader:
             self.current_sec=0
             self.current_frame_index=0
     
-    def yieldSelectedStream(self,detection_fps):
-        result={}
+    def getNextFrame(self):
         origin_frame,self.current_batch=self.getCurrentFrame() 
+        return origin_frame
 
-            # origin_frame,self.current_batch=self.getCurrentFrame() 
+    def ProcessAndYieldFrame(self,frame,detection_fps):
+        result={}
+        copy_frame=frame.copy()
 
         if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
             # origin_frame,self.current_batch=self.getCurrentFrame() 
-            detection_frame=origin_frame.copy()
-            detection_frame,inference_time=self.applyDetection(detection_frame)
+            detection_frame,inference_time=self.applyDetection(copy_frame)
             self.inference_time_records.append(inference_time)
             self.addFrameFpsAndTime(detection_frame,detection_fps)
             result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=80)
 
         elif self.current_selected_stream== ClientStreamTypeEnum.BACKGROUND_SUBTRACTION:
-            copy_frame=origin_frame.copy()
             foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(copy_frame)
             # self.addInferenceTime(subtraction_frame,inference_time)
             self.addFrameFpsAndTime(foreground_detection_frame,detection_fps)
@@ -291,8 +308,7 @@ class StreamReader:
             result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=80)
         
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
-            tracking_frame=origin_frame.copy()
-            tracking_frame,inference_time=self.tracking_service.apply(tracking_frame)
+            tracking_frame,inference_time=self.tracking_service.apply(copy_frame)
             result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
             # result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
             # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)

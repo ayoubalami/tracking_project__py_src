@@ -30,15 +30,15 @@ class AppService:
     stream_source: StreamSourceEnum=None
     buffering_thread=None   
     save_detectors_results=False
-    api_server='localhost'
+    host_server='localhost'
 
-    def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str,save_detectors_results:bool,api_server:str):
+    def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str,save_detectors_results:bool,host_server:str):
         
         self.detection_service=detection_service
         self.stream_source=stream_source
         self.video_src=video_src
         self.save_detectors_results=save_detectors_results
-        self.api_server=api_server
+        self.host_server=host_server
         
         print("AppService from "+str(self.stream_source) +" Starting ...")
         
@@ -71,7 +71,7 @@ class AppService:
 
     def index(self):
 
-        return render_template('index.html',api_server=self.api_server)
+        return render_template('index.html',api_server=self.host_server)
  
     def return_stream(self):
         yield from self.stream_reader.read_stream()

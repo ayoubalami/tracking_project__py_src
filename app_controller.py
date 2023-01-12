@@ -26,13 +26,14 @@ def pars_args():
     stream_source: StreamSourceEnum=StreamSourceEnum.FILE
     parser = argparse.ArgumentParser()
     save_detectors_results=False
-    api_server='localhost'
+    host_server='localhost'
     
-    parser.add_argument("-server", "--api_server", help = "api_server host remote raspberry of local pc")
-    parser.add_argument("-s", "--stream_source", help = "Select stream source FILE, WEBCAM")
-    parser.add_argument("-d", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
-    parser.add_argument("-r", "--save_detectors_results", help = "save_detectors_results inference fps to results.csv")
-    
+    parser.add_argument("-hs", "--host_server", help = "host_server host remote raspberry of local pc")
+    parser.add_argument("-ss", "--stream_source", help = "Select stream source FILE, WEBCAM")
+    parser.add_argument("-ds", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
+    parser.add_argument("-rr", "--save_detectors_results", help = "save_detectors_results inference fps to results.csv")
+    parser.add_argument("-w", "--webcam", dest='webcam', help = "",action="store")
+
     args = parser.parse_args()
     if args:
         detection_service:IDetectionService=None
@@ -58,6 +59,9 @@ def pars_args():
             elif args.stream_source in( 'WEBCAM' ,'w')  :
                 stream_source=StreamSourceEnum.WEBCAM
                 video_src=webcam_src
+                if args.webcam    :
+                    video_src= args.webcam
+                    print('read from WEBCAM'+ video_src)
         else:
             stream_source=StreamSourceEnum.FILE
             video_src=file_src
@@ -65,20 +69,20 @@ def pars_args():
         if args.save_detectors_results:
             save_detectors_results=True
 
-        if args.api_server:
-            if args.api_server in( 'r' ,'rasp','raspberry','raspberrypi') :
-                api_server='raspberrypi.local'
+        if args.host_server:
+            if args.host_server in( 'r' ,'rasp','raspberry','raspberrypi') :
+                host_server='raspberrypi.local'
             else :
-                api_server=args.api_server
+                host_server=args.host_server
 
             
-    return detection_service,stream_source,video_src,save_detectors_results,api_server
+    return detection_service,stream_source,video_src,save_detectors_results,host_server
 
 app=Flask(__name__)
 CORS(app)
 
-detection_service,stream_source,video_src,save_detectors_results,api_server=pars_args()
-app_service=AppService(detection_service=detection_service,stream_source=stream_source,video_src=video_src,save_detectors_results=save_detectors_results,api_server=api_server)
+detection_service,stream_source,video_src,save_detectors_results,host_server=pars_args()
+app_service=AppService(detection_service=detection_service,stream_source=stream_source,video_src=video_src,save_detectors_results=save_detectors_results,host_server=host_server)
 
 
 # def read_stream():
