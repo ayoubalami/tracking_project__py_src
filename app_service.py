@@ -18,6 +18,7 @@ from classes.stream_reader import StreamReader, StreamSourceEnum
 from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.tracking_service import TrackingService
 from classes.WebcamStream import WebcamStream
+from classes.raspbearry_camera_reader import RaspberryCameraReader
 from utils_lib.enums import ClientStreamTypeEnum
 
 
@@ -52,8 +53,11 @@ class AppService:
             print( " No detection_module To load")
         print("AppService Started.")
 
+        if stream_source==StreamSourceEnum.RASPBERRY_CAM:
+            self.raspberry_camera=RaspberryCameraReader()
+
         # self.stream_reader=StreamReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service, stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
-        self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
+        # self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
 
     def clean_memory(self):
         print(" START clean_memory ")
@@ -79,27 +83,38 @@ class AppService:
         # yield from self.webcam_stream.read_from_camera()
 
     def stop_stream(self):
-        if self.save_detectors_results:
-            self.stream_reader.save_records()
-
-        if  not self.stream_reader.stop_reading_from_user_action :
-            self.stream_reader.stop_reading_from_user_action=True
-            return jsonify(result='stream stoped')
-        return jsonify(result='error server in stream stoped')
+        if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
+            if not self.raspberry_camera.stop_reading_from_user_action :
+                self.raspberry_camera.stop_reading_from_user_action=True
+                print("SET CAMERA MODULE STOP")
+                return jsonify(result='rasp stream stoped')
+        else:
+            if self.save_detectors_results:
+                self.stream_reader.save_records()
+            if  not self.stream_reader.stop_reading_from_user_action :
+                self.stream_reader.stop_reading_from_user_action=True
+                return jsonify(result='stream stoped')
+            return jsonify(result='error server in stream stoped')
 
     def start_stream(self,selected_video):
-        selected_video="videos/"+selected_video
-        # if (selected_video!= self.stream_reader.video_src):
-        #     self.stream_reader.change_video_file(selected_video)
-             
-        while(True):
-            sleep(0.01)
-            # if self.stream_reader and (self.stream_reader.buffer or self.stream_source == StreamSourceEnum.WEBCAM)  :
-            print("SET TO START °°")
-            if self.stream_reader.stop_reading_from_user_action :
-                self.stream_reader.stop_reading_from_user_action=False
-                print("SET TO START")
-                return jsonify(result='stream started')
+        if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
+            if self.raspberry_camera.stop_reading_from_user_action :
+                self.raspberry_camera.stop_reading_from_user_action=False
+                print("SET CAMERA MODULE START")
+                return jsonify(result='rasp stream started')
+        else:
+            selected_video="videos/"+selected_video
+            # if (selected_video!= self.stream_reader.video_src):
+            #     self.stream_reader.change_video_file(selected_video)
+                
+            while(True):
+                sleep(0.01)
+                # if self.stream_reader and (self.stream_reader.buffer or self.stream_source == StreamSourceEnum.WEBCAM)  :
+                print("SET TO START °°")
+                if self.stream_reader.stop_reading_from_user_action :
+                    self.stream_reader.stop_reading_from_user_action=False
+                    print("SET TO START")
+                    return jsonify(result='stream started')
 
 
     def start_offline_detection(self):
@@ -150,24 +165,24 @@ class AppService:
         return jsonify(result=param+' updated ')
 
     def main_video_stream(self):
-        print("=======> main_video_stream")
-        # self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
-        self.stream_reader.background_subtractor_service=self.background_subtractor_service
-        self.stream_reader.tracking_service=self.tracking_service
-        
-        d_start,d_height,tr_start,tr_height= 200,100,300,500
-        width,height=800,800
-        if self.stream_reader.buffer :
-            width,height=int(self.stream_reader.buffer.width),int(self.stream_reader.buffer.height)
-            self.stream_reader.tracking_service.init_regions(width,height, d_start,d_height,tr_start,tr_height)
 
-            self.stream_reader.startBuffering()
+        if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
+            print("=======> main_raspberry_camera_stream")        
+            return Response(self.raspberry_camera.read_camera_stream (),mimetype='text/event-stream')
 
-
-        return Response(self.return_stream(),mimetype='text/event-stream')
-        # return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
-
-    
+        else:
+            print("=======> main_video_stream")
+            self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
+            self.stream_reader.background_subtractor_service=self.background_subtractor_service
+            self.stream_reader.tracking_service=self.tracking_service
+            d_start,d_height,tr_start,tr_height= 200,100,300,500
+            width,height=800,800
+            if self.stream_reader.buffer :
+                width,height=int(self.stream_reader.buffer.width),int(self.stream_reader.buffer.height)
+                self.stream_reader.tracking_service.init_regions(width,height, d_start,d_height,tr_start,tr_height)
+                self.stream_reader.startBuffering()
+            return Response(self.return_stream(),mimetype='text/event-stream')
+ 
 
     def switch_client_stream(self, stream):
         if  self.stream_reader!=None:

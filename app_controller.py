@@ -32,7 +32,7 @@ def pars_args():
     parser.add_argument("-ss", "--stream_source", help = "Select stream source FILE, WEBCAM")
     parser.add_argument("-ds", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
     parser.add_argument("-rr", "--save_detectors_results", help = "save_detectors_results inference fps to results.csv")
-    parser.add_argument("-w", "--webcam", dest='webcam', help = "",action="store")
+    parser.add_argument("-cam_stream", "--webcam", dest='webcam', help = "",action="store")
 
     args = parser.parse_args()
     if args:
@@ -59,8 +59,12 @@ def pars_args():
             elif args.stream_source in( 'WEBCAM' ,'w')  :
                 stream_source=StreamSourceEnum.WEBCAM
                 video_src=webcam_src
-                if args.webcam    :
-                    video_src= args.webcam
+                if args.webcam :
+                    if args.webcam in( 'r' ,'rasp','raspberry')  :
+                        stream_source=StreamSourceEnum.RASPBERRY_CAM
+                    else:
+                        video_src= args.webcam
+                    
                     print('read from WEBCAM'+ video_src)
         else:
             stream_source=StreamSourceEnum.FILE

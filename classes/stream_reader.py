@@ -11,7 +11,6 @@ import cv2,time,os, numpy as np
 import pyshine as ps
 from classes.detection_service import IDetectionService
 from  classes.WebcamStream import WebcamStream
-from  classes.RaspberryCamStream import RaspberryCamStream
 from  classes.buffer import Buffer
 from classes.background_subtractor_service import BackgroundSubtractorService
 from utils_lib.enums import ClientStreamTypeEnum, StreamSourceEnum
@@ -67,10 +66,9 @@ class StreamReader:
             self.buffer.stream_reader=self
 
         if self.stream_source==StreamSourceEnum.WEBCAM:
-            # self.webcam_stream = WebcamStream(src=self.video_src)
-            # self.webcam_stream.start()
-            self.raspberry_camera=RaspberryCamStream()
-            self.raspberry_camera.picam2.start()
+            self.webcam_stream = WebcamStream(src=self.video_src)
+            self.webcam_stream.start()
+           
             print("StreamReader From Camera .....")
  
 
@@ -96,30 +94,12 @@ class StreamReader:
 
     def read_stream(self):
         if self.stream_source == StreamSourceEnum.WEBCAM:   
-            # yield from self.read_stream_from_webcam()
-            yield from self.read_stream_from_raspberry_cam()
+            yield from self.read_stream_from_webcam()
         else:
             yield from self.read_stream_from_buffer()
         return "NO STREAM TO READ"
 
-
-    def read_stream_from_raspberry_cam(self):
-        print("Start READING FROM raspberry webcam ......")
-        
-
-        while(True):
-            image = self.raspberry_camera.picam2.capture_array()
-            if self.stop_reading_from_user_action:
-                time.sleep(.2)
-                break
-            yield from self.ProcessAndYieldFrame(image,3)
-        # for frame in self.raspberry_camera.camera.capture_continuous(self.raspberry_camera.rawCapture, format="bgr", use_video_port=True):
-        #     if self.stop_reading_from_user_action:
-        #         time.sleep(.2)
-        #         break
-        #     image = frame.array
-        #     yield from self.ProcessAndYieldFrame(image,3)
-        #     self.raspberry_camera.rawCapture.truncate(0)
+ 
  
 
     def read_stream_from_webcam(self):
@@ -135,16 +115,7 @@ class StreamReader:
             if self.stop_reading_from_user_action:
                 time.sleep(.2)
                 continue
-           
-            # ret,frame=self.webcam_stream.read()    
-
-            # if self.detection_service !=None and self.detection_service.get_selected_model() !=None:
-            #     frame , inference_time= self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
             
-            # frame =  ps.putBText(frame,str(detection_fps)+" fps",text_offset_x=320,text_offset_y=20,vspace=10,hspace=10, font_scale=1.2,text_RGB=(255,25,50))
-            # ret,buffer=cv2.imencode('.jpg',frame)
-            # frame=buffer.tobytes()
-            # yield from self.yieldSelectedStream(detection_fps)
             frame=self.getNextFrame()
             yield from self.ProcessAndYieldFrame(frame,detection_fps)
             
