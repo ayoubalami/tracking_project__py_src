@@ -6,7 +6,8 @@ class WebcamStream:
     def __init__(self, src=0):
 
             self.stopped = False
-            self.stream = cv2.VideoCapture(src)
+            #self.stream = cv2.VideoCapture(src)
+            self.stream=cv2.VideoCapture(1)
             if not self.stream.isOpened():
                 raise Exception("Couldn't open camera {}".format(src))
 

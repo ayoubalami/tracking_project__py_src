@@ -3,3 +3,10 @@ flask-cors
 pyshine
 youtube-dl
 pafy
+torch==1.13.1+cpu
+pandas
+IPython
+psutil
+torchvision==0.14.1+cpu
+tqdm
+matplotlib

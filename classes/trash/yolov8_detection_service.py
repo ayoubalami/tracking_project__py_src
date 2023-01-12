@@ -2,7 +2,7 @@
 from csv import writer
 import cv2,time,os,numpy as np
 from classes.detection_service import IDetectionService
-from ultralytics import YOLO
+#from ultralytics import YOLO
 
 class Yolov8DetectionService(IDetectionService):
 

@@ -22,6 +22,7 @@ def pars_args():
     file_src   =   "videos/highway2.mp4"
     # youtube_url =   "https://www.youtube.com/watch?v=QuUxHIVUoaY"
     webcam_src  =   'http://192.168.43.1:9000/video'
+#    webcam_src=0
     stream_source: StreamSourceEnum=StreamSourceEnum.FILE
     parser = argparse.ArgumentParser()
     save_detectors_results=False
