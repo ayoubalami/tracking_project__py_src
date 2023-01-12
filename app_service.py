@@ -53,6 +53,7 @@ class AppService:
         print("AppService Started.")
 
         # self.stream_reader=StreamReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service, stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
+        self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
 
     def clean_memory(self):
         print(" START clean_memory ")
@@ -88,18 +89,18 @@ class AppService:
 
     def start_stream(self,selected_video):
         selected_video="videos/"+selected_video
-        if (selected_video!= self.stream_reader.video_src):
-            self.stream_reader.change_video_file(selected_video)
+        # if (selected_video!= self.stream_reader.video_src):
+        #     self.stream_reader.change_video_file(selected_video)
              
         while(True):
             sleep(0.01)
-            if self.stream_reader and (self.stream_reader.buffer or self.stream_source == StreamSourceEnum.WEBCAM)  :
-                print("SET TO START °°")
-                if self.stream_reader.stop_reading_from_user_action :
-                    self.stream_reader.stop_reading_from_user_action=False
-                    print("SET TO START")
-                    return jsonify(result='stream started')
-            # return jsonify(result='error server in stream started')
+            # if self.stream_reader and (self.stream_reader.buffer or self.stream_source == StreamSourceEnum.WEBCAM)  :
+            print("SET TO START °°")
+            if self.stream_reader.stop_reading_from_user_action :
+                self.stream_reader.stop_reading_from_user_action=False
+                print("SET TO START")
+                return jsonify(result='stream started')
+
 
     def start_offline_detection(self):
         # wait for streamer to be created before starting
@@ -150,7 +151,7 @@ class AppService:
 
     def main_video_stream(self):
         print("=======> main_video_stream")
-        self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
+        # self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
         self.stream_reader.background_subtractor_service=self.background_subtractor_service
         self.stream_reader.tracking_service=self.tracking_service
         
@@ -165,6 +166,8 @@ class AppService:
 
         return Response(self.return_stream(),mimetype='text/event-stream')
         # return Response(self.return_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
+
+    
 
     def switch_client_stream(self, stream):
         if  self.stream_reader!=None:

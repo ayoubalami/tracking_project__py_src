@@ -54,7 +54,6 @@ class StreamReader:
         self.stop_reading_to_clean=False
         self.tracking_service=None
         self.background_subtractor_service=None
-        self.raspberry_camera=RaspberryCamStream()
      
 
         if self.stream_source==StreamSourceEnum.FILE:
@@ -68,11 +67,12 @@ class StreamReader:
             self.buffer.stream_reader=self
 
         if self.stream_source==StreamSourceEnum.WEBCAM:
-            self.webcam_stream = WebcamStream(src=self.video_src)
-            self.webcam_stream.start()
+            # self.webcam_stream = WebcamStream(src=self.video_src)
+            # self.webcam_stream.start()
+            self.raspberry_camera=RaspberryCamStream()
+            self.raspberry_camera.picam2.start()
             print("StreamReader From Camera .....")
  
-
 
     def startBuffering(self):
         self.buffering_thread= threading.Thread(target=self.buffer.download_buffer)
@@ -105,14 +105,21 @@ class StreamReader:
 
     def read_stream_from_raspberry_cam(self):
         print("Start READING FROM raspberry webcam ......")
+        
 
-        for frame in self.raspberry_camera.camera.capture_continuous(self.raspberry_camera.rawCapture, format="bgr", use_video_port=True):
+        while(True):
+            image = self.raspberry_camera.picam2.capture_array()
             if self.stop_reading_from_user_action:
                 time.sleep(.2)
                 break
-            image = frame.array
             yield from self.ProcessAndYieldFrame(image,3)
-            self.raspberry_camera.rawCapture.truncate(0)
+        # for frame in self.raspberry_camera.camera.capture_continuous(self.raspberry_camera.rawCapture, format="bgr", use_video_port=True):
+        #     if self.stop_reading_from_user_action:
+        #         time.sleep(.2)
+        #         break
+        #     image = frame.array
+        #     yield from self.ProcessAndYieldFrame(image,3)
+        #     self.raspberry_camera.rawCapture.truncate(0)
  
 
     def read_stream_from_webcam(self):

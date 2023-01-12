@@ -6,6 +6,7 @@ class StreamSourceEnum(Enum):
     FILE = 1
     WEBCAM = 2
     YOUTUBE=3
+    RASPBERRY_CAM=4
 
 class ClientStreamTypeEnum(Enum):
     CNN_DETECTOR = 1
