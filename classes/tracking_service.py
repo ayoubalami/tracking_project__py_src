@@ -9,8 +9,11 @@ from classes.background_subtractor_service import BackgroundSubtractorService
 class TrackingService():
     
     background_subtractor_service:BackgroundSubtractorService=None    
-    (d_region_x, d_region_y, d_region_w, d_region_h)=400 , 200,  160 , 160
-    (tr_region_x, tr_region_y, tr_region_w, tr_region_h)=800 , 500,  160 , 160
+    # (d_region_x, d_region_y, d_region_w, d_region_h)=200,100,300,500
+    # (tr_region_x, tr_region_y, tr_region_w, tr_region_h)=800 , 500,  160 , 160
+    d_start,d_height,tr_start,tr_height= 200,100,300,500
+
+    is_region_initialization_done=False
 
     def __init__(self,background_subtractor_service:BackgroundSubtractorService):
         self.background_subtractor_service=background_subtractor_service
@@ -18,6 +21,10 @@ class TrackingService():
     
     def apply(self,frame): 
         
+        if self.is_region_initialization_done==False:
+            width,height=frame.shape[1],frame.shape[0]
+            self.init_regions(width,height, self.d_start,self.d_height,self.tr_start,self.tr_height)  
+
         foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(frame)
         detection_region , tracking_region=self.divide_frame(foreground_detection_frame)
 
@@ -60,4 +67,4 @@ class TrackingService():
     def init_regions(self,width,height, d_start,d_height,tr_start,tr_height):
         (self.d_region_x, self.d_region_y, self.d_region_w, self.d_region_h)     =  0,d_start,width,d_height
         (self.tr_region_x, self.tr_region_y, self.tr_region_w, self.tr_region_h) =   0,tr_start,width,tr_height
-         
+        self.is_region_initialization_done=True

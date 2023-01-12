@@ -102,6 +102,12 @@ function initVideoStreamFrame(){
             videoFrame.attr("src", 'data:image/jpeg;base64,' + result[stream]);
         });        
     };
+    // eventSource.onerror = (err) => {
+    //     console.log("Stream ERROR :", err);
+    //     console.error("Stream done :", err);
+    //     eventSource.close();
+    //   };
+
     videoInitialized=true;
 }
 

@@ -2,12 +2,12 @@ from warnings import catch_warnings
 import cv2
 from threading import Condition,Thread
 
-class WebcamStream:
+class WebcamReader:
     def __init__(self, src=0):
 
             self.stopped = False
             #self.stream = cv2.VideoCapture(src)
-            self.stream=cv2.VideoCapture(1)
+            self.stream=cv2.VideoCapture(src)
             if not self.stream.isOpened():
                 raise Exception("Couldn't open camera {}".format(src))
 

@@ -13,7 +13,7 @@ class BackgroundSubtractorService():
         self.min_box_size=1000
 
     def apply(self,frame): 
-        t1= time.time()
+        start_time= time.perf_counter()
         origin_frame=frame.copy()
         frame = self.background_subtractor.apply(frame)
         # frame = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
@@ -34,7 +34,12 @@ class BackgroundSubtractorService():
                 origin_frame[y:y+h, x:x+w] = res
                 cv2.rectangle(origin_frame, (x, y), (x + w, y + h),  (255, 0, 0), 2)
 
-        inference_time=time.time()-t1
+        fps=1/round(time.perf_counter()-start_time,3)
+        self.addFrameFps(origin_frame,fps)
+        return origin_frame,frame, fps
 
-        return origin_frame,frame, inference_time
+    def addFrameFps(self,img,detection_fps):
+        width=img.shape[1]
+        cv2.putText(img, f'FPS: {round(detection_fps,2)}', (int(width/2)-20,50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255,25,50), 2)
+    
 

@@ -29,5 +29,6 @@ class IDetectionService:
         pass
 
     def addFrameFps(self,img,detection_fps):
-        cv2.putText(img, f'FPS: {round(detection_fps,2)}', (320,50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255,25,50), 2)
-  
+        width=img.shape[1]
+        cv2.putText(img, f'FPS: {round(detection_fps,2)}', (int(width/2)-20,50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255,25,50), 2)
+    

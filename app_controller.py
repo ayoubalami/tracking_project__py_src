@@ -29,10 +29,10 @@ def pars_args():
     host_server='localhost'
     
     parser.add_argument("-hs", "--host_server", help = "host_server host remote raspberry of local pc")
-    parser.add_argument("-ss", "--stream_source", help = "Select stream source FILE, WEBCAM")
+    parser.add_argument("-ss", "--stream_source", help = "Select stream source FILE, REMOTE_WEBCAM, RASPBERRY_CAM")
     parser.add_argument("-ds", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
     parser.add_argument("-rr", "--save_detectors_results", help = "save_detectors_results inference fps to results.csv")
-    parser.add_argument("-cam_stream", "--webcam", dest='webcam', help = "",action="store")
+    # parser.add_argument("-cam_stream", "--webcam", dest='webcam', help = "",action="store")
 
     args = parser.parse_args()
     if args:
@@ -59,13 +59,16 @@ def pars_args():
             elif args.stream_source in( 'WEBCAM' ,'w')  :
                 stream_source=StreamSourceEnum.WEBCAM
                 video_src=webcam_src
-                if args.webcam :
-                    if args.webcam in( 'r' ,'rasp','raspberry')  :
-                        stream_source=StreamSourceEnum.RASPBERRY_CAM
-                    else:
-                        video_src= args.webcam
+            elif args.stream_source in( 'RASPBERRY' ,'r')  :
+                stream_source=StreamSourceEnum.RASPBERRY_CAM
+                # video_src=webcam_src
+                # if args.webcam :
+                #     if args.webcam in( 'r' ,'rasp','raspberry')  :
+                #         stream_source=StreamSourceEnum.RASPBERRY_CAM
+                #     else:
+                video_src= 'RASPBERRY_CAM'
                     
-                    print('read from WEBCAM'+ video_src)
+            print('read from '+ str(stream_source))
         else:
             stream_source=StreamSourceEnum.FILE
             video_src=file_src

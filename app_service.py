@@ -17,13 +17,11 @@ from classes.onnx_detection_service import OnnxDetectionService
 from classes.stream_reader import StreamReader, StreamSourceEnum
 from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.tracking_service import TrackingService
-from classes.WebcamStream import WebcamStream
-from classes.raspbearry_camera_reader import RaspberryCameraReader
+from classes.webcam_reader import WebcamReader
+from classes.raspberry_camera_reader import RaspberryCameraReader
 from utils_lib.enums import ClientStreamTypeEnum
 
-
-class AppService:
-    
+class AppService:    
     stream_reader :StreamReader = None
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
@@ -54,7 +52,7 @@ class AppService:
         print("AppService Started.")
 
         if stream_source==StreamSourceEnum.RASPBERRY_CAM:
-            self.raspberry_camera=RaspberryCameraReader()
+            self.raspberry_camera=RaspberryCameraReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service,tracking_service=self.tracking_service)
 
         # self.stream_reader=StreamReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service, stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
         # self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
@@ -70,12 +68,11 @@ class AppService:
         return jsonify(result='clean_memory OK')
 
     def reset_stream(self):
-        self.stream_reader.reset()
+        if self.stream_reader:
+            self.stream_reader.reset()
         return jsonify('reset stream')
   
-
     def index(self):
-
         return render_template('index.html',api_server=self.host_server)
  
     def return_stream(self):
@@ -84,8 +81,8 @@ class AppService:
 
     def stop_stream(self):
         if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
-            if not self.raspberry_camera.stop_reading_from_user_action :
-                self.raspberry_camera.stop_reading_from_user_action=True
+            if self.raspberry_camera.start_reading_action  :
+                self.raspberry_camera.start_reading_action=False
                 print("SET CAMERA MODULE STOP")
                 return jsonify(result='rasp stream stoped')
         else:
@@ -98,8 +95,8 @@ class AppService:
 
     def start_stream(self,selected_video):
         if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
-            if self.raspberry_camera.stop_reading_from_user_action :
-                self.raspberry_camera.stop_reading_from_user_action=False
+            if self.raspberry_camera.start_reading_action ==False:
+                self.raspberry_camera.start_reading_action=True
                 print("SET CAMERA MODULE START")
                 return jsonify(result='rasp stream started')
         else:
@@ -141,11 +138,17 @@ class AppService:
         return jsonify(result='ERROR model is null')
 
     def update_threshold_value(self,threshold):
-        self.stream_reader.threshold=float(threshold)
+        if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
+            self.raspberry_camera.threshold=float(threshold)
+        else:
+            self.stream_reader.threshold=float(threshold)
         return jsonify(result='threshold updated ')
 
     def update_nms_threshold_value(self,nms_threshold:float):
-        self.stream_reader.nms_threshold=float(nms_threshold)
+        if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
+            self.raspberry_camera.nms_threshold=float(nms_threshold)
+        else:
+            self.stream_reader.nms_threshold=float(nms_threshold)
         return jsonify(result='nmsthreshold updated ')
 
     def update_background_subtraction_param(self,param,value):
@@ -168,29 +171,34 @@ class AppService:
 
         if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
             print("=======> main_raspberry_camera_stream")        
-            return Response(self.raspberry_camera.read_camera_stream (),mimetype='text/event-stream')
+            return Response(self.raspberry_camera.read_camera_stream(),mimetype='text/event-stream')
 
         else:
             print("=======> main_video_stream")
             self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
             self.stream_reader.background_subtractor_service=self.background_subtractor_service
             self.stream_reader.tracking_service=self.tracking_service
-            d_start,d_height,tr_start,tr_height= 200,100,300,500
-            width,height=800,800
+
             if self.stream_reader.buffer :
-                width,height=int(self.stream_reader.buffer.width),int(self.stream_reader.buffer.height)
-                self.stream_reader.tracking_service.init_regions(width,height, d_start,d_height,tr_start,tr_height)
                 self.stream_reader.startBuffering()
             return Response(self.return_stream(),mimetype='text/event-stream')
  
 
     def switch_client_stream(self, stream):
-        if  self.stream_reader!=None:
+        if self.stream_reader!=None:
             if stream == 'CNN_DETECTOR':
                 self.stream_reader.current_selected_stream= ClientStreamTypeEnum.CNN_DETECTOR
             elif  stream == 'BACKGROUND_SUBTRACTION':
                 self.stream_reader.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
             elif stream == 'TRACKING_STREAM':
                 self.stream_reader.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
+
+        if self.raspberry_camera!=None:
+            if stream == 'CNN_DETECTOR':
+                self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.CNN_DETECTOR
+            elif  stream == 'BACKGROUND_SUBTRACTION':
+                self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
+            elif stream == 'TRACKING_STREAM':
+                self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
 
         return jsonify(result=stream)
