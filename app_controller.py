@@ -79,10 +79,10 @@ def pars_args():
         if args.host_server:
             if args.host_server in( 'r' ,'rasp','raspberry','raspberrypi') :
                 host_server='raspberrypi.local'
+                # host_server='192.168.43.186'
             else :
                 host_server=args.host_server
 
-            
     return detection_service,stream_source,video_src,save_detectors_results,host_server
 
 app=Flask(__name__)

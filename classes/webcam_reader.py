@@ -6,12 +6,12 @@ class WebcamReader:
     def __init__(self, src=0):
 
             self.stopped = False
-            #self.stream = cv2.VideoCapture(src)
-            self.stream=cv2.VideoCapture(src)
+            # self.stream = cv2.VideoCapture(src)
+            self.stream=cv2.VideoCapture(1,  cv2.CAP_V4L)
             if not self.stream.isOpened():
                 raise Exception("Couldn't open camera {}".format(src))
 
-            self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 0)
+            self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             # self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 400)
             # self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 600)
 

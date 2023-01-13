@@ -4,7 +4,7 @@
 // var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
 // var $SCRIPT_ROOT = "http://Raspberrypi.local:8000/"
-var $SCRIPT_ROOT = "http://"+api_server+":8000/"
+var $SCRIPT_ROOT = "http://"+api_server+":8000"
 var secondApiIpChecked=false
 
 var intervalID = null;

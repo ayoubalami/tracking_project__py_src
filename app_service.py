@@ -21,8 +21,10 @@ from classes.webcam_reader import WebcamReader
 from classes.raspberry_camera_reader import RaspberryCameraReader
 from utils_lib.enums import ClientStreamTypeEnum
 
+
 class AppService:    
     stream_reader :StreamReader = None
+    raspberry_camera :RaspberryCameraReader = None
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
     tracking_service: TrackingService=None
@@ -54,7 +56,6 @@ class AppService:
         if stream_source==StreamSourceEnum.RASPBERRY_CAM:
             self.raspberry_camera=RaspberryCameraReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service,tracking_service=self.tracking_service)
 
-        # self.stream_reader=StreamReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service, stream_source=self.stream_source ,video_src=self.video_src,threshold=self.threshold,nms_threshold=self.nms_threshold) 
         # self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
 
     def clean_memory(self):

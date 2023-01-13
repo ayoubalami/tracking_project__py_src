@@ -22,8 +22,12 @@ class RaspberryCameraReader :
         self.tracking_service=tracking_service
         self.threshold=0.5
         self.nms_threshold=0.5
-        self.picam2 = Picamera2()
-        self.picam2.configure(self.picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (640, 480)}))
+        try:
+            self.picam2 = Picamera2()
+        except:
+            print("camera not detected program exited....")
+            exit()
+        self.picam2.configure(self.picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (1296,972)}))
         time.sleep(.1)
 
     def read_camera_stream(self):
@@ -43,7 +47,7 @@ class RaspberryCameraReader :
             # detection_frame,inference_time=self.applyDetection(image,self.detection_service,threshold=self.threshold,nms_threshold=self.nms_threshold)
 
             if not self.detection_service :
-                time.sleep(.03)
+                time.sleep(.02)
             yield from self.ProcessAndYieldFrame(image)
       
         # self.picam2.stop()
@@ -55,16 +59,16 @@ class RaspberryCameraReader :
 
         if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
             detection_frame,inference_time=self.applyDetection(copy_frame)
-            result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=50)
+            result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=80)
 
         elif self.current_selected_stream== ClientStreamTypeEnum.BACKGROUND_SUBTRACTION:
             foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(copy_frame)
-            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=50)
-            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=50)
+            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=80)
+            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=80)
         
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
             tracking_frame,inference_time=self.tracking_service.apply(copy_frame)
-            result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
+            result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
             # result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
             # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)
         yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
