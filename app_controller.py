@@ -5,13 +5,11 @@ import threading,os
 from time import sleep,time
 from flask import jsonify,stream_with_context,Flask,render_template,Response
 from classes.buffer import Buffer
-from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.stream_reader import StreamSourceEnum, StreamReader
 from classes.detection_service import IDetectionService
 from app_service import AppService
 from flask_cors import CORS
 import sys,argparse
-
 from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.opencv_detection_service import OpencvDetectionService
 from classes.onnx_detection_service import OnnxDetectionService

@@ -74,15 +74,19 @@ class Yolov5DetectionService(IDetectionService):
     def get_object_detection_models(self):
         return self.detection_method_list 
       
-    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5):
+    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5,boxes_plotting=True):
         start_time = time.perf_counter()
         img=frame.copy()
         labels, cord , inference_time = self.score_frame(img)
-        img = self.plot_boxes((labels, cord ), img,threshold=threshold)
-        fps = 1 / np.round(time.perf_counter()-start_time,3)
-        self.addFrameFps(img,fps)
-        return img,inference_time
-        
+        if boxes_plotting:
+            img , _ = self.plot_boxes((labels, cord ), img,threshold=threshold,nms_threshold=nms_threshold,boxes_plotting=True)
+            fps = 1 / np.round(time.perf_counter()-start_time,3)
+            self.addFrameFps(img,fps)
+            return img,inference_time
+        else:
+            return self.plot_boxes((labels, cord ), img,threshold=threshold,nms_threshold=nms_threshold,boxes_plotting=False)
+
+    
     def score_frame(self, frame):
         # self.model.to(self.device)
         frame = [frame]        
@@ -92,7 +96,7 @@ class Yolov5DetectionService(IDetectionService):
         labels, cord = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
         return labels, cord , np.round(end_time - start_time, 4)
 
-    def plot_boxes(self, results, frame,threshold):
+    def plot_boxes(self, results, frame,threshold,nms_threshold,boxes_plotting=True):
         boxes=[]
         confidences=[]
         classes_ids=[]
@@ -110,8 +114,10 @@ class Yolov5DetectionService(IDetectionService):
                 box = np.array([x1,y1,x2, y2])
                 boxes.append(box) 
                 
-        indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=threshold,nms_threshold=0.5)
-   
+        indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
+
+        raw_detection_data=[]
+
         for i in indices:
             x1, y1, x2, y2 = boxes[i]
             classColor = (236,106,240)
@@ -119,10 +125,14 @@ class Yolov5DetectionService(IDetectionService):
             if (classes_ids[i] in self.classAllowed)==True:
                 classColor = self.colorList[self.classAllowed.index(classes_ids[i])]
             conf = confidences[i]
-            displayText = '{}: {:.2f}'.format(label, conf) 
-            cv2.rectangle(frame,(x1,y1),(x2,y2),color=classColor,thickness=2)
-            cv2.putText(frame, displayText, (x1,y1-2),cv2.FONT_HERSHEY_PLAIN, 1.5,classColor,2)
-        return frame
+            if (boxes_plotting):                
+                displayText = '{}: {:.2f}'.format(label, conf) 
+                cv2.rectangle(frame,(x1,y1),(x2,y2),color=classColor,thickness=2)
+                cv2.putText(frame, displayText, (x1,y1-2),cv2.FONT_HERSHEY_PLAIN, 1.5,classColor,2)
+            else:
+                raw_detection_data.append(([x1, y1, x2-x1, y2-y1],conf,label))
 
-    
-    
+        return frame,raw_detection_data
+      
+
+ 

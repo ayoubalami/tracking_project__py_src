@@ -13,6 +13,7 @@ from classes.detection_service import IDetectionService
 from  classes.webcam_reader import WebcamReader
 from  classes.buffer import Buffer
 from classes.background_subtractor_service import BackgroundSubtractorService
+from classes.tracking_service.tracking_service import TrackingService
 from utils_lib.enums import ClientStreamTypeEnum, StreamSourceEnum
 import csv
 import json
@@ -50,7 +51,7 @@ class StreamReader:
         self.stream_source=stream_source
         self.video_src=video_src
         self.stop_reading_to_clean=False
-        self.tracking_service=None
+        self.tracking_service:TrackingService=None
         self.background_subtractor_service=None
 
         if self.stream_source==StreamSourceEnum.FILE:
@@ -265,7 +266,7 @@ class StreamReader:
             result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=50)
         
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
-            tracking_frame,inference_time=self.tracking_service.apply(copy_frame)
+            tracking_frame=self.tracking_service.apply(copy_frame,threshold= self.threshold ,nms_threshold=self.nms_threshold)
             result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
             # result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
             # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)

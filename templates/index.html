@@ -59,6 +59,8 @@
               <option value="highway1.mp4" title="">highway1.mp4</option>
               <option selected="selected" value="highway2.mp4" title="">highway2.mp4</option>
               <option value="highway3.mp4" title="">highway3.mp4</option>
+              <option value="highway4.mp4" title="">highway4.mp4</option>
+              <option value="highway5.mp4" title="">highway5.mp4</option>
             </select>
           </div>
 
@@ -182,52 +184,62 @@
                         <div class="d-flex" style="align-items: baseline;">
                           <h5 class="me-3" style="align-self: cente">varThreshold : </h5>
                           <code>
-                            <h4 id="varThresholdValueText"> 16 </h4>
+                            <h4 id="varThresholdValueText"> 100 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('varThreshold')" min="1" max="255" value="16" step="1"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('varThreshold')" min="1" max="255" value="100" step="1"
                           class="slider w-100" id="varThresholdSlider">
                       </div> 
                       <div class="col-md-6 py-2 ">
                         <div class="d-flex" style="align-items: baseline;">
                           <h5 class="me-3" style="align-self: cente">history : </h5>
                           <code>
-                            <h4 id="historyValueText"> 500 </h4>
+                            <h4 id="historyValueText"> 400 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('history')" min="0" max="1000" value="500" step="5"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('history')" min="0" max="1000" value="400" step="5"
                           class="slider w-100" id="historySlider">
                       </div>
                     </div>
                     <div class="row my-1">
-                      <div class="col-md-4 py-1">
+                      <div class="col-md-6 py-1">
                         <div class="d-flex" style="align-items: baseline;">
                           <h5 class="me-3" style="align-self: cente">morphologyEx iteration : </h5>
                           <code>
-                            <h4 id="morphologicalExValueText"> 0 </h4>
+                            <h4 id="morphologicalExValueText"> 3 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('morphologicalEx')" min="0" max="5" value="0" step="1"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('morphologicalEx')" min="0" max="5" value="3" step="1"
                           class="slider w-100" id="morphologicalExSlider">
                       </div>
-                      <div class="col-md-4 py-1">
+                      <div class="col-md-6 py-1">
                         <div class="d-flex" style="align-items: baseline;">
                           <h5 class="me-3" style="align-self: cente">kernel size : </h5>
                           <code>
-                            <h4 id="kernelSizeValueText"> 5 </h4>
+                            <h4 id="morphologicalKernelSizeValueText"> 7 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('kernelSize')" min="3" max="11" value="5" step="2"
-                          class="slider w-100" id="kernelSizeSlider">
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('morphologicalKernelSize')" min="3" max="11" value="7" step="2"
+                          class="slider w-100" id="morphologicalKernelSizeSlider">
                       </div>
-                      <div class="col-md-4 py-1">
+                      <div class="col-md-6 py-1">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">Blur kernel size : </h5>
+                          <code>
+                            <h4 id="blurKernelSizeValueText"> 3 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('blurKernelSize')" min="1" max="11" value="5" step="2"
+                          class="slider w-100" id="blurKernelSizeSlider">
+                      </div>
+                      <div class="col-md-6 py-1">
                         <div class="d-flex" style="align-items: baseline;">
                           <h5 class="me-3" style="align-self: cente">min detected area : </h5>
                           <code>
-                            <h4 id="minBoxSizeValueText"> 1000 </h4>
+                            <h4 id="minBoxSizeValueText"> 300 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('minBoxSize')" min="100" max="2500" value="1000" step="100"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('minBoxSize')" min="100" max="2500" value="300" step="100"
                           class="slider w-100" id="minBoxSizeSlider">
                       </div> 
                     </div>      

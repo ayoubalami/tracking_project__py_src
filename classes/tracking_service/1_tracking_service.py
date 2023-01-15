@@ -6,33 +6,35 @@ from utils_lib.enums import SurveillanceRegionEnum
 from classes.background_subtractor_service import BackgroundSubtractorService
 
 
-class TrackingService():
+class _TrackingService():
     
     background_subtractor_service:BackgroundSubtractorService=None    
-    # (d_region_x, d_region_y, d_region_w, d_region_h)=200,100,300,500
-    # (tr_region_x, tr_region_y, tr_region_w, tr_region_h)=800 , 500,  160 , 160
     d_start,d_height,tr_start,tr_height= 200,100,300,500
-
     is_region_initialization_done=False
 
     def __init__(self,background_subtractor_service:BackgroundSubtractorService):
         self.background_subtractor_service=background_subtractor_service
         pass
     
+
     def apply(self,frame): 
-        
-        if self.is_region_initialization_done==False:
-            width,height=frame.shape[1],frame.shape[0]
-            self.init_regions(width,height, self.d_start,self.d_height,self.tr_start,self.tr_height)  
-
         foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(frame)
-        detection_region , tracking_region=self.divide_frame(foreground_detection_frame)
-
-        detection_region=self.process_detection_region(detection_region)
-        tracking_region=self.process_tracking_region(tracking_region)
-
-        self.consolidate_frame(foreground_detection_frame,detection_region,tracking_region)
         return foreground_detection_frame, 0 #inference_time
+
+    # def apply(self,frame): 
+        
+    #     if self.is_region_initialization_done==False:
+    #         width,height=frame.shape[1],frame.shape[0]
+    #         self.init_regions(width,height, self.d_start,self.d_height,self.tr_start,self.tr_height)  
+
+    #     foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(frame)
+    #     detection_region , tracking_region=self.divide_frame(foreground_detection_frame)
+
+    #     detection_region=self.process_detection_region(detection_region)
+    #     tracking_region=self.process_tracking_region(tracking_region)
+
+    #     self.consolidate_frame(foreground_detection_frame,detection_region,tracking_region)
+    #     return foreground_detection_frame, 0 #inference_time
 
     def divide_frame(self,frame):
         detection_region= frame[self.d_region_y:self.d_region_y+self.d_region_h, self.d_region_x:self.d_region_x+self.d_region_w]

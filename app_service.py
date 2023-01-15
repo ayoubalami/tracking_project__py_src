@@ -16,7 +16,7 @@ from classes.opencv_detection_service import OpencvDetectionService
 from classes.onnx_detection_service import OnnxDetectionService
 from classes.stream_reader import StreamReader, StreamSourceEnum
 from classes.tensorflow_detection_service import TensorflowDetectionService
-from classes.tracking_service import TrackingService
+from classes.tracking_service.tracking_service import TrackingService
 from classes.webcam_reader import WebcamReader
 from classes.raspberry_camera_reader import RaspberryCameraReader
 from utils_lib.enums import ClientStreamTypeEnum
@@ -44,7 +44,8 @@ class AppService:
         print("AppService from "+str(self.stream_source) +" Starting ...")
         
         self.background_subtractor_service=BackgroundSubtractorService()
-        self.tracking_service=TrackingService(self.background_subtractor_service)
+        self.tracking_service=TrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
+
        
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
@@ -102,8 +103,8 @@ class AppService:
                 return jsonify(result='rasp stream started')
         else:
             selected_video="videos/"+selected_video
-            # if (selected_video!= self.stream_reader.video_src):
-            #     self.stream_reader.change_video_file(selected_video)
+            if (selected_video!= self.stream_reader.video_src):
+                self.stream_reader.change_video_file(selected_video)
                 
             while(True):
                 sleep(0.01)
@@ -159,10 +160,12 @@ class AppService:
             self.background_subtractor_service.background_subtractor.setVarThreshold(int(value))
         if param=='history':
             self.background_subtractor_service.background_subtractor.setHistory(int(value))
+        if param=='blurKernelSize':
+            self.background_subtractor_service.blur_kernel_size=int(value)
         if param=='morphologicalEx':
             self.background_subtractor_service.morphological_ex_iteration=int(value)
-        if param=='kernelSize':
-            self.background_subtractor_service.kernel_size=int(value)
+        if param=='morphologicalKernelSize':
+            self.background_subtractor_service.morphological_kernel_size=int(value)
         if param=='minBoxSize':
             self.background_subtractor_service.min_box_size=int(value)
 

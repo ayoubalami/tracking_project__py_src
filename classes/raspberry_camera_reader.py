@@ -1,6 +1,5 @@
 
-from picamera2 import Picamera2, Preview
-from picamera2.encoders import H264Encoder
+
 import json
 import time
 import cv2
@@ -10,11 +9,13 @@ import base64
 # from utils_lib.utils_functions import encodeStreamingFrame,applyDetection
 
 from classes.background_subtractor_service import BackgroundSubtractorService
-from classes.tracking_service import TrackingService
+from classes.tracking_service.tracking_service import TrackingService
 from classes.detection_service import IDetectionService
 
 class RaspberryCameraReader :
     def __init__(self,detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService,tracking_service:TrackingService): 
+        from picamera2 import Picamera2, Preview
+        from picamera2.encoders import H264Encoder
         self.start_reading_action=False
         self.detection_service=detection_service
         self.current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR
