@@ -189,19 +189,23 @@ function onClickStartOfflineDetection(){
     });  
 }
 
+
 function onClickToggleStopStart(){        
     if(is_running_stream){
         toggleDisabledStartStopButton(true);
         toggleDisabledDetectionMethodSelect(false);
         toggleDisabledLoadingModelButton(false);
         toggleDisabledResetButton(false);
+        toggleDisabledNextFrameButton(false)
         sendStopVideoRequest();
     }else{
         toggleDisabledStartStopButton(true);
         toggleDisabledDetectionMethodSelect(true);
         toggleDisabledLoadingModelButton(true,showSpinner=false);
         toggleDisabledResetButton(true);
+        toggleDisabledNextFrameButton(true)
         sendStartVideoRequest();
+
         // toggleDisabledResetButton(false)
     }
     is_running_stream=!is_running_stream
@@ -251,6 +255,7 @@ function onClickLoadModel(){
     toggleDisabledLoadingModelButton(true);
     toggleDisabledStartStopButton(true);
     toggleDisabledResetButton(true);
+    toggleDisabledNextFrameButton(true);
     
     if (selected_model_name==null){
         selected_model_name=$( "#objectDetectionSelect" )[0].value
@@ -267,13 +272,18 @@ function onClickLoadModel(){
             toggleDisabledLoadingModelButton(false);
             toggleDisabledStartStopButton(false);
             toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false);
+
             setModelNameText(""+selected_model_name +" est chargé correctement.") 
             // return e
         },
         error: function (errMsg) {
             console.log(" ERROR IN stop_stream")
-            setModelNameText("Error in loading "+selected_model_name +"!!")
-
+            setModelNameText("ERROR in loading "+selected_model_name +"!!")
+            toggleDisabledLoadingModelButton(false);
+            toggleDisabledStartStopButton(false);
+            toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false);
         }
     });
 }
@@ -359,6 +369,7 @@ function toggleDisabledStartStopButton(setToDisabled){
     }
 }
 
+
 function toggleDisabledLoadingModelButton(setToDisabled,showSpinner=true){
     if (setToDisabled){
         $("#loadModelButton").attr("disabled", true);
@@ -438,44 +449,35 @@ function changeServerApi(){
     }
 
 }
-// function onCheckedBackgroundSubtractionService(){
-//     showBackgroundSubtractionStream=$("#backgroundSubtractionCheckChecked").prop("checked")
-//     toggleDisabledBackgroundSubtractionStream();
 
-//     $.ajax({
-//         type: "POST",
-//         url: $SCRIPT_ROOT + '/background_subtraction/show_stream/'+showBackgroundSubtractionStream,
-//         dataType: "json",
-//         success: function (data) {
-//             console.log("  toggleDisabledBackgroundSubtractionStream  ")
-//         },
-//         error: function (errMsg) {
-//             console.log(" error toggleDisabledBackgroundSubtractionStream true")
-//         }
-//     });  
+ 
+function sendGoToNextFrameRequest(){
+    toggleDisabledNextFrameButton(true);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/get_next_frame',
+        dataType: "json",
+        success: function (data) {
+            console.log(" get_next_frame ")
+            toggleDisabledNextFrameButton(false);
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN start_stream")
+            toggleDisabledNextFrameButton(false)
+        }
+    });    
+}
 
-// }
+function onClickGoToNextFrame(){        
+    if(is_running_stream==false){
+        sendGoToNextFrameRequest();
+    }
+}
 
-// window.onbeforeunload = function (e) {
-//     var e = e || window.event;
-//     alert("clean_memory")
-//     $.ajax({
-//         type: "POST",
-//         url: $SCRIPT_ROOT + '/clean_memory',
-//         // The key needs to match your method's input parameter (case-sensitive).
-//         // data: JSON.stringify({ Markers: markers }),
-//         // contentType: "application/json; charset=utf-8",
-//         dataType: "json",
-//         success: function (data) {
-//             console.log(" memory cleaned")
-//             // alert("")
-//             return e
-//         },
-//         error: function (errMsg) {
-//             console.log(" ERROR IN memory cleaning")
-//         }
-//     });
-
-
-// };
-//  </script>
+function toggleDisabledNextFrameButton(setToDisabled){
+    if (setToDisabled){
+        $("#goToNextFrameButton").attr("disabled", true);
+    }else{
+        $("#goToNextFrameButton").attr("disabled", false);
+    }
+}

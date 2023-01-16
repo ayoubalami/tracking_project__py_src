@@ -32,7 +32,7 @@ class StreamReader:
             self.buffer.clean_memory()
             self.stop_reading_to_clean=True
 
-    def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src:str ):
+    def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src:str,save_detectors_results=False ):
         self.perf = []
         self.classAllowed= []
         self.colorList= []
@@ -41,6 +41,8 @@ class StreamReader:
         self.current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR
         self.current_batch=0
         self.stop_reading_from_user_action=True
+        self.get_one_next_frame=False 
+        self.save_detectors_results=save_detectors_results
         self.buffer :Buffer= None 
         self.current_time=0
         self.detection_service=detection_service
@@ -96,8 +98,6 @@ class StreamReader:
             yield from self.read_stream_from_buffer()
         return "NO STREAM TO READ"
 
- 
- 
 
     def read_stream_from_webcam(self):
         # delay for buffer to load some frame
@@ -109,7 +109,7 @@ class StreamReader:
         while True: 
             # IF BUTTON STOP PRESSED CONTINUE
             if self.stop_reading_from_user_action:
-                time.sleep(.2)
+                time.sleep(.05)
                 continue
             
             frame=self.getNextFrame()
@@ -119,6 +119,10 @@ class StreamReader:
             if (time.perf_counter() - start_time) > refresh_rate :
                 counter = 0
                 start_time = time.perf_counter()
+
+            if self.get_one_next_frame:
+                self.stop_reading_from_user_action=True
+                self.get_one_next_frame=False
             
     def read_stream_from_buffer(self):
         # delay for buffer to load some frame
@@ -129,7 +133,6 @@ class StreamReader:
         jump_frame=0    
         print("Start READING FROM BUFFER ......")
         diff_time=0
-        # backgroundSubtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
 
         while True :
             t1= time.perf_counter()
@@ -138,7 +141,7 @@ class StreamReader:
                 break
             # IF BUTTON STOP PRESSED CONTINUE
             if self.stop_reading_from_user_action:
-                time.sleep(.2)
+                time.sleep(.05)
                 continue
             
              # END READING IN CASE OF REACHING THE LAST BATCH
@@ -183,7 +186,14 @@ class StreamReader:
             # SAVE RECORDES CSV
             # if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
             # self.records.append({'detector': self.detection_service.get_selected_model()['name'],'fps':float(1/diff_time) ,'inference_time':inference_time})
-            self.fps_records.append(float(1/diff_time) )
+            
+            if self.save_detectors_results:
+                self.fps_records.append(float(1/diff_time) )
+
+            if self.get_one_next_frame:
+                self.stop_reading_from_user_action=True
+                self.get_one_next_frame=False
+    
         print(" :::: END STREAM READER LOOP")
 
     def getCurrentFrame(self):   
@@ -254,7 +264,8 @@ class StreamReader:
         if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
             # origin_frame,self.current_batch=self.getCurrentFrame() 
             detection_frame,inference_time=self.applyDetection(copy_frame)
-            self.inference_time_records.append(inference_time)
+            if self.save_detectors_results:
+                self.inference_time_records.append(inference_time)
             self.addFrameTime(detection_frame)
             result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=50)
 

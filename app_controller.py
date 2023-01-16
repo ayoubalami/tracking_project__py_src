@@ -124,6 +124,10 @@ def stop_stream():
 def start_stream(selected_video):
     return app_service.start_stream(selected_video)
 
+@app.route('/get_next_frame', methods = ['POST'])
+def get_next_frame():
+    return app_service.go_to_next_frame()
+
 @app.route('/start_offline_detection', methods = ['POST'])
 def start_offline_detection():
     return app_service.start_offline_detection()

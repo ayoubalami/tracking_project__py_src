@@ -1,5 +1,6 @@
 
 import base64
+from csv import writer
 import subprocess
 import cv2
 from utils_lib.enums import ClientStreamTypeEnum
@@ -25,4 +26,5 @@ def addTrackingFrameFps(img,detection_fps):
     width=img.shape[1]
     cv2.putText(img, f'Tracking FPS: {round(detection_fps,2)}', (int(width/2)-100,50), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (50,25,255), 2)
 
+ 
  

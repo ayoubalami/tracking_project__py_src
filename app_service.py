@@ -106,14 +106,23 @@ class AppService:
             if (selected_video!= self.stream_reader.video_src):
                 self.stream_reader.change_video_file(selected_video)
                 
-            while(True):
-                sleep(0.01)
+            # while(True):
+            #     sleep(0.01)
                 # if self.stream_reader and (self.stream_reader.buffer or self.stream_source == StreamSourceEnum.WEBCAM)  :
-                print("SET TO START °°")
-                if self.stream_reader.stop_reading_from_user_action :
-                    self.stream_reader.stop_reading_from_user_action=False
-                    print("SET TO START")
-                    return jsonify(result='stream started')
+            print("SET TO START °°")
+            if self.stream_reader.stop_reading_from_user_action :
+                self.stream_reader.stop_reading_from_user_action=False
+                print("SET TO START")
+                return jsonify(result='stream started')
+
+
+    def go_to_next_frame(self):
+        print("GET NEXT FRAME START °°")
+        if self.stream_reader.stop_reading_from_user_action :
+            self.stream_reader.get_one_next_frame=True 
+            self.stream_reader.stop_reading_from_user_action=False
+            print("SET TO NEXT FRAME START")
+            return jsonify(result='stream started  +1')
 
 
     def start_offline_detection(self):
@@ -179,7 +188,7 @@ class AppService:
 
         else:
             print("=======> main_video_stream")
-            self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
+            self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src,save_detectors_results=self.save_detectors_results)        
             self.stream_reader.background_subtractor_service=self.background_subtractor_service
             self.stream_reader.tracking_service=self.tracking_service
 
