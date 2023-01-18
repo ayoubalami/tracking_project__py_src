@@ -2,7 +2,7 @@
 from csv import writer
 import cv2,time,os,numpy as np
 from classes.detection_service import IDetectionService
-#from ultralytics import YOLO
+# from utils_lib.ultralytics.ultralytics import YOLO
 
 class Yolov8DetectionService(IDetectionService):
 
@@ -75,9 +75,14 @@ class Yolov8DetectionService(IDetectionService):
       
     def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5):
         start_time = time.perf_counter()
-        img=frame.copy()
-        self.model.predict_cli(source=frame,return_outputs=False,save=False)  
-        #    
+        # img=frame.copy()
+
+        self.model.predict(source='me.jpg',return_outputs=False,save=False)      
+        # for x in det:
+        #     print(x)
+
+        fps = 1 / np.round(time.perf_counter()-start_time,3)
+        self.addFrameFps(frame,fps) 
         return frame, 0
         # labels, cord , inference_time = self.score_frame(img)
         # img = self.plot_boxes((labels, cord ), img,threshold=threshold)

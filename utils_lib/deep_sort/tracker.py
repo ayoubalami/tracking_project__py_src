@@ -69,6 +69,9 @@ class Tracker:
             self._match(detections)
  
         # Update track set.
+        # print("len(self.tracks)")
+        # print(len(self.tracks))
+        # print("len(self.tracks)")
         for track_idx, detection_idx in matches:
             self.tracks[track_idx].update(
                 self.kf, detections[detection_idx])

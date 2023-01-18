@@ -98,7 +98,6 @@ class StreamReader:
             yield from self.read_stream_from_buffer()
         return "NO STREAM TO READ"
 
-
     def read_stream_from_webcam(self):
         # delay for buffer to load some frame
 
@@ -149,6 +148,9 @@ class StreamReader:
                 continue;   
 
             if self.current_frame_index>=len(self.buffer.buffer_frames) or len(self.buffer.buffer_frames)==0 :
+                # print("---WAITING FOR FRAMES ...")
+                #  LAST FRAME
+                time.sleep(.05)
                 continue
             
             # RETURN FRAMES TO NAV
@@ -251,11 +253,10 @@ class StreamReader:
             self.current_time=0
             self.current_sec=0
             self.current_frame_index=0
-    
+ 
     def getNextFrame(self):
         origin_frame,self.current_batch=self.getCurrentFrame() 
         return origin_frame
-
 
     def ProcessAndYieldFrame(self,frame):
         result={}
@@ -267,18 +268,19 @@ class StreamReader:
             if self.save_detectors_results:
                 self.inference_time_records.append(inference_time)
             self.addFrameTime(detection_frame)
-            result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=50)
+            result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=71)
 
         elif self.current_selected_stream== ClientStreamTypeEnum.BACKGROUND_SUBTRACTION:
             foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(copy_frame)
             # self.addInferenceTime(subtraction_frame,inference_time)
             self.addFrameTime(foreground_detection_frame)
-            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=50)
-            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=50)
+            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=71)
+            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=71)
         
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
             tracking_frame=self.tracking_service.apply(copy_frame,threshold= self.threshold ,nms_threshold=self.nms_threshold)
-            result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
+            self.addFrameTime(tracking_frame)
+            result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=71)
             # result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
             # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)
         yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'

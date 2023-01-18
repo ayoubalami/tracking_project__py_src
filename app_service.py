@@ -72,6 +72,8 @@ class AppService:
     def reset_stream(self):
         if self.stream_reader:
             self.stream_reader.reset()
+        if self.tracking_service:
+            self.tracking_service.reset()
         return jsonify('reset stream')
   
     def index(self):
@@ -105,7 +107,9 @@ class AppService:
             selected_video="videos/"+selected_video
             if (selected_video!= self.stream_reader.video_src):
                 self.stream_reader.change_video_file(selected_video)
-                
+                if self.tracking_service:
+                    self.tracking_service.reset()
+               
             # while(True):
             #     sleep(0.01)
                 # if self.stream_reader and (self.stream_reader.buffer or self.stream_source == StreamSourceEnum.WEBCAM)  :
@@ -123,6 +127,7 @@ class AppService:
             self.stream_reader.stop_reading_from_user_action=False
             print("SET TO NEXT FRAME START")
             return jsonify(result='stream started  +1')
+        return jsonify(result='error getting  NEXT FRAME ')
 
 
     def start_offline_detection(self):
@@ -148,23 +153,34 @@ class AppService:
                 return jsonify(error='ERROR model throw exception')
         return jsonify(result='ERROR model is null')
 
-    def update_threshold_value(self,threshold):
-        if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
-            self.raspberry_camera.threshold=float(threshold)
-        else:
-            self.stream_reader.threshold=float(threshold)
-        return jsonify(result='threshold updated ')
+    # def update_threshold_value(self,threshold):
+    #     if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
+    #         self.raspberry_camera.threshold=float(threshold)
+    #     else:
+    #         self.stream_reader.threshold=float(threshold)
+    #     return jsonify(result='threshold updated ')
 
-    def update_nms_threshold_value(self,nms_threshold:float):
+    # def update_nms_threshold_value(self,nms_threshold:float):
+    #     if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
+    #         self.raspberry_camera.nms_threshold=float(nms_threshold)
+    #     else:
+    #         self.stream_reader.nms_threshold=float(nms_threshold)
+    #     return jsonify(result='nmsthreshold updated ')
+
+    def update_cnn_detector_param(self,param,value):
         if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
-            self.raspberry_camera.nms_threshold=float(nms_threshold)
+            if param=='threshold':
+                self.raspberry_camera.threshold=float(value)
+            if param=='nms_threshold':
+                self.raspberry_camera.nms_threshold=float(value)
         else:
-            self.stream_reader.nms_threshold=float(nms_threshold)
-        return jsonify(result='nmsthreshold updated ')
+            if param=='threshold':
+                self.stream_reader.threshold=float(value)
+            if param=='nms_threshold':
+                self.stream_reader.nms_threshold=float(value)
+        return jsonify(result=param+' updated ')
 
     def update_background_subtraction_param(self,param,value):
-        # self.nms_threshold=float(nms_threshold)
-        # self.stream_reader.nms_threshold=self.nms_threshold
         if param=='varThreshold':
             self.background_subtractor_service.background_subtractor.setVarThreshold(int(value))
         if param=='history':
@@ -215,3 +231,22 @@ class AppService:
                 self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
 
         return jsonify(result=stream)
+
+    def track_with(self, param):
+        self.tracking_service.reset()
+        if param=='background_subtraction':
+            self.tracking_service.track_object_by_background_sub=True
+            self.tracking_service.track_object_by_cnn_detection=False
+        if param=='cnn_detection':
+            self.tracking_service.track_object_by_background_sub=False
+            self.tracking_service.track_object_by_cnn_detection=True      
+        return jsonify(result=param)
+
+    def show_missing_tracks(self, value):
+        if value=='true':
+            self.tracking_service.show_missing_tracks=True
+        else:
+            self.tracking_service.show_missing_tracks=False
+        return jsonify(result=value)
+
+ 

@@ -17,6 +17,8 @@ var objectDetectionList=[];
 var loadingDetectionModel=false;
 var selected_model_name=null;
 var showBackgroundSubtractionStream=false;
+var showMissingTracks=false;
+var main_video_stream_error_count=0;
 
 window.onbeforeunload = function(event){
 
@@ -39,50 +41,56 @@ window.onbeforeunload = function(event){
     }
 
 
-    function updateThresholdValue(){
-        var thresholdValueText =  $( "#thresholdValueText" )
-        var newThresholdValue=$( "#thresholdSlider" )[0].value;
-        thresholdValueText.text( newThresholdValue);
+    function updateCNNDetectorParamValue(param){
+        var newParamValueFromSlider= $( "#"+param+"Slider" )[0].value;
+        $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+
+        if (param.startsWith('tracking_')){
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            param=param.substring(9)
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#"+param+"Slider" )[0].value= newParamValueFromSlider;
+        }else{
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"Slider" )[0].value= newParamValueFromSlider;
+        }
+         
         $.ajax({
             type: "POST",
-            url: $SCRIPT_ROOT + '/models/update_threshold/'+newThresholdValue,
+            url: $SCRIPT_ROOT + '/models/update_cnn_detector_param/'+param+'/'+newParamValueFromSlider,
             dataType: "json",
             success: function (data) {
-                console.log("/models/threshold")
-                
+                // paramValueText.text( newParamValueFromSlider);
+                console.log("/models/update_cnn_detector_param is done!") 
             },
             error: function (errMsg) {
-            }
-        });  
-    }
-
-    function updateNmsThresholdValue(){
-       
-        var nmsThresholdValueText =  $( "#nmsThresholdValueText" )
-        var newNmsThresholdValue=$( "#nmsThresholdSlider" )[0].value;
-
-        nmsThresholdValueText.text( newNmsThresholdValue);
-        $.ajax({
-            type: "POST",
-            url: $SCRIPT_ROOT + '/models/update_nms_threshold/'+newNmsThresholdValue,
-            dataType: "json",
-            success: function (data) {
-                console.log("/models/nms_threshold") 
-            },
-            error: function (errMsg) {
+                console.log(" ERROR /models/update_cnn_detector_param ") 
             }
         });  
     }
 
     function updateBackgroundSubtractionParamValue(param){
-        var paramValueText = $( "#"+param+"ValueText" )
+        // tracking_varThreshold
         var newParamValueFromSlider= $( "#"+param+"Slider" )[0].value;
+
+        if (param.startsWith('tracking_')){
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            param=param.substring(9)
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#"+param+"Slider" )[0].value= newParamValueFromSlider;
+        }else{
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"Slider" )[0].value= newParamValueFromSlider;
+        }
+
         $.ajax({
             type: "POST",
             url: $SCRIPT_ROOT + '/models/update_background_subtraction_param/'+param+'/'+newParamValueFromSlider,
             dataType: "json",
             success: function (data) {
-                paramValueText.text( newParamValueFromSlider);
+                // paramValueText.text( newParamValueFromSlider);
                 console.log("/models/update_background_subtraction_param is done!") 
             },
             error: function (errMsg) {
@@ -95,6 +103,7 @@ window.onbeforeunload = function(event){
 function initVideoStreamFrame(){
     var eventSource = new EventSource('/main_video_stream');
     eventSource.onmessage = function(event) {
+        main_video_stream_error_count=0
         var result = JSON.parse(event.data);
         streamKeys=Object.keys(result)
         streamKeys.forEach(stream => {
@@ -102,11 +111,13 @@ function initVideoStreamFrame(){
             videoFrame.attr("src", 'data:image/jpeg;base64,' + result[stream]);
         });        
     };
-    // eventSource.onerror = (err) => {
-    //     console.log("Stream ERROR :", err);
-    //     console.error("Stream done :", err);
-    //     eventSource.close();
-    //   };
+    eventSource.onerror = (err) => {
+        main_video_stream_error_count++;
+        console.log("Stream ERROR :", err);
+        console.error("Stream done :", err);
+        if(main_video_stream_error_count>10)
+            eventSource.close();
+      };
 
     videoInitialized=true;
 }
@@ -214,25 +225,30 @@ function onClickToggleStopStart(){
 
 function fillobjectDetectionSelect(methodsList){
     var objectDetectionSelect = $("#objectDetectionSelect");
+    var tracking_objectDetectionSelect = $("#tracking_objectDetectionSelect");
+
     console.log(methodsList);
     methodsList.forEach(method => {
         var el = document.createElement("option");
         el.textContent = method.name;
         el.value = method.name;
         objectDetectionSelect.append(el);
+        el = document.createElement("option");
+        el.textContent = method.name;
+        el.value = method.name;
+        tracking_objectDetectionSelect.append(el);
     });
 }
 
 function setModelNameText(text){
-    var selectModelText = $("#selectModelText");
-    selectModelText.text(text);
+    $("#selectModelText").text(text);
+    $("#tracking_selectModelText").text(text);
 }
 
 function setModelNameTextToLoadState(newSelectedModel){
-    var selectModelText = $("#selectModelText");
-    selectModelText.text(newSelectedModel + " est en cours de chargement ...");
+    $("#selectModelText").text(newSelectedModel + " est en cours de chargement ...");
+    $("#tracking_selectModelText").text(newSelectedModel + " est en cours de chargement ...");
 }
-
 
 function getObjectDetectionList(){
         $.ajax({
@@ -251,17 +267,19 @@ function getObjectDetectionList(){
     }
 
 
-function onClickLoadModel(){
+function onClickLoadModel(source){
     toggleDisabledLoadingModelButton(true);
     toggleDisabledStartStopButton(true);
     toggleDisabledResetButton(true);
     toggleDisabledNextFrameButton(true);
     
     if (selected_model_name==null){
-        selected_model_name=$( "#objectDetectionSelect" )[0].value
+        if (source=='for_tracking')
+            selected_model_name=$( "#tracking_objectDetectionSelect" )[0].value;
+        else
+            selected_model_name=$( "#objectDetectionSelect" )[0].value;
     }    
     setModelNameTextToLoadState();
-   
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/models/load/'+selected_model_name,
@@ -333,14 +351,15 @@ function sendStartVideoRequest(){
 }
 
  
-
-
-
-
-function onChangeObjectDetection(){
-    console.log($( "#objectDetectionSelect" )[0].value );
-    selected_model_name=$( "#objectDetectionSelect" )[0].value
-    
+function onChangeObjectDetection(source){
+    if (source=='for_tracking'){
+        selected_model_name=$( "#tracking_objectDetectionSelect" )[0].value;
+        $( "#objectDetectionSelect" )[0].value=selected_model_name
+    }else{
+        selected_model_name=$( "#objectDetectionSelect" )[0].value
+        $( "#tracking_objectDetectionSelect" )[0].value=selected_model_name
+    }
+   
 }
 
 function toggleDisabledResetButton(setToDisabled){
@@ -354,8 +373,10 @@ function toggleDisabledResetButton(setToDisabled){
 function toggleDisabledDetectionMethodSelect(setToDisabled){
     if(setToDisabled){
         $("#objectDetectionSelect").prop('disabled', true);
+        $("#tracking_objectDetectionSelect").prop('disabled', true);
     }else{
         $("#objectDetectionSelect").prop('disabled', false);
+        $("#tracking_objectDetectionSelect").prop('disabled', false);
     }
 }
 
@@ -373,13 +394,18 @@ function toggleDisabledStartStopButton(setToDisabled){
 function toggleDisabledLoadingModelButton(setToDisabled,showSpinner=true){
     if (setToDisabled){
         $("#loadModelButton").attr("disabled", true);
+        $("#tracking_loadModelButton").attr("disabled", true);
+        
         if(showSpinner){
             $("#loadModelButton").children().css( "display", "inline-block" )
+            $("#tracking_loadModelButton").children().css( "display", "inline-block" )
         }
         loadingDetectionModel=true;
     }else{
         $("#loadModelButton").attr("disabled", false);
         $("#loadModelButton").children().css( "display", "none" )
+        $("#tracking_loadModelButton").attr("disabled", false);
+        $("#tracking_loadModelButton").children().css( "display", "none" )
         loadingDetectionModel=false;
     }
 }
@@ -480,4 +506,46 @@ function toggleDisabledNextFrameButton(setToDisabled){
     }else{
         $("#goToNextFrameButton").attr("disabled", false);
     }
+}
+
+function onClickTrackWithDetection(){
+    $("#tracking_accordionFlushDetectorParams").show();
+    $("#tracking_accordionFlushBackgroundSubtraction").hide();
+    send_track_with_request('cnn_detection')
+}
+
+function onClickTrackWithBackgroundSubtraction(){
+    $("#tracking_accordionFlushDetectorParams").hide();
+    $("#tracking_accordionFlushBackgroundSubtraction").show();
+    send_track_with_request('background_subtraction')
+}
+
+function send_track_with_request(param){
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/track_with/'+param,
+        dataType: "json",
+        success: function (data) {
+            console.log(" track_with ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN start_stream")
+        }
+    });    
+}
+
+function onCheckedShowMissingTracks(){
+    showMissingTracks=$("#showMissingTracksChecked")[0].checked;
+    console.log(showMissingTracks);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/show_missing_tracks/'+showMissingTracks,
+        dataType: "json",
+        success: function (data) {
+            console.log(" show_missing_tracks ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN show_missing_tracks")
+        }
+    });    
 }

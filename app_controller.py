@@ -46,7 +46,9 @@ def pars_args():
                 detection_service=Yolov5DetectionService()
             # elif args.detection_service in( 'YOLOV8' ,'yv8') :
             #     detection_service=Yolov8DetectionService()
-
+            else:
+                print("PARAM INCORRECT. LOADING DEFAULT DETECTION SERVICE ....")
+                detection_service=OpencvDetectionService()
         else:
             detection_service=OpencvDetectionService()
 
@@ -141,13 +143,18 @@ def get_object_detection_list():
 def load_detection_model(model):
     return app_service.load_detection_model(model=model)
 
-@app.route('/models/update_threshold/<threshold>', methods = ['POST'])
-def update_threshold_value(threshold):
-    return app_service.update_threshold_value(threshold=threshold)
+# @app.route('/models/update_threshold/<threshold>', methods = ['POST'])
+# def update_threshold_value(threshold):
+#     return app_service.update_threshold_value(threshold=threshold)
 
-@app.route('/models/update_nms_threshold/<nms_threshold>', methods = ['POST'])
-def update_nms_threshold_value(nms_threshold):
-    return app_service.update_nms_threshold_value(nms_threshold=nms_threshold)
+# @app.route('/models/update_nms_threshold/<nms_threshold>', methods = ['POST'])
+# def update_nms_threshold_value(nms_threshold):
+#     return app_service.update_nms_threshold_value(nms_threshold=nms_threshold)
+
+
+@app.route('/models/update_cnn_detector_param/<param>/<value>', methods = ['POST'])
+def update_cnn_detector_param(param,value):
+    return app_service.update_cnn_detector_param(param=param,value=value)
 
 @app.route('/models/update_background_subtraction_param/<param>/<value>', methods = ['POST'])
 def update_background_subtraction_param(param,value):
@@ -162,6 +169,15 @@ def switch_client_stream(stream):
 def reset_stream():
     return app_service.reset_stream() 
     # return app_service.clean_memory() 
+
+@app.route('/track_with/<param>', methods = ['POST'])
+def track_with(param):
+    return app_service.track_with(param=param) 
+    # return app_service.clean_memory() 
+
+@app.route('/show_missing_tracks/<value>', methods = ['POST'])
+def show_missing_tracks(value):
+    return app_service.show_missing_tracks(value=value) 
 
 
 if __name__=="__main__":

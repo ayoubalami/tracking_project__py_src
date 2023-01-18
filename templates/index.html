@@ -61,6 +61,7 @@
               <option value="highway3.mp4" title="">highway3.mp4</option>
               <option value="highway4.mp4" title="">highway4.mp4</option>
               <option value="highway5.mp4" title="">highway5.mp4</option>
+              <option value="highway6.mp4" title="">highway6.mp4</option>
             </select>
           </div>
 
@@ -84,7 +85,6 @@
               </button>
             </div>
           </div>
- 
         </div>
         
       </div>
@@ -128,10 +128,10 @@
                         </div>
                         <div class="row my-1">
                           <div class="col input-group">
-                            <select id="objectDetectionSelect" onchange="onChangeObjectDetection()" class="p-2 form-select"
+                            <select id="objectDetectionSelect" onchange="onChangeObjectDetection('for_detection')" class="p-2 form-select"
                               aria-label="Default select example">
                             </select>
-                            <button class="p-2 btn btn-success btn-md w-25" type="button" onclick="onClickLoadModel()"
+                            <button class="p-2 btn btn-success btn-md w-25" type="button" onclick="onClickLoadModel('for_detection')"
                               id="loadModelButton">
                               <span class="spinner-border spinner-border-sm " style="display: none" role="status"
                                 aria-hidden="true"></span>
@@ -147,7 +147,7 @@
                                 <h4 id="thresholdValueText"> 0.5 </h4>
                               </code>
                             </div>
-                            <input type="range" onchange="updateThresholdValue()" min="0" max="1" value="0.5" step="0.1"
+                            <input type="range" onchange="updateCNNDetectorParamValue('threshold')" min="0" max="1" value="0.5" step="0.1"
                               class="slider w-100" id="thresholdSlider">
                           </div>
                           <div class="col-md-6 py-2">
@@ -157,7 +157,7 @@
                                 <h4 id="nmsThresholdValueText"> 0.5 </h4>
                               </code>
                             </div>
-                            <input type="range" onchange="updateNmsThresholdValue()" min="0" max="1" value="0.5" step="0.1"
+                            <input type="range" onchange="updateCNNDetectorParamValue('nmsThreshold')" min="0" max="1" value="0.5" step="0.1"
                               class="slider w-100" id="nmsThresholdSlider">
                           </div>
                         </div>
@@ -254,17 +254,164 @@
             <img id="backgroundSubStream_2" />
           </div>
         </div>
-        <div class="tab-pane container fade" id="trackingStream"> 
+        <div class="tab-pane container px-0  fade" id="trackingStream"> 
+          <div class="col input-group m-2">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="inlineRadioOptions" id="trackWithDetectionRadio" onclick="onClickTrackWithDetection()" value="option1" checked>
+              <label class="form-check-label" for="trackWithDetectionRadio">Track using Detection</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="inlineRadioOptions"  id="trackWithBackgroundSubtractionRadio" onclick="onClickTrackWithBackgroundSubtraction()" value="option2">
+              <label class="form-check-label" for="trackWithBackgroundSubtractionRadio">Track using Background subtraction</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="showMissingTracksChecked"  onclick="onCheckedShowMissingTracks()"  >
+              <label class="form-check-label mx-2" for="flexSwitchCheckChecked" >Show missing tracks</label>
+            </div>
+          </div>
+
+          <div class="accordion accordion-flush px-0 py-2" id="tracking_accordionFlushDetectorParams">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="flush-headingOne">
+                <button class="accordion-button " type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseDetectorParams" aria-expanded="true" aria-controls="flush-collapseDetectorParams">
+                  <h4 class="m-0">
+                    Detector Stream Parametres - For Tracking
+                  </h4>
+                </button>
+              </h2>
+              <div id="flush-collapseDetectorParams" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushDetectorParams">
+                <div class="accordion-body py-0">
+                  <div class="row my-2">
+                    <div class="col input-group">
+                      <h5 class="m-0" id="tracking_selectModelText">
+                        Aucun modele de detection chargé
+                      </h5>
+                    </div>
+                  </div>
+                  <div class="row my-1">
+                    <div class="col input-group">
+                      <select id="tracking_objectDetectionSelect" onchange="onChangeObjectDetection('for_tracking')" class="p-2 form-select"
+                        aria-label="Default select example">
+                      </select>
+                      <button class="p-2 btn btn-success btn-md w-25" type="button" onclick="onClickLoadModel('for_tracking')"
+                        id="tracking_loadModelButton">
+                        <span class="spinner-border spinner-border-sm " style="display: none" role="status"
+                          aria-hidden="true"></span>
+                        load model
+                      </button>
+                    </div>
+                  </div>
+                  <div class="row my-1">
+                    <div class="col-md-6 py-2">
+                      <div class="d-flex" style="align-items: baseline;">
+                        <h5 class="me-3" style="align-self: cente">threshold : </h5>
+                        <code>
+                          <h4 id="tracking_thresholdValueText"> 0.5 </h4>
+                        </code>
+                      </div>
+                      <input type="range" onchange="updateCNNDetectorParamValue('tracking_threshold')" min="0" max="1" value="0.5" step="0.1"
+                        class="slider w-100" id="tracking_thresholdSlider">
+                    </div>
+                    <div class="col-md-6 py-2">
+                      <div class="d-flex" style="align-items: baseline;">
+                        <h5 class="me-3" style="align-self: cente">nms_threshold : </h5>
+                        <code>
+                          <h4 id="tracking_nmsThresholdValueText"> 0.5 </h4>
+                        </code>
+                      </div>
+                      <input type="range" onchange="updateCNNDetectorParamValue('tracking_nmsThreshold')" min="0" max="1" value="0.5" step="0.1"
+                        class="slider w-100" id="tracking_nmsThresholdSlider">
+                    </div>
+                  </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+          <div class="accordion accordion-flush px-0 py-2" id="tracking_accordionFlushBackgroundSubtraction">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="flush-headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-BackgroundSub" aria-expanded="true" aria-controls="flush-collapse-BackgroundSub" >
+                  <h4 class="m-0">
+                    Background subtraction Stream Parametres - for tracking
+                  </h4>
+                </button>
+              </h2>
+              <div id="flush-collapse-BackgroundSub" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushBackgroundSubtraction">
+                <div class="accordion-body">
+                    <div class="row my-1">
+                      <div class="col-md-6 py-2 ">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">varThreshold : </h5>
+                          <code>
+                            <h4 id="tracking_varThresholdValueText"> 100 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_varThreshold')" min="1" max="255" value="100" step="1"
+                          class="slider w-100" id="tracking_varThresholdSlider">
+                      </div> 
+                      <div class="col-md-6 py-2 ">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">history : </h5>
+                          <code>
+                            <h4 id="tracking_historyValueText"> 400 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_history')" min="0" max="1000" value="400" step="5"
+                          class="slider w-100" id="tracking_historySlider">
+                      </div>
+                    </div>
+                    <div class="row my-1">
+                      <div class="col-md-6 py-1">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">morphologyEx iteration : </h5>
+                          <code>
+                            <h4 id="tracking_morphologicalExValueText"> 3 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_morphologicalEx')" min="0" max="5" value="3" step="1"
+                          class="slider w-100" id="tracking_morphologicalExSlider">
+                      </div>
+                      <div class="col-md-6 py-1">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">kernel size : </h5>
+                          <code>
+                            <h4 id="tracking_morphologicalKernelSizeValueText"> 7 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_morphologicalKernelSize')" min="3" max="11" value="7" step="2"
+                          class="slider w-100" id="tracking_morphologicalKernelSizeSlider">
+                      </div>
+                      <div class="col-md-6 py-1">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">Blur kernel size : </h5>
+                          <code>
+                            <h4 id="tracking_blurKernelSizeValueText"> 3 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_blurKernelSize')" min="1" max="11" value="5" step="2"
+                          class="slider w-100" id="tracking_blurKernelSizeSlider">
+                      </div>
+                      <div class="col-md-6 py-1">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">min detected area : </h5>
+                          <code>
+                            <h4 id="tracking_minBoxSizeValueText"> 300 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_minBoxSize')" min="100" max="2500" value="300" step="100"
+                          class="slider w-100" id="tracking_minBoxSizeSlider">
+                      </div> 
+                    </div>      
+                </div>
+              </div>
+            </div>
+          </div>
           <div  class="col" style="display: flex; flex-direction: column;width: 100%;">
             <img id="trackingStream_1" />
             <img id="trackingStream_2" />
           </div>
         </div>
       </div>
-  
-
   </div>
 </body>
-
-
 </html>
