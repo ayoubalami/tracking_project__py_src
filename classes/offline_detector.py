@@ -22,7 +22,7 @@ class OfflineDetector:
         # self.video_writer= cv2.VideoWriter('/root/shared/out.mp4', cv2.VideoWriter_fourcc('M','J','P','G'), 10, (int(width ),int(height )))
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         output_filename='out.mp4'
-        if self.detection_service.get_selected_model() !=None:
+        if self.detection_service and self.detection_service.get_selected_model() !=None:
             output_filename=self.detection_service.get_selected_model()['name']+"-out.mp4"
         self.video_writer = cv2.VideoWriter('/root/shared/out_videos/'+output_filename, fourcc, 20, (width, height), True)
  

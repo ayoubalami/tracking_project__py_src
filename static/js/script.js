@@ -97,7 +97,6 @@ window.onbeforeunload = function(event){
                 console.log(" ERROR /models/update_background_subtraction_param ") 
             }
         });  
-
     }
     
 function initVideoStreamFrame(){
@@ -115,14 +114,12 @@ function initVideoStreamFrame(){
         main_video_stream_error_count++;
         console.log("Stream ERROR :", err);
         console.error("Stream done :", err);
-        if(main_video_stream_error_count>10)
+        if(main_video_stream_error_count>5)
             eventSource.close();
       };
 
     videoInitialized=true;
 }
-
-
 
 function initData(){
     getObjectDetectionList();
@@ -152,7 +149,6 @@ function onClickReset(){
     });  
 }
 
-
 function stopStreamOnReset(){
     if(is_running_stream){
         toggleDisabledStartStopButton(true);
@@ -161,7 +157,6 @@ function stopStreamOnReset(){
         sendStopVideoRequest();
         is_running_stream=!is_running_stream
     }
-    
 } 
 
 function onClickStartOfflineDetection(){
@@ -170,19 +165,20 @@ function onClickStartOfflineDetection(){
     toggleDisabledDetectionMethodSelect(true);
     toggleDisabledLoadingModelButton(true,showSpinner=false);
     toggleDisabledResetButton(true);
-
+    toggleDisabledNextFrameButton(true);
     $("#offlineDetectionButton").attr("disabled", true);
     $("#offlineDetectionButton").children().css( "display", "inline-block" )
-
+    selectedVideo=$('#inputVideoFile').find(":selected").val();
     $.ajax({
         type: "POST",
-        url: $SCRIPT_ROOT + '/start_offline_detection',
+        url: $SCRIPT_ROOT + '/start_offline_detection/'+selectedVideo,
         dataType: "json",
         success: function (data) {
             toggleDisabledStartStopButton(false);
             toggleDisabledDetectionMethodSelect(false);
             toggleDisabledLoadingModelButton(false,showSpinner=false);
             toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false);
             $("#offlineDetectionButton").attr("disabled", false);
             $("#offlineDetectionButton").children().css( "display", "none" )
             console.log("  start_offline_detection  success")
@@ -194,12 +190,10 @@ function onClickStartOfflineDetection(){
             toggleDisabledResetButton(false);
             $("#offlineDetectionButton").attr("disabled", false);
             $("#offlineDetectionButton").children().css( "display", "none" )
-
             console.log(" ERROR IN start_offline_detection")
         }
     });  
 }
-
 
 function onClickToggleStopStart(){        
     if(is_running_stream){
@@ -272,7 +266,9 @@ function onClickLoadModel(source){
     toggleDisabledStartStopButton(true);
     toggleDisabledResetButton(true);
     toggleDisabledNextFrameButton(true);
-    
+    $("#offlineDetectionButton").attr("disabled", true);
+    $("#offlineTrackingButton").attr("disabled", true);
+
     if (selected_model_name==null){
         if (source=='for_tracking')
             selected_model_name=$( "#tracking_objectDetectionSelect" )[0].value;
@@ -291,7 +287,9 @@ function onClickLoadModel(source){
             toggleDisabledStartStopButton(false);
             toggleDisabledResetButton(false);
             toggleDisabledNextFrameButton(false);
-
+            $("#offlineDetectionButton").attr("disabled", false);
+            $("#offlineTrackingButton").attr("disabled", false);
+        
             setModelNameText(""+selected_model_name +" est chargé correctement.") 
             // return e
         },
@@ -326,6 +324,7 @@ function sendStopVideoRequest(){
         }
     });
 }
+
 function sendStartVideoRequest(){
     selectedVideo=$('#inputVideoFile').find(":selected").val();
       $.ajax({
@@ -334,7 +333,6 @@ function sendStartVideoRequest(){
         dataType: "json",
         success: function (data) {
             console.log(" start_stream "+selectedVideo)
-           
             // intervalID = setInterval(update_values, 600);
             $('#startStopButton').html( 'Stop');
             // $('#startStopButton').attr("class","btn btn-danger btn-lg w-25");
@@ -359,7 +357,6 @@ function onChangeObjectDetection(source){
         selected_model_name=$( "#objectDetectionSelect" )[0].value
         $( "#tracking_objectDetectionSelect" )[0].value=selected_model_name
     }
-   
 }
 
 function toggleDisabledResetButton(setToDisabled){
@@ -389,7 +386,6 @@ function toggleDisabledStartStopButton(setToDisabled){
         loadingStartStopButton=false;
     }
 }
-
 
 function toggleDisabledLoadingModelButton(setToDisabled,showSpinner=true){
     if (setToDisabled){
@@ -429,10 +425,8 @@ function update_values() {
 function load_duration() {
     $.getJSON($SCRIPT_ROOT + '/video_duration',
         function (data) {
-
             video_duration = data.result
             $('#myRange').attr("max", data.result)
-
         });
 }
 
@@ -458,7 +452,6 @@ function onClickSwitchTab(stream){
     });  
 }
 
-
 function changeServerApi(){
 
     if  (secondApiIpChecked==false){
@@ -471,11 +464,8 @@ function changeServerApi(){
         $SCRIPT_ROOT = "http://"+api_server+":8000/"
         secondApiIpChecked=true
         getObjectDetectionList()
-
     }
-
 }
-
  
 function sendGoToNextFrameRequest(){
     toggleDisabledNextFrameButton(true);
@@ -548,4 +538,78 @@ function onCheckedShowMissingTracks(){
             console.log(" ERROR IN show_missing_tracks")
         }
     });    
+}
+
+function onClickStartOfflineTracking(){
+
+    toggleDisabledStartStopButton(true);
+    toggleDisabledDetectionMethodSelect(true);
+    toggleDisabledLoadingModelButton(true,showSpinner=false);
+    toggleDisabledResetButton(true);
+    toggleDisabledNextFrameButton(true)
+    $("#offlineDetectionButton").attr("disabled", true);
+    $("#offlineDetectionButton").children().css( "display", "inline-block" )
+    $("#offlineTrackingButton").attr("disabled", true);
+    $("#offlineTrackingButton").children().css( "display", "inline-block" )
+    selectedVideo=$('#inputVideoFile').find(":selected").val();
+
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/start_offline_tracking/'+selectedVideo,
+        dataType: "json",
+        success: function (data) {
+            toggleDisabledStartStopButton(false);
+            toggleDisabledDetectionMethodSelect(false);
+            toggleDisabledLoadingModelButton(false,showSpinner=false);
+            toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false)
+            $("#offlineDetectionButton").attr("disabled", false);
+            $("#offlineDetectionButton").children().css( "display", "none" )
+            $("#offlineTrackingButton").attr("disabled", false);
+            $("#offlineTrackingButton").children().css( "display", "none" )
+            console.log("  start_offline_tracking  success")
+        },
+        error: function (errMsg) {
+            toggleDisabledStartStopButton(true);
+            toggleDisabledDetectionMethodSelect(true);
+            toggleDisabledLoadingModelButton(true,showSpinner=false);
+            toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false)
+            $("#offlineDetectionButton").attr("disabled", false);
+            $("#offlineDetectionButton").children().css( "display", "none" )
+            $("#offlineTrackingButton").attr("disabled", false);
+            $("#offlineTrackingButton").children().css( "display", "none" )
+            console.log(" ERROR IN start_offline_tracking")
+        }
+    });  
+}
+
+function onCheckedActivateStreamSimulation(){
+    activateStreamSimulation=$("#streamStimulationCheckbox")[0].checked;
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/activate_stream_simulation/'+activateStreamSimulation,
+        dataType: "json",
+        success: function (data) {
+            console.log(" activate_stream_simulation ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN activate_stream_simulation")
+        }
+    });
+}
+
+function onCheckedUseCNNFeatureExtraction(){
+    useCNNFeatureExtractionCheckbox=$("#useCNNFeatureExtractionCheckbox")[0].checked;
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/use_cnn_feature_extraction_on_tracking/'+useCNNFeatureExtractionCheckbox,
+        dataType: "json",
+        success: function (data) {
+            console.log(" activate_stream_simulation ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN activate_stream_simulation")
+        }
+    });   
 }

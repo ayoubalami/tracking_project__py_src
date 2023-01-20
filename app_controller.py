@@ -130,9 +130,13 @@ def start_stream(selected_video):
 def get_next_frame():
     return app_service.go_to_next_frame()
 
-@app.route('/start_offline_detection', methods = ['POST'])
-def start_offline_detection():
-    return app_service.start_offline_detection()
+@app.route('/start_offline_detection/<selected_video>', methods = ['POST'])
+def start_offline_detection(selected_video):
+    return app_service.start_offline_detection(selected_video)
+
+@app.route('/start_offline_tracking/<selected_video>', methods = ['POST'])
+def start_offline_tracking(selected_video):
+    return app_service.start_offline_tracking(selected_video)
 
 @app.route('/get_object_detection_list', methods = ['GET'])
 def get_object_detection_list():
@@ -179,6 +183,13 @@ def track_with(param):
 def show_missing_tracks(value):
     return app_service.show_missing_tracks(value=value) 
 
+@app.route('/activate_stream_simulation/<value>', methods = ['POST'])
+def activate_stream_simulation(value):
+    return app_service.activate_stream_simulation(value=value) 
+
+@app.route('/use_cnn_feature_extraction_on_tracking/<value>', methods = ['POST'])
+def use_cnn_feature_extraction_on_tracking(value):
+    return app_service.use_cnn_feature_extraction_on_tracking(value=value) 
 
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)

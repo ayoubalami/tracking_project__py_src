@@ -25,7 +25,7 @@ class StreamReader:
     nms_threshold=0.5
     threshold=0.5
     np.random.seed(123)
-   
+
     def clean_memory(self):
         print("CALL DESTRUCTER FROM STREAM READER ")
         if  self.buffer:
@@ -55,6 +55,7 @@ class StreamReader:
         self.stop_reading_to_clean=False
         self.tracking_service:TrackingService=None
         self.background_subtractor_service=None
+        self.activate_stream_simulation=True
 
         if self.stream_source==StreamSourceEnum.FILE:
             self.buffer=Buffer(stream_source=StreamSourceEnum.FILE, video_src=video_src)
@@ -164,7 +165,12 @@ class StreamReader:
                 self.current_sec=self.current_sec+1
                 new_sec=self.current_sec
             # GO to THE NEXT FRAME
-            self.current_frame_index=self.current_frame_index + floor(jump_frame) 
+
+            # STREAM SIMULATION or  OFFLINE SIMULATION
+            if self.activate_stream_simulation:
+                self.current_frame_index=self.current_frame_index + floor(jump_frame) 
+            else:
+                self.current_frame_index=self.current_frame_index + 1 
             
             # sleep if the FPS is too high 
             if current_fps > self.buffer.fps:

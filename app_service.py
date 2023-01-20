@@ -19,6 +19,7 @@ from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.tracking_service.tracking_service import TrackingService
 from classes.webcam_reader import WebcamReader
 from classes.raspberry_camera_reader import RaspberryCameraReader
+from classes.tracking_service.offline_tracker import OfflineTracker
 from utils_lib.enums import ClientStreamTypeEnum
 
 
@@ -106,6 +107,7 @@ class AppService:
         else:
             selected_video="videos/"+selected_video
             if (selected_video!= self.stream_reader.video_src):
+                self.video_src=selected_video
                 self.stream_reader.change_video_file(selected_video)
                 if self.tracking_service:
                     self.tracking_service.reset()
@@ -130,15 +132,34 @@ class AppService:
         return jsonify(result='error getting  NEXT FRAME ')
 
 
-    def start_offline_detection(self):
+    def start_offline_detection(self,selected_video):
         # wait for streamer to be created before starting
         print(" START OfflineDetection")
+        selected_video="videos/"+selected_video
+        if (selected_video!= self.stream_reader.video_src):
+            self.video_src=selected_video
+            self.stream_reader.change_video_file(selected_video)
         self.offline_detector=OfflineDetector(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src ) 
         self.offline_detector.threshold= self.stream_reader.threshold  
         self.offline_detector.nms_threshold=self.stream_reader.nms_threshold
         self.offline_detector.start()
         return jsonify(result='OfflineDetector started')
 
+    def start_offline_tracking(self,selected_video):
+        # wait for streamer to be created before starting
+        print(" START OfflineTracker")
+        selected_video="videos/"+selected_video
+        if (selected_video!= self.stream_reader.video_src):
+            self.video_src=selected_video
+            self.stream_reader.change_video_file(selected_video)
+            if self.tracking_service:
+                self.tracking_service.reset()
+        self.offline_tracker=OfflineTracker(tracking_service=self.tracking_service,stream_source=self.stream_source ,video_src=self.video_src ) 
+        self.offline_tracker.threshold= self.stream_reader.threshold  
+        self.offline_tracker.nms_threshold=self.stream_reader.nms_threshold
+        self.offline_tracker.start()
+        return jsonify(result='OfflineDetector started')
+    
     def get_object_detection_list(self):
         if self.detection_service!=None :
             return jsonify(self.detection_service.get_object_detection_models())
@@ -249,4 +270,20 @@ class AppService:
             self.tracking_service.show_missing_tracks=False
         return jsonify(result=value)
 
+    def activate_stream_simulation(self, value):
+        if value=='true':
+            self.stream_reader.activate_stream_simulation=True
+        else:
+            self.stream_reader.activate_stream_simulation=False
+        return jsonify(result=value)
+ 
+    def use_cnn_feature_extraction_on_tracking(self,value):
+        if value=='true':
+            self.tracking_service.use_cnn_feature_extraction=True
+        else:
+            self.tracking_service.use_cnn_feature_extraction=False
+           
+        self.tracking_service.reset()
+
+        return jsonify(result=value)
  

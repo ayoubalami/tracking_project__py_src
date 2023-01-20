@@ -136,43 +136,42 @@ class OpencvDetectionService(IDetectionService):
             [138.42940829, 219.02379358, 166.29923782],
             [ 59.40987365, 197.51795215,  34.32644182],
             [ 42.21779254, 156.23398212,  60.88976857]]
-      
 
-
-    def detect_objects(self, frame,threshold:float,nms_threshold:float):
+    def detect_objects(self, frame,threshold:float,nms_threshold:float,boxes_plotting=True):
         # frame=frame.copy()
         # classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
         start_time= time.perf_counter()
         classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
         inference_time=np.round(time.perf_counter()-start_time,3)
-
         bboxs=list(bboxs)
         confidences=list(np.array(confidences).reshape(1,-1)[0])
         confidences=list(map(float,confidences))
         bboxIdx=cv2.dnn.NMSBoxes(bboxs,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
-             
+        raw_detection_data=[]
         if len(bboxIdx) !=0 :
             for i in range (0,len(bboxIdx)):
                 bbox=bboxs[np.squeeze(bboxIdx[i])]
                 classConfidence = confidences[bboxIdx[i]]
                 classLabelID=np.squeeze(classLabelIDs[bboxIdx[i]])
-
-
                 classLabel = self.classesList[classLabelID]
                 classColor = (236,106,240)
                 if (classLabelID in self.classAllowed)==True:
                     classLabel = self.classesList[classLabelID]
                     classColor = self.colorList[self.classAllowed.index(classLabelID)]
-
                 displayText = '{}: {:.2f}'.format(classLabel, classConfidence) 
-                
                 x,y,w,h=bbox
-                cv2.rectangle(frame,(x,y),(x+w,y+h),color=classColor,thickness=2)
-                cv2.putText(frame, displayText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
+                if boxes_plotting :
+                    cv2.rectangle(frame,(x,y),(x+w,y+h),color=classColor,thickness=2)
+                    cv2.putText(frame, displayText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
+                else:
+                    raw_detection_data.append(([x, y, w, h],classConfidence,classLabel))
 
-        fps = 1 / np.round(time.perf_counter()-start_time,3)
-        self.addFrameFps(frame,fps)
-        return frame,inference_time
+        if boxes_plotting :
+            fps = 1 / np.round(time.perf_counter()-start_time,3)
+            self.addFrameFps(frame,fps)
+            return frame,inference_time
+        else:
+            return frame,raw_detection_data
 
 
     def init_object_detection_models_list(self):

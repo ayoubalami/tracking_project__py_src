@@ -8,52 +8,78 @@ from utils_lib.enums import SurveillanceRegionEnum
 from classes.background_subtractor_service import BackgroundSubtractorService
 
 from classes.detection_service import IDetectionService
-from utils_lib.utils_functions import addTrackingFrameFps
+from utils_lib.utils_functions import addTrackingFrameFps,addTrackingAndDetectionTime
 
 from utils_lib.deep_sort import preprocessing
 from utils_lib.deep_sort import nn_matching
 from utils_lib.deep_sort.detection import Detection
 from utils_lib.deep_sort.tracker import Tracker
 from _collections import deque
-
+from utils_lib.deep_sort.tools import generate_detections as gdet
 class TrackingService():
     track_object_by_background_sub=False
     track_object_by_cnn_detection=True
     # feature_detector = cv2.BRISK_create()
     show_missing_tracks=False
-    pts = [deque(maxlen=30) for _ in range(1000)]
+    pts = [deque(maxlen=50) for _ in range(1000)]
     background_subtractor_service:BackgroundSubtractorService=None    
     detection_service:IDetectionService=None    
     d_start,d_height,tr_start,tr_height= 200,100,300,500
     is_region_initialization_done=False   
-    n_init=2
+    n_init=3
     max_age=30
-    max_iou_distance=0.75
-    max_cosine_distance = 0.7
-
+    max_iou_distance=0.5
+    max_cosine_distance = 0.2
+    feature_extractor_model_file='utils_lib/deep_sort/models/mars-small128.pb'
+    encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
     colors = {}
+    use_cnn_feature_extraction=False
 
     def __init__(self,detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService):
         self.background_subtractor_service=background_subtractor_service
         self.detection_service=detection_service
         nn_budget = None
         # nms_max_overlap = 0.8
-        self.metric = nn_matching.NearestNeighborDistanceMetric('euclidean', self.max_cosine_distance, nn_budget)
+        # euclidean
+        self.metric = nn_matching.NearestNeighborDistanceMetric('cosine', self.max_cosine_distance, nn_budget)
         self.tracker = Tracker(self.metric,max_iou_distance=self.max_iou_distance, max_age=self.max_age, n_init=self.n_init)
 
     def apply(self,frame,threshold=0.5 ,nms_threshold=0.5): 
-
         start_time=time.perf_counter()
         detection_frame  ,raw_detection_data=self.getRawDetection(frame,threshold=threshold ,nms_threshold=nms_threshold)
-        tracking_detections = [Detection(np.array(bbox),score, class_name, self.calculateFeatures(detection_frame,bbox)) for bbox, score, class_name in
-                  raw_detection_data]
-                
+        detection_time=round(time.perf_counter()-start_time,3)
+        
+        tracking_time=time.perf_counter()
+        self.trackAndDrawBox(detection_frame,raw_detection_data)
+        tracking_time=round(time.perf_counter()-tracking_time,4)
+
+        if round(time.perf_counter()-start_time,3)>0:
+            fps=1/round(time.perf_counter()-start_time,3)
+            addTrackingFrameFps(detection_frame,fps)
+        else :
+            addTrackingFrameFps(detection_frame,None)
+
+        addTrackingAndDetectionTime(detection_frame,detection_time,tracking_time)
+        return detection_frame
+
+    def trackAndDrawBox(self,detection_frame,raw_detection_data):
+        
+        bboxes = [np.array(raw_data[0]) for raw_data  in raw_detection_data]       
+        scores = [raw_data[1] for raw_data  in raw_detection_data]       
+        class_names = [raw_data[2] for raw_data  in raw_detection_data]       
+        self.drawDetectedBBoxes(detection_frame,bboxes)
+        if self.use_cnn_feature_extraction:
+            features = self.encoder(detection_frame, bboxes)
+        else:
+            features=  [np.array([]) for _  in bboxes] 
+        tracking_detections = [Detection(bbox, score, class_name, feature) for bbox, score, class_name, feature in
+                  zip(bboxes, scores, class_names, features)]
+
         self.tracker.predict()
         self.tracker.update(tracking_detections)
-
         for track in self.tracker.tracks:
             if (not track.is_confirmed() or track.time_since_update >1):
-                if self.show_missing_tracks :
+                if self.show_missing_tracks:
                     bbox = track.to_tlbr()
                     cv2.rectangle(detection_frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])), (255,255,255), 2)
                     cv2.putText(detection_frame, "?", (int(((bbox[0]) + (bbox[2]))/2)-10, int(((bbox[1]) + (bbox[3]))/2)), 0, 0.85,
@@ -64,9 +90,9 @@ class TrackingService():
                 color = self.getTrackedColor(int(track.track_id))
                 # color = (32,122,200)
                 cv2.rectangle(detection_frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])), color, 2)
-                cv2.rectangle(detection_frame, (int(bbox[0]), int(bbox[1]-30)), (int(bbox[0])+(len(class_name)
+                cv2.rectangle(detection_frame, (int(bbox[0]), int(bbox[1]-20)), (int(bbox[0])+(len(class_name)
                             +len(str(track.track_id)))*17, int(bbox[1])), color, -1)
-                cv2.putText(detection_frame, class_name+"-"+str(track.track_id), (int(bbox[0]), int(bbox[1]-10)), 0, 0.75,
+                cv2.putText(detection_frame, class_name+"-"+str(track.track_id), (int(bbox[0]), int(bbox[1]-3)), 0, 0.6,
                             (255, 255, 255), 2)        
                 center = (int(((bbox[0]) + (bbox[2]))/2), int(((bbox[1])+(bbox[3]))/2))
                 self.pts[track.track_id].append(center)
@@ -77,23 +103,12 @@ class TrackingService():
                     thickness = int(np.sqrt(64/float(j+1))*1.5)
                     cv2.line(detection_frame, (self.pts[track.track_id][j-1]), (self.pts[track.track_id][j]), color, thickness)
 
-        try:
-            fps=1/round(time.perf_counter()-start_time,3)
-            addTrackingFrameFps(detection_frame,fps)
-        except:
-            addTrackingFrameFps(detection_frame,60)
-        return detection_frame
-
-
     def getRawDetection(self,origin_frame,threshold=0.5 ,nms_threshold=0.5): 
-        
         if self.track_object_by_cnn_detection==True and self.detection_service !=None and self.detection_service.get_selected_model() !=None:
             return  self.detection_service.detect_objects(origin_frame,threshold= threshold ,nms_threshold=nms_threshold,boxes_plotting=False)
-        
         if self.track_object_by_background_sub==True and self.background_subtractor_service !=None :
             return  self.background_subtractor_service.apply(origin_frame,boxes_plotting=False)
         return origin_frame,[]
-
 
     def getTrackedColor(self,track_id):
         if self.colors.get(track_id):
@@ -106,20 +121,23 @@ class TrackingService():
             return color
   
     def reset(self):
+        self.tracker.tracks=[]
         self.tracker=Tracker(self.metric,max_iou_distance=self.max_iou_distance, max_age=self.max_age, n_init=self.n_init)
         self.pts = [deque(maxlen=30) for _ in range(1000)]
         self.colors={}
         # pass
 
-    def  calculateFeatures (self,frame,bbox):
-        x,y,w,h=bbox
-        sub_frame=frame[y:y+h, x:x+w] 
-        feature =np.array([])
-        white_rect = np.zeros(sub_frame.shape, dtype=np.uint8) 
-        white_rect[:, :, 1] = 255
-        res = cv2.addWeighted(sub_frame, 0.5, white_rect, 0.2, 1.0)
-        frame[y:y+h, x:x+w]=res
-        return feature
+    def  drawDetectedBBoxes (self,frame,bboxes):
+        for bbox in bboxes:
+            x,y,w,h=bbox
+            # print(bbox)
+            sub_frame=frame[y:y+h, x:x+w] 
+            white_rect = np.zeros(sub_frame.shape, dtype=np.uint8) 
+            white_rect[:, :, 1] = 255
+            res = cv2.addWeighted(sub_frame, 0.5, white_rect, 0.2, 1.0)
+            frame[y:y+h, x:x+w]=res
+            cv2.rectangle(frame, ( x,y), (x+w,y+h), (255,255,255), 3)
+
 
 
 
