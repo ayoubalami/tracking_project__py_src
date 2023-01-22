@@ -525,7 +525,7 @@ function send_track_with_request(param){
 }
 
 function onCheckedShowMissingTracks(){
-    showMissingTracks=$("#showMissingTracksChecked")[0].checked;
+    showMissingTracks=$("#showMissingTracksCheckbox")[0].checked;
     console.log(showMissingTracks);
     $.ajax({
         type: "POST",
@@ -612,4 +612,35 @@ function onCheckedUseCNNFeatureExtraction(){
             console.log(" ERROR IN activate_stream_simulation")
         }
     });   
+}
+
+function onCheckedActivateDetection(){
+    activateDetection=$("#activateDetectionCheckbox")[0].checked;
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/activate_detection/'+activateDetection,
+        dataType: "json",
+        success: function (data) {
+            console.log(" activate_detection ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN activate_detection")
+        }
+    });
+}
+
+function updateTrackingParamValue(param){
+    var newParamValueFromSlider= $( "#"+param+"Slider" )[0].value;
+    $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/update_tracking_param/'+param+'/'+newParamValueFromSlider,
+        dataType: "json",
+        success: function (data) {
+            console.log("/update_tracking_param is done!")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /update_tracking_param ")
+        }
+    });  
 }

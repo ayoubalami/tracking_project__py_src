@@ -282,8 +282,20 @@ class AppService:
             self.tracking_service.use_cnn_feature_extraction=True
         else:
             self.tracking_service.use_cnn_feature_extraction=False
-           
         self.tracking_service.reset()
-
+        return jsonify(result=value)
+        
+    def activate_detection_for_tracking(self,value):
+        if value=='true':
+            self.tracking_service.activate_detection_for_tracking=True
+        else:
+            self.tracking_service.activate_detection_for_tracking=False
         return jsonify(result=value)
  
+    def update_tracking_param_value(self,param,value):
+        if self.tracking_service:
+            if param == 'maxCosDistance':
+                self.tracking_service.threshold_feature_distance= float(value)
+            if param =='maxIou':
+                self.tracking_service.tracker.max_iou_distance= float(value)
+        return jsonify(result=value)

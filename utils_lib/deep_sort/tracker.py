@@ -129,8 +129,13 @@ class Tracker:
             linear_assignment.min_cost_matching(
                 iou_matching.iou_cost, self.max_iou_distance, self.tracks,
                 detections, iou_track_candidates, unmatched_detections)
+        # print(self.max_iou_distance)
 
+        # print(matches_a)
+        # print(matches_b)
         matches = matches_a + matches_b
+        # print(matches)
+
         unmatched_tracks = list(set(unmatched_tracks_a + unmatched_tracks_b))
         return matches, unmatched_tracks, unmatched_detections
 

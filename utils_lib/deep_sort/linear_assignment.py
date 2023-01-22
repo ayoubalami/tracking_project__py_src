@@ -52,9 +52,15 @@ def min_cost_matching(
     if len(detection_indices) == 0 or len(track_indices) == 0:
         return [], track_indices, detection_indices  # Nothing to match.
 
+    # print("--------")
     cost_matrix = distance_metric(
         tracks, detections, track_indices, detection_indices)
+    # print(cost_matrix)
     cost_matrix[cost_matrix > max_distance] = max_distance + 1e-5
+    # print(max_distance)
+    # print(cost_matrix)
+    # print("*********")
+
     indices = linear_sum_assignment(cost_matrix)
     indices = np.asarray(indices)
     indices = np.transpose(indices)

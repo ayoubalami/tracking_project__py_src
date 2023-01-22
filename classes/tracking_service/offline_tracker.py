@@ -31,7 +31,7 @@ class OfflineTracker:
         print(str(self.threshold)+" threshold")
         print(str(self.nms_threshold)+" nms threshold")
         i=0
-        max_out_frames=400
+        max_out_frames=2400
         step=math.ceil(max_out_frames/10)
         while True:
             success, frame = self.cap.read()

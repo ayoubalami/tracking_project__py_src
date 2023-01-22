@@ -36,6 +36,8 @@ def iou(bbox, candidates):
     area_intersection = wh.prod(axis=1)
     area_bbox = bbox[2:].prod()
     area_candidates = candidates[:, 2:].prod(axis=1)
+    # print('area_intersection / (area_bbox + area_candidates - area_intersection)')
+    # print(area_intersection / (area_bbox + area_candidates - area_intersection))
     return area_intersection / (area_bbox + area_candidates - area_intersection)
 
 

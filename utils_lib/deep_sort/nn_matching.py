@@ -108,10 +108,10 @@ def _nn_cosine_distance(x, y):
 
     distances = _cosine_distance(x, y)
     
-    # print("====")
-    # print(x)
-    # print(y)
+    # print("====_cosine_distance=====")
+
     # print(distances)
+    # print(distances.min(axis=0))
     return distances.min(axis=0)
 
 

@@ -191,6 +191,15 @@ def activate_stream_simulation(value):
 def use_cnn_feature_extraction_on_tracking(value):
     return app_service.use_cnn_feature_extraction_on_tracking(value=value) 
 
+@app.route('/activate_detection/<value>', methods = ['POST'])
+def activate_detection_for_tracking(value):
+    return app_service.activate_detection_for_tracking(value=value) 
+
+@app.route('/update_tracking_param/<param>/<value>', methods = ['POST'])
+def update_tracking_param_value(param,value):
+    return app_service.update_tracking_param_value(param=param,value=value) 
+
+
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)
 

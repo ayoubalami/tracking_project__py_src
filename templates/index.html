@@ -258,35 +258,95 @@
             <img id="backgroundSubStream_2" />
           </div>
         </div>
-        <div class="tab-pane container px-0  fade" id="trackingStream"> 
-          <div class="col input-group m-2">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="useCNNFeatureExtractionCheckbox"  onclick="onCheckedUseCNNFeatureExtraction()"  >
-              <label class="form-check-label mx-2" for="useCNNFeatureExtractionCheckbox" >Use CNN Feature Extraction</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="inlineRadioOptions" id="trackWithDetectionRadio" onclick="onClickTrackWithDetection()"  checked>
-              <label class="form-check-label" for="trackWithDetectionRadio">Track using Detection</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="inlineRadioOptions"  id="trackWithBackgroundSubtractionRadio" onclick="onClickTrackWithBackgroundSubtraction()" >
-              <label class="form-check-label" for="trackWithBackgroundSubtractionRadio">Track using Background subtraction</label>
-            </div>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="showMissingTrackscheckbox"  onclick="onCheckedShowMissingTracks()"  >
-              <label class="form-check-label mx-2" for="showMissingTrackscheckbox" >Show missing tracks</label>
-            </div>
-            <div class="btn-group" role="group" aria-label="First group">
-              <button class="p-2 btn btn-warning btn-lg " onclick="onClickStartOfflineTracking()"
-                id="offlineTrackingButton">
-                <span class="spinner-border spinner-border-sm " style="display: none" role="status"
-                  aria-hidden="true">
-                </span>
-                Start offline tracking
-              </button>
+        <div class="tab-pane container px-0  fade" id="trackingStream">  
+          <div class="accordion accordion-flush px-0 py-2" id="tracking_accordionFlushMainParams">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="flush-headingOne">
+                <button class="accordion-button " type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTrackingParams" aria-expanded="true" aria-controls="flush-collapseDetectorParams">
+                  <h4 class="m-0">
+                    Tracking Parametres 
+                  </h4>
+                </button>
+              </h2>
+              <div id="flush-collapseTrackingParams" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne" data-bs-parent="#tracking_accordionFlushMainParams">
+                <div class="accordion-body py-0">
+                  <div class="row my-2">
+                    <div class="col-md-6 align-items-center">
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="trackWithDetectionRadio" onclick="onClickTrackWithDetection()"  checked>
+                        <label class="form-check-label" for="trackWithDetectionRadio">Track using Detection</label>
+                      </div>
+                      <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="inlineRadioOptions"  id="trackWithBackgroundSubtractionRadio" onclick="onClickTrackWithBackgroundSubtraction()" >
+                        <label class="form-check-label" for="trackWithBackgroundSubtractionRadio">Track using Background subtraction</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="useCNNFeatureExtractionCheckbox"  onclick="onCheckedUseCNNFeatureExtraction()"  >
+                        <label class="form-check-label mx-2" for="useCNNFeatureExtractionCheckbox" >Use CNN Feature Extraction</label>
+                      </div>
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showMissingTracksCheckbox"  onclick="onCheckedShowMissingTracks()"  >
+                        <label class="form-check-label mx-2" for="showMissingTracksCheckbox" >Show missing tracks</label>
+                      </div>
+                      <!-- <div class="btn-group" role="group" aria-label="First group">
+                        <button class="p-2 btn btn-warning btn-lg " onclick="onClickStartOfflineTracking()"
+                          id="offlineTrackingButton">
+                          <span class="spinner-border spinner-border-sm " style="display: none" role="status"
+                            aria-hidden="true">
+                          </span>
+                          Start offline tracking
+                        </button>
+                      </div> -->
+                    </div>
+                  </div>
+                  <div class="row my-1">
+                    <div class="col-md-6 py-2">
+                      <div class="d-flex" style="align-items: baseline;">
+                        <h5 class="me-3" style="align-self: cente">max cos distance between features' vectors: </h5>
+                        <code>
+                          <h4 id="maxCosDistanceValueText"> 0.2 </h4>
+                        </code>
+                      </div>
+                      <input type="range" onchange="updateTrackingParamValue('maxCosDistance')" min="0" max="1" value="0.2" step="0.1"
+                        class="slider w-100" id="maxCosDistanceSlider">
+                    </div>
+                    <div class="col-md-6 py-2">
+                      <div class="d-flex" style="align-items: baseline;">
+                        <h5 class="me-3" style="align-self: cente">max iou between prediction and detection : </h5>
+                        <code>
+                          <h4 id="maxIouValueText"> 0.5 </h4>
+                        </code>
+                      </div>
+                      <input type="range" onchange="updateTrackingParamValue('maxIou')" min="0" max="1" value="0.5" step="0.1"
+                        class="slider w-100" id="maxIouSlider">
+                    </div>
+                  </div>
+                  <div class="row my-1">
+
+                    <div class="col-md-6 py-2">
+                      <div class="btn-group form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="activateDetectionCheckbox"  onclick="onCheckedActivateDetection()"  checked >
+                        <label class="form-check-label mx-2" for="activateDetectionCheckbox" >activate detection</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6 py-2">
+                      <div class="btn-group" role="group" aria-label="First group">
+                        <button class="p-2 btn btn-warning btn-lg " onclick="onClickStartOfflineTracking()"
+                          id="offlineTrackingButton">
+                          <span class="spinner-border spinner-border-sm " style="display: none" role="status"
+                            aria-hidden="true">
+                          </span>
+                          Start offline tracking
+                        </button>
+                      </div> 
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
           <div class="accordion accordion-flush px-0 py-2" id="tracking_accordionFlushDetectorParams">
             <div class="accordion-item">
               <h2 class="accordion-header" id="flush-headingOne">
@@ -316,6 +376,7 @@
                           aria-hidden="true"></span>
                         load model
                       </button>
+                    
                     </div>
                   </div>
                   <div class="row my-1">
