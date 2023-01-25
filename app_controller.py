@@ -19,7 +19,8 @@ from classes.trash.yolov8_detection_service import Yolov8DetectionService
 def pars_args():
     file_src   =   "videos/highway2.mp4"
     # youtube_url =   "https://www.youtube.com/watch?v=QuUxHIVUoaY"
-    webcam_src  =   'http://192.168.43.1:9000/video'
+    # webcam_src  =   'http://192.168.43.1:9000/video'
+    local_webcam_src  =   'http://10.10.23.223:9000/video'
 #    webcam_src=0
     stream_source: StreamSourceEnum=StreamSourceEnum.FILE
     parser = argparse.ArgumentParser()
@@ -30,7 +31,7 @@ def pars_args():
     parser.add_argument("-ss", "--stream_source", help = "Select stream source FILE, REMOTE_WEBCAM, RASPBERRY_CAM")
     parser.add_argument("-ds", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
     parser.add_argument("-rr", "--save_detectors_results", help = "save_detectors_results inference fps to results.csv")
-    # parser.add_argument("-cam_stream", "--webcam", dest='webcam', help = "",action="store")
+    parser.add_argument("-webcam", "--webcam", help = "webcam ip server ")
 
     args = parser.parse_args()
     if args:
@@ -58,7 +59,7 @@ def pars_args():
                 video_src=file_src
             elif args.stream_source in( 'WEBCAM' ,'w')  :
                 stream_source=StreamSourceEnum.WEBCAM
-                video_src=webcam_src
+                video_src=local_webcam_src
             elif args.stream_source in( 'RASPBERRY' ,'r')  :
                 stream_source=StreamSourceEnum.RASPBERRY_CAM
                 # video_src=webcam_src
@@ -72,6 +73,13 @@ def pars_args():
         else:
             stream_source=StreamSourceEnum.FILE
             video_src=file_src
+
+        if args.webcam :
+            stream_source=StreamSourceEnum.WEBCAM
+            if str(args.webcam)=='-':
+                video_src=local_webcam_src
+            else:
+                video_src=str(args.webcam)
 
         if args.save_detectors_results:
             save_detectors_results=True

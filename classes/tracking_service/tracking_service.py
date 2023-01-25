@@ -47,6 +47,12 @@ class TrackingService():
 
     def apply(self,frame,threshold=0.5 ,nms_threshold=0.5): 
         start_time=time.perf_counter()
+       
+        # width=frame.shape[1]
+        # heigth=frame.shape[0]
+        # # cv2.rectangle(frame, (int(width/2)-100, 50), (int(width/2)+100, heigth), (0,0,0), -1)
+        # cv2.rectangle(frame, (0, 0), (int(width), heigth), (255,255,255), -1)
+        # frame=cv2.resize(frame,(int(width/16),int(heigth/16)))
         detection_frame  ,raw_detection_data=self.getRawDetection(frame,threshold=threshold ,nms_threshold=nms_threshold)
         detection_time=round(time.perf_counter()-start_time,3)
         

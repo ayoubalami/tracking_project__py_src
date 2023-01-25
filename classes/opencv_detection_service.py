@@ -10,7 +10,7 @@ class OpencvDetectionService(IDetectionService):
 
     np.random.seed(123)
     model=None
-    
+    default_model_input_size=416
     def clean_memory(self):
         print("CALL DESTRUCTER FROM OpencvDetectionService")
         if self.model:
@@ -115,7 +115,8 @@ class OpencvDetectionService(IDetectionService):
             self.colorList .insert(0,(0,0,0))
 
         elif self.selected_model['type']=='yolo':
-            self.model.setInputParams(size=(416, 416), scale=1/255, swapRB=True)
+            self.model.setInputParams(size=(self.default_model_input_size, self.default_model_input_size), scale=1/255, swapRB=True)
+
         print("Model " + self.modelName + " loaded successfully...")
       
     def get_selected_model(self):
@@ -137,10 +138,15 @@ class OpencvDetectionService(IDetectionService):
             [ 59.40987365, 197.51795215,  34.32644182],
             [ 42.21779254, 156.23398212,  60.88976857]]
 
-    def detect_objects(self, frame,threshold:float,nms_threshold:float,boxes_plotting=True):
-        # frame=frame.copy()
-        # classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
+    def detect_objects(self, frame,threshold:float,nms_threshold:float,boxes_plotting=True,  network_input_size=416):
+       
         start_time= time.perf_counter()
+
+        if network_input_size!=None and network_input_size != self.default_model_input_size:
+            self.default_model_input_size=network_input_size
+            print("UPDATE YOLO NETWORK INPUT SIZE ... ")
+            self.model.setInputParams(size=(self.default_model_input_size, self.default_model_input_size), scale=1/255, swapRB=True)
+             
         classLabelIDs,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
         inference_time=np.round(time.perf_counter()-start_time,3)
         bboxs=list(bboxs)

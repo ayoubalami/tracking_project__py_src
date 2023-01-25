@@ -192,13 +192,15 @@ class AppService:
         if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
             if param=='threshold':
                 self.raspberry_camera.threshold=float(value)
-            if param=='nms_threshold':
+            if param=='nmsThreshold':
                 self.raspberry_camera.nms_threshold=float(value)
         else:
             if param=='threshold':
                 self.stream_reader.threshold=float(value)
-            if param=='nms_threshold':
+            if param=='nmsThreshold':
                 self.stream_reader.nms_threshold=float(value)
+            if param=='networkInputSize':
+                self.stream_reader.network_input_size=int(value)
         return jsonify(result=param+' updated ')
 
     def update_background_subtraction_param(self,param,value):

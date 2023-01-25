@@ -123,48 +123,60 @@
               </h2>
               <div id="flush-collapseDetectorParams" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushDetectorParams">
                 <div class="accordion-body py-0">
-                        <div class="row my-2">
-                          <div class="col input-group">
-                            <h5 class="m-0" id="selectModelText">
-                              Aucun modele de detection chargé
-                            </h5>
-                          </div>
+                      <div class="row my-2">
+                        <div class="col input-group">
+                          <h5 class="m-0" id="selectModelText">
+                            Aucun modele de detection chargé
+                          </h5>
                         </div>
-                        <div class="row my-1">
-                          <div class="col input-group">
-                            <select id="objectDetectionSelect" onchange="onChangeObjectDetection('for_detection')" class="p-2 form-select"
-                              aria-label="Default select example">
-                            </select>
-                            <button class="p-2 btn btn-success btn-md w-25" type="button" onclick="onClickLoadModel('for_detection')"
-                              id="loadModelButton">
-                              <span class="spinner-border spinner-border-sm " style="display: none" role="status"
-                                aria-hidden="true"></span>
-                              load model
-                            </button>
-                          </div>
+                      </div>
+                      <div class="row my-1">
+                        <div class="col input-group">
+                          <select id="objectDetectionSelect" onchange="onChangeObjectDetection('for_detection')" class="p-2 form-select"
+                            aria-label="Default select example">
+                          </select>
+                          <button class="p-2 btn btn-success btn-md w-25" type="button" onclick="onClickLoadModel('for_detection')"
+                            id="loadModelButton">
+                            <span class="spinner-border spinner-border-sm " style="display: none" role="status"
+                              aria-hidden="true"></span>
+                            load model
+                          </button>
                         </div>
-                        <div class="row my-1">
-                          <div class="col-md-6 py-2">
-                            <div class="d-flex" style="align-items: baseline;">
-                              <h5 class="me-3" style="align-self: cente">threshold : </h5>
-                              <code>
-                                <h4 id="thresholdValueText"> 0.5 </h4>
-                              </code>
-                            </div>
-                            <input type="range" onchange="updateCNNDetectorParamValue('threshold')" min="0" max="1" value="0.5" step="0.1"
-                              class="slider w-100" id="thresholdSlider">
+                      </div>
+                      <div class="row my-1">
+                        <div class="col-md-6 py-2">
+                          <div class="d-flex" style="align-items: baseline;">
+                            <h5 class="me-3" style="align-self: cente">threshold : </h5>
+                            <code>
+                              <h4 id="threshold_ValueText"> 0.5 </h4>
+                            </code>
                           </div>
-                          <div class="col-md-6 py-2">
-                            <div class="d-flex" style="align-items: baseline;">
-                              <h5 class="me-3" style="align-self: cente">nms_threshold : </h5>
-                              <code>
-                                <h4 id="nmsThresholdValueText"> 0.5 </h4>
-                              </code>
-                            </div>
-                            <input type="range" onchange="updateCNNDetectorParamValue('nmsThreshold')" min="0" max="1" value="0.5" step="0.1"
-                              class="slider w-100" id="nmsThresholdSlider">
-                          </div>
+                          <input type="range" onchange="updateCNNDetectorParamValue('threshold')" min="0" max="1" value="0.5" step="0.1"
+                            class="slider w-100" id="threshold_Slider">
                         </div>
+                        <div class="col-md-6 py-2">
+                          <div class="d-flex" style="align-items: baseline;">
+                            <h5 class="me-3" style="align-self: cente">nms_threshold : </h5>
+                            <code>
+                              <h4 id="nmsThreshold_ValueText"> 0.5 </h4>
+                            </code>
+                          </div>
+                          <input type="range" onchange="updateCNNDetectorParamValue('nmsThreshold')" min="0" max="1" value="0.5" step="0.1"
+                            class="slider w-100" id="nmsThreshold_Slider">
+                        </div>
+                      </div>
+                      <div class="row ">
+                        <div class="col-md-6 ">
+                          <div class="d-flex" style="align-items: baseline;">
+                            <h5 class="me-3" style="align-self: cente">network input size : </h5>
+                            <code>
+                              <h4 id="networkInputSize_ValueText"> 416 </h4>
+                            </code>
+                          </div>
+                          <input type="range" onchange="updateCNNDetectorParamValue('networkInputSize')" min="32" max="640" value="416" step="32"
+                            class="slider w-100" id="networkInputSize_Slider">
+                        </div>
+                      </div> 
                  </div>
               </div>
             </div>
@@ -384,24 +396,36 @@
                       <div class="d-flex" style="align-items: baseline;">
                         <h5 class="me-3" style="align-self: cente">threshold : </h5>
                         <code>
-                          <h4 id="tracking_thresholdValueText"> 0.5 </h4>
+                          <h4 id="tracking_threshold_ValueText"> 0.5 </h4>
                         </code>
                       </div>
                       <input type="range" onchange="updateCNNDetectorParamValue('tracking_threshold')" min="0" max="1" value="0.5" step="0.1"
-                        class="slider w-100" id="tracking_thresholdSlider">
+                        class="slider w-100" id="tracking_threshold_Slider">
                     </div>
                     <div class="col-md-6 py-2">
                       <div class="d-flex" style="align-items: baseline;">
                         <h5 class="me-3" style="align-self: cente">nms_threshold : </h5>
                         <code>
-                          <h4 id="tracking_nmsThresholdValueText"> 0.5 </h4>
+                          <h4 id="tracking_nmsThreshold_ValueText"> 0.5 </h4>
                         </code>
                       </div>
                       <input type="range" onchange="updateCNNDetectorParamValue('tracking_nmsThreshold')" min="0" max="1" value="0.5" step="0.1"
-                        class="slider w-100" id="tracking_nmsThresholdSlider">
+                        class="slider w-100" id="tracking_nmsThreshold_Slider">
+                    </div> 
+                  </div>
+                  <div class="row ">
+                    <div class="col-md-6 ">
+                      <div class="d-flex" style="align-items: baseline;">
+                        <h5 class="me-3" style="align-self: cente">network input size : </h5>
+                        <code>
+                          <h4 id="tracking_networkInputSize_ValueText"> 416 </h4>
+                        </code>
+                      </div>
+                      <input type="range" onchange="updateCNNDetectorParamValue('tracking_networkInputSize')" min="32" max="624" value="416" step="32"
+                        class="slider w-100" id="tracking_networkInputSize_Slider">
+                      </div>
                     </div>
                   </div>
-                 </div>
               </div>
             </div>
           </div>

@@ -42,18 +42,18 @@ window.onbeforeunload = function(event){
 
 
     function updateCNNDetectorParamValue(param){
-        var newParamValueFromSlider= $( "#"+param+"Slider" )[0].value;
-        $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+        var newParamValueFromSlider= $( "#"+param+"_Slider" )[0].value;
+        $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
 
         if (param.startsWith('tracking_')){
-            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
             param=param.substring(9)
-            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
-            $( "#"+param+"Slider" )[0].value= newParamValueFromSlider;
+            $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
+            $( "#"+param+"_Slider" )[0].value= newParamValueFromSlider;
         }else{
-            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
-            $( "#tracking_"+param+"ValueText" ).text( newParamValueFromSlider);
-            $( "#tracking_"+param+"Slider" )[0].value= newParamValueFromSlider;
+            $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"_ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"_Slider" )[0].value= newParamValueFromSlider;
         }
          
         $.ajax({

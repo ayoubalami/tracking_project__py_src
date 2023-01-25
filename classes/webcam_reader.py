@@ -6,8 +6,10 @@ class WebcamReader:
     def __init__(self, src=0):
 
             self.stopped = False
-            # self.stream = cv2.VideoCapture(src)
-            self.stream=cv2.VideoCapture(1,  cv2.CAP_V4L)
+            if src=='RASPBERRY_CAM':
+                self.stream=cv2.VideoCapture(1,  cv2.CAP_V4L)
+            else:
+                self.stream = cv2.VideoCapture(src)
             if not self.stream.isOpened():
                 raise Exception("Couldn't open camera {}".format(src))
 

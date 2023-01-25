@@ -9,7 +9,8 @@ class Yolov5DetectionService(IDetectionService):
 
     np.random.seed(123)
     model=None
-    
+    default_model_input_size=640
+
     def clean_memory(self):
         print("CALL DESTRUCTER FROM Yolov5DetectionService")
         if self.model:
@@ -31,9 +32,9 @@ class Yolov5DetectionService(IDetectionService):
         # self.classAllowed=range(0, 80)
         self.detection_method_list    =   [ 
                         {'name': 'yolov5n'   },
-                        {'name': 'yolov5n6'   },
+                        # {'name': 'yolov5n6'   },
                         {'name': 'yolov5s'  },
-                        {'name': 'yolov5s6'  },
+                        # {'name': 'yolov5s6'  },
                         {'name': 'yolov5m'  },
                         {'name': 'yolov5l'  },
                         {'name': 'yolov5x'  }                        
@@ -74,24 +75,26 @@ class Yolov5DetectionService(IDetectionService):
     def get_object_detection_models(self):
         return self.detection_method_list 
       
-    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5,boxes_plotting=True):
+    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5,boxes_plotting=True,network_input_size=640):
         start_time = time.perf_counter()
-        img=frame.copy()
-        labels, cord , inference_time = self.score_frame(img)
+        if network_input_size!=None and network_input_size != self.default_model_input_size:
+            self.default_model_input_size=network_input_size
+            print("UPDATE YOLO V5 NETWORK INPUT SIZE ... "+str(self.default_model_input_size))
+        # frame=cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        labels, cord , inference_time = self.score_frame(frame)
         if boxes_plotting:
-            img , _ = self.plot_boxes((labels, cord ), img,threshold=threshold,nms_threshold=nms_threshold,boxes_plotting=True)
+            frame , _ = self.plot_boxes((labels, cord ), frame,threshold=threshold,nms_threshold=nms_threshold,boxes_plotting=True)
             fps = 1 / np.round(time.perf_counter()-start_time,3)
-            self.addFrameFps(img,fps)
-            return img,inference_time
+            self.addFrameFps(frame,fps)
+            return frame,inference_time
         else:
-            return self.plot_boxes((labels, cord ), img,threshold=threshold,nms_threshold=nms_threshold,boxes_plotting=False)
-
+            return self.plot_boxes((labels, cord ), frame,threshold=threshold,nms_threshold=nms_threshold,boxes_plotting=False)
     
     def score_frame(self, frame):
         # self.model.to(self.device)
         frame = [frame]        
         start_time = time.perf_counter()
-        results = self.model(frame,size=640)
+        results = self.model(frame,size=self.default_model_input_size)
         end_time = time.perf_counter()
         labels, cord = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
         return labels, cord , np.round(end_time - start_time, 4)
