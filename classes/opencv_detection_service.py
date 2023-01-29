@@ -138,12 +138,14 @@ class OpencvDetectionService(IDetectionService):
             [ 59.40987365, 197.51795215,  34.32644182],
             [ 42.21779254, 156.23398212,  60.88976857]]
 
-    def detect_objects(self, frame,threshold:float,nms_threshold:float,boxes_plotting=True,  network_input_size=416):
+    def detect_objects(self, frame,threshold:float,nms_threshold:float,boxes_plotting=True):
        
         start_time= time.perf_counter()
+        # print(frame.shape)
+        # frame=frame[:, :, :3]
 
-        if network_input_size!=None and network_input_size != self.default_model_input_size:
-            self.default_model_input_size=network_input_size
+        if self.network_input_size!=None and self.network_input_size != self.default_model_input_size:
+            self.default_model_input_size=self.network_input_size
             print("UPDATE YOLO NETWORK INPUT SIZE ... ")
             self.model.setInputParams(size=(self.default_model_input_size, self.default_model_input_size), scale=1/255, swapRB=True)
              

@@ -28,7 +28,7 @@ class RaspberryCameraReader :
         except:
             print("camera not detected program exited....")
             exit()
-        self.picam2.configure(self.picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (1296,972)}))
+        self.picam2.configure(self.picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (900,600)}))
         time.sleep(.1)
 
     def read_camera_stream(self):
@@ -57,6 +57,9 @@ class RaspberryCameraReader :
     def ProcessAndYieldFrame(self,frame):
         result={}
         copy_frame=frame.copy()
+        # copy_frame=copy_frame[:,:,1:4]
+        # copy_frame=copy_frame[:,:,:3]
+        copy_frame = cv2.cvtColor(copy_frame, cv2.COLOR_RGBA2RGB)
 
         if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
             detection_frame,inference_time=self.applyDetection(copy_frame)

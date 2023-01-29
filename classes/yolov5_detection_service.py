@@ -75,7 +75,7 @@ class Yolov5DetectionService(IDetectionService):
     def get_object_detection_models(self):
         return self.detection_method_list 
       
-    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5,boxes_plotting=True,network_input_size=640):
+    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5,boxes_plotting=True ):
         start_time = time.perf_counter()
         if network_input_size!=None and network_input_size != self.default_model_input_size:
             self.default_model_input_size=network_input_size

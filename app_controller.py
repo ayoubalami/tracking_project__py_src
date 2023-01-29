@@ -207,6 +207,11 @@ def activate_detection_for_tracking(value):
 def update_tracking_param_value(param,value):
     return app_service.update_tracking_param_value(param=param,value=value) 
 
+@app.route('/rotate_servo_motor/<axis>/<value>', methods = ['POST'])
+def rotate_servo_motor(axis,value):
+    return app_service.rotate_servo_motor(axis=axis,value=value) 
+
+
 
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)

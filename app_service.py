@@ -21,9 +21,10 @@ from classes.webcam_reader import WebcamReader
 from classes.raspberry_camera_reader import RaspberryCameraReader
 from classes.tracking_service.offline_tracker import OfflineTracker
 from utils_lib.enums import ClientStreamTypeEnum
+from servo_motor import ServoMotor
 
+class AppService:  
 
-class AppService:    
     stream_reader :StreamReader = None
     raspberry_camera :RaspberryCameraReader = None
     detection_service :IDetectionService= None
@@ -57,6 +58,13 @@ class AppService:
 
         if stream_source==StreamSourceEnum.RASPBERRY_CAM:
             self.raspberry_camera=RaspberryCameraReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service,tracking_service=self.tracking_service)
+            self.y_servo_motor=ServoMotor(servo_pin=18)
+            self.x_servo_motor=ServoMotor(servo_pin=23)
+            # self.y_servo_motor.goToAngle(angle=0 )  
+            self.x_servo_motor.goToAngleWithSpeed(angle=int(0),speed=0.001 )
+
+            # self.x_servo_motor.goToAngle(angle=0 )  
+            self.y_servo_motor.goToAngleWithSpeed(angle=int(0),speed=0.001 )
 
         # self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
 
@@ -78,7 +86,7 @@ class AppService:
         return jsonify('reset stream')
   
     def index(self):
-        return render_template('index.html',api_server=self.host_server)
+        return render_template('index.html',api_server=self.host_server,stream_source=self.stream_source.name)
  
     def return_stream(self):
         yield from self.stream_reader.read_stream()
@@ -189,18 +197,20 @@ class AppService:
     #     return jsonify(result='nmsthreshold updated ')
 
     def update_cnn_detector_param(self,param,value):
-        if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
-            if param=='threshold':
-                self.raspberry_camera.threshold=float(value)
-            if param=='nmsThreshold':
-                self.raspberry_camera.nms_threshold=float(value)
-        else:
-            if param=='threshold':
-                self.stream_reader.threshold=float(value)
-            if param=='nmsThreshold':
-                self.stream_reader.nms_threshold=float(value)
-            if param=='networkInputSize':
-                self.stream_reader.network_input_size=int(value)
+        if param=='networkInputSize':
+            self.detection_service.network_input_size=int(value)
+        else :
+            if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
+                if param=='threshold':
+                    self.raspberry_camera.threshold=float(value)
+                if param=='nmsThreshold':
+                    self.raspberry_camera.nms_threshold=float(value)
+            else:
+                if param=='threshold':
+                    self.stream_reader.threshold=float(value)
+                if param=='nmsThreshold':
+                    self.stream_reader.nms_threshold=float(value)
+                
         return jsonify(result=param+' updated ')
 
     def update_background_subtraction_param(self,param,value):
@@ -300,4 +310,14 @@ class AppService:
                 self.tracking_service.threshold_feature_distance= float(value)
             if param =='maxIou':
                 self.tracking_service.tracker.max_iou_distance= float(value)
+        return jsonify(result=value)
+
+    def rotate_servo_motor(self,axis,value):
+        if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
+            if axis=='x':
+                # self.x_servo_motor.goToAngle(angle=int(value) )
+                self.x_servo_motor.goToAngleWithSpeed(angle=int(value),speed=0.005 )
+            elif axis=='y':
+                self.y_servo_motor.goToAngleWithSpeed(angle=int(value),speed=0.005) 
+
         return jsonify(result=value)

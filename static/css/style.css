@@ -50,3 +50,8 @@
     border-color: #aab2b9 #acb8c5 #e4efff;
     background: #62a0fd2b;
 }
+
+#RaspberryServoCameraInput label{
+    font-size: large;
+    font-weight: bold;
+}

@@ -4,7 +4,9 @@
 // var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
 // var $SCRIPT_ROOT = "http://Raspberrypi.local:8000/"
-var $SCRIPT_ROOT = "http://"+api_server+":8000"
+
+// var $SCRIPT_ROOT = "http://"+api_server+":8000"
+var $SCRIPT_ROOT = "http://192.168.137.226:8000"
 var secondApiIpChecked=false
 
 var intervalID = null;
@@ -122,12 +124,17 @@ function initVideoStreamFrame(){
 }
 
 function initData(){
+    initStreamSourceParams()
     getObjectDetectionList();
     if (videoInitialized==false)
         initVideoStreamFrame()
-
-    // src="{{ url_for('video_stream') }}"
-}
+    
+    setTimeout(function(){
+        if (stream_source=='RASPBERRY_CAM'){
+            onClickToggleStopStart();
+        }
+     }, 500); 
+   }
 
 function onClickReset(){
     toggleDisabledResetButton(true);
@@ -641,6 +648,35 @@ function updateTrackingParamValue(param){
         },
         error: function (errMsg) {
             console.log(" ERROR /update_tracking_param ")
+        }
+    });  
+}
+
+function initStreamSourceParams(){
+    console.log(stream_source);
+    if (stream_source=='RASPBERRY_CAM'){
+        $( "#videoFilesSelect" ).attr('style','display:none !important');
+        $( "#RaspberryServoCameraInput" ).attr('style','display:block !important');
+    }
+    else{
+        $( "#videoFilesSelect" ).attr('style','display:flex !important');
+        $( "#RaspberryServoCameraInput" ).attr('style','display:none !important');
+    }
+}
+
+function updateServoMotorValue(axis){
+    
+    var newDegreeFromSlider= $( "#"+axis+"_axisServoDegreeSlider" )[0].value;
+    $( "#"+axis+"_axisServoDegree_valueText" ).text( newDegreeFromSlider);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/rotate_servo_motor/'+axis+'/'+newDegreeFromSlider,
+        dataType: "json",
+        success: function (data) {
+            console.log("/rotate_servo_motor is done!")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /rotate_servo_motor ")
         }
     });  
 }

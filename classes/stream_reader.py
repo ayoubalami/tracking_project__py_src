@@ -115,6 +115,7 @@ class StreamReader:
                 continue
             
             frame=self.getNextFrame()
+
             yield from self.ProcessAndYieldFrame(frame)
             
             counter+=1
@@ -218,7 +219,7 @@ class StreamReader:
         # resize_ratio=.5
         # origin_frame=cv2.resize(origin_frame, (int(self.buffer.width*resize_ratio) ,int(self.buffer.height*resize_ratio) ))
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
-            detection_frame ,inference_time = self.detection_service.detect_objects(origin_frame, threshold= self.threshold ,nms_threshold=self.nms_threshold,network_input_size=self.network_input_size)
+            detection_frame ,inference_time = self.detection_service.detect_objects(origin_frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
             return detection_frame,inference_time
         return origin_frame,-1
 
