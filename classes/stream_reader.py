@@ -25,6 +25,7 @@ class StreamReader:
     nms_threshold=0.5
     threshold=0.5
     network_input_size=None
+    video_resolution_ratio=1
 
     np.random.seed(123)
 
@@ -265,6 +266,10 @@ class StreamReader:
  
     def getNextFrame(self):
         origin_frame,self.current_batch=self.getCurrentFrame() 
+        if self.video_resolution_ratio!=None and self.video_resolution_ratio!=1  :
+            img_height,img_width = origin_frame.shape[:2] 
+            origin_frame=cv2.resize(origin_frame, (int(img_width*self.video_resolution_ratio) ,int(img_height*self.video_resolution_ratio) ))
+
         return origin_frame
 
     def ProcessAndYieldFrame(self,frame):

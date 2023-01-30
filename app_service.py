@@ -18,14 +18,13 @@ from classes.stream_reader import StreamReader, StreamSourceEnum
 from classes.tensorflow_detection_service import TensorflowDetectionService
 from classes.tracking_service.tracking_service import TrackingService
 from classes.webcam_reader import WebcamReader
-from classes.raspberry_camera_reader import RaspberryCameraReader
 from classes.tracking_service.offline_tracker import OfflineTracker
 from utils_lib.enums import ClientStreamTypeEnum
+
 
 class AppService:  
 
     stream_reader :StreamReader = None
-    raspberry_camera :RaspberryCameraReader = None
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
     tracking_service: TrackingService=None
@@ -56,6 +55,8 @@ class AppService:
         print("AppService Started.")
 
         if stream_source==StreamSourceEnum.RASPBERRY_CAM:
+            from classes.raspberry_camera_reader import RaspberryCameraReader
+            self.raspberry_camera :RaspberryCameraReader = None
             self.raspberry_camera=RaspberryCameraReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service,tracking_service=self.tracking_service)
            
 
@@ -99,7 +100,7 @@ class AppService:
                 return jsonify(result='stream stoped')
             return jsonify(result='error server in stream stoped')
 
-    def start_stream(self,selected_video):
+    def start_stream(self,selected_video,video_resolution_ratio):
         if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
             if self.raspberry_camera.start_reading_action ==False:
                 self.raspberry_camera.start_reading_action=True
@@ -107,6 +108,12 @@ class AppService:
                 return jsonify(result='rasp stream started')
         else:
             selected_video="videos/"+selected_video
+            video_resolution_ratio=float(video_resolution_ratio)/100
+            if video_resolution_ratio>1:
+                video_resolution_ratio=1
+
+            if video_resolution_ratio!=self.stream_reader.video_resolution_ratio :
+                self.stream_reader.video_resolution_ratio = video_resolution_ratio
             if (selected_video!= self.stream_reader.video_src):
                 self.video_src=selected_video
                 self.stream_reader.change_video_file(selected_video)
@@ -247,14 +254,15 @@ class AppService:
                 self.stream_reader.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
             elif stream == 'TRACKING_STREAM':
                 self.stream_reader.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
-
-        if self.raspberry_camera!=None:
-            if stream == 'CNN_DETECTOR':
-                self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.CNN_DETECTOR
-            elif  stream == 'BACKGROUND_SUBTRACTION':
-                self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
-            elif stream == 'TRACKING_STREAM':
-                self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
+        
+        elif self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
+            if self.raspberry_camera!=None:
+                if stream == 'CNN_DETECTOR':
+                    self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.CNN_DETECTOR
+                elif  stream == 'BACKGROUND_SUBTRACTION':
+                    self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
+                elif stream == 'TRACKING_STREAM':
+                    self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
 
         return jsonify(result=stream)
 

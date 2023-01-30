@@ -130,9 +130,9 @@ def clean_memory():
 def stop_stream():
     return app_service.stop_stream()
 
-@app.route('/start_stream/<selected_video>', methods = ['POST'])
-def start_stream(selected_video):
-    return app_service.start_stream(selected_video)
+@app.route('/start_stream/<video_resolution_ratio>/<selected_video>', methods = ['POST'])
+def start_stream( selected_video,video_resolution_ratio):
+    return app_service.start_stream( selected_video,video_resolution_ratio)
 
 @app.route('/get_next_frame', methods = ['POST'])
 def get_next_frame():

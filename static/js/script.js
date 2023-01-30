@@ -5,8 +5,8 @@
 
 // var $SCRIPT_ROOT = "http://Raspberrypi.local:8000/"
 
-// var $SCRIPT_ROOT = "http://"+api_server+":8000"
-var $SCRIPT_ROOT = "http://192.168.137.226:8000"
+var $SCRIPT_ROOT = "http://"+api_server+":8000"
+// var $SCRIPT_ROOT = "http://192.168.137.226:8000"
 
 var secondApiIpChecked=false
 
@@ -179,6 +179,8 @@ function onClickStartOfflineDetection(){
     $("#offlineDetectionButton").attr("disabled", true);
     $("#offlineDetectionButton").children().css( "display", "inline-block" )
     selectedVideo=$('#inputVideoFile').find(":selected").val();
+    // selectedResolution=$('#inputVideoResolution').find(":selected").val();
+     
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/start_offline_detection/'+selectedVideo,
@@ -335,11 +337,19 @@ function sendStopVideoRequest(){
     });
 }
 
+function onChangeVideoResolution(){
+    var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
+    $( "#nmsThreshold_ValueText" ).text( selectedResolution+" %");
+}
+
 function sendStartVideoRequest(){
     selectedVideo=$('#inputVideoFile').find(":selected").val();
-      $.ajax({
+    var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
+    // $( "#"+param+"ValueText" ).text( selectedResolution+" %");
+
+    $.ajax({
         type: "POST",
-        url: $SCRIPT_ROOT + '/start_stream/'+selectedVideo,
+        url: $SCRIPT_ROOT + '/start_stream/'+selectedResolution+'/'+selectedVideo,
         dataType: "json",
         success: function (data) {
             console.log(" start_stream "+selectedVideo)
