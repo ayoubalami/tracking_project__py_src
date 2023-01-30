@@ -41,7 +41,7 @@ def pars_args():
                 detection_service=OpencvDetectionService()
             elif args.detection_service in( 'ONNX' ,'onnx')  :
                 detection_service=OnnxDetectionService()
-            elif args.detection_service in( 'TENSORFLOW' ,'tf') :
+            elif args.detection_service in( 'TENSORFLOW' ,'tf','tensorflow') :
                 detection_service=TensorflowDetectionService()
             elif args.detection_service in( 'YOLOV5' ,'yv5') :
                 detection_service=Yolov5DetectionService()
@@ -211,6 +211,10 @@ def update_tracking_param_value(param,value):
 def rotate_servo_motor(axis,value):
     return app_service.rotate_servo_motor(axis=axis,value=value) 
 
+
+@app.route('/update_raspberry_camera_zoom/<zoom>', methods = ['POST'])
+def update_raspberry_camera_zoom(zoom):
+    return app_service.update_raspberry_camera_zoom(zoom=zoom) 
 
 
 if __name__=="__main__":

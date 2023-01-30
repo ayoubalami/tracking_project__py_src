@@ -5,6 +5,7 @@ import time
 import cv2
 from utils_lib.enums import ClientStreamTypeEnum
 import base64
+from servo_motor import ServoMotor
 
 # from utils_lib.utils_functions import encodeStreamingFrame,applyDetection
 
@@ -17,18 +18,32 @@ class RaspberryCameraReader :
         from picamera2 import Picamera2, Preview
         from picamera2.encoders import H264Encoder
         self.start_reading_action=False
-        self.detection_service=detection_service
         self.current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR
+
+        self.detection_service=detection_service
         self.background_subtractor_service=background_subtractor_service
         self.tracking_service=tracking_service
+        
         self.threshold=0.5
         self.nms_threshold=0.5
+        self.zoom=1
+        self.y_servo_motor=ServoMotor(servo_pin=18)
+        self.x_servo_motor=ServoMotor(servo_pin=23)  
+        try:
+            self.x_servo_motor.goToAngleWithSpeed(angle=int(0),speed=0.001 )
+        except:
+            self.x_servo_motor.goToAngle(angle=0 )  
+        try:
+            self.y_servo_motor.goToAngleWithSpeed(angle=int(0),speed=0.001 )
+        except:
+            self.y_servo_motor.goToAngle(angle=0 )
+
         try:
             self.picam2 = Picamera2()
         except:
             print("camera not detected program exited....")
             exit()
-        self.picam2.configure(self.picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (900,600)}))
+        self.picam2.configure(self.picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (1024, 768)}))
         time.sleep(.1)
 
     def read_camera_stream(self):
@@ -45,6 +60,16 @@ class RaspberryCameraReader :
                 time.sleep(.1)
                 continue
             image = self.picam2.capture_array()
+            image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
+            
+            if self.zoom>1:
+                hight,width=image.shape[:2]
+                x=int((width*.5)- (width/self.zoom)*.5)
+                y=int((hight*.5)- (hight/self.zoom)*.5)
+                w=int(width/self.zoom)
+                h=int(hight/self.zoom)
+                image = image[y:y+h, x:x+w]
+
             # detection_frame,inference_time=self.applyDetection(image,self.detection_service,threshold=self.threshold,nms_threshold=self.nms_threshold)
 
             if not self.detection_service :
@@ -59,7 +84,6 @@ class RaspberryCameraReader :
         copy_frame=frame.copy()
         # copy_frame=copy_frame[:,:,1:4]
         # copy_frame=copy_frame[:,:,:3]
-        copy_frame = cv2.cvtColor(copy_frame, cv2.COLOR_RGBA2RGB)
 
         if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
             detection_frame,inference_time=self.applyDetection(copy_frame)
@@ -71,10 +95,9 @@ class RaspberryCameraReader :
             result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=80)
         
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
-            tracking_frame,inference_time=self.tracking_service.apply(copy_frame)
+            tracking_frame=self.tracking_service.apply(copy_frame,threshold= self.threshold ,nms_threshold=self.nms_threshold)
             result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
-            # result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
-            # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)
+         
         yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 
     def encodeStreamingFrame(self,frame,resize_ratio=1,jpeg_quality=100):

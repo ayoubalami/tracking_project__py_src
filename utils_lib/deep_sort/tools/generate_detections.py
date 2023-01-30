@@ -3,11 +3,11 @@ import errno
 import argparse
 import numpy as np
 import cv2
-#import tensorflow.compat.v1 as tf
+import tensorflow.compat.v1 as tf
     
-#physical_devices = tf.config.experimental.list_physical_devices('GPU')
-#if len(physical_devices) > 0:
-#    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+if len(physical_devices) > 0:
+   tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 def _run_in_batches(f, data_dict, out, batch_size):
     data_len = len(out)
@@ -57,7 +57,7 @@ def extract_image_patch(image, bbox, patch_shape):
 
     # convert to top left, bottom right
     bbox[2:] += bbox[:2]
-    bbox = bbox.astype(np.int)
+    bbox = bbox.astype(np.int16)
 
     # clip at image boundaries
     bbox[:2] = np.maximum(0, bbox[:2])
@@ -74,23 +74,23 @@ class ImageEncoder(object):
 
     def __init__(self, checkpoint_filename, input_name="images",
                  output_name="features"):
-#       self.session = tf.Session()
-#       with tf.gfile.GFile(checkpoint_filename, "rb") as file_handle:
-#           graph_def = tf.GraphDef()
-#           graph_def.ParseFromString(file_handle.read())
-#       tf.import_graph_def(graph_def, name="net")
-#       self.input_var = tf.get_default_graph().get_tensor_by_name(
-#           "%s:0" % input_name)
-#       self.output_var = tf.get_default_graph().get_tensor_by_name(
-#           "%s:0" % output_name)
+        self.session = tf.Session()
+        with tf.gfile.GFile(checkpoint_filename, "rb") as file_handle:
+            graph_def = tf.GraphDef()
+            graph_def.ParseFromString(file_handle.read())
+        tf.import_graph_def(graph_def, name="net")
+        self.input_var = tf.get_default_graph().get_tensor_by_name(
+            "%s:0" % input_name)
+        self.output_var = tf.get_default_graph().get_tensor_by_name(
+            "%s:0" % output_name)
 
-#        assert len(self.output_var.get_shape()) == 2
-#        assert len(self.input_var.get_shape()) == 4
-#        self.feature_dim = self.output_var.get_shape().as_list()[-1]
-#       self.image_shape = self.input_var.get_shape().as_list()[1:]
-        self.image_shape=None
-        self.feature_dim=None
-        pass
+        assert len(self.output_var.get_shape()) == 2
+        assert len(self.input_var.get_shape()) == 4
+        self.feature_dim = self.output_var.get_shape().as_list()[-1]
+        self.image_shape = self.input_var.get_shape().as_list()[1:]
+        # self.image_shape=None
+        # self.feature_dim=None
+        # pass
     def __call__(self, data_x, batch_size=32):
         out = np.zeros((len(data_x), self.feature_dim), np.float32)
         _run_in_batches(
@@ -164,9 +164,9 @@ def generate_detections(encoder, mot_dir, output_dir, detection_dir=None):
         detections_in = np.loadtxt(detection_file, delimiter=',')
         detections_out = []
 
-        frame_indices = detections_in[:, 0].astype(np.int)
-        min_frame_idx = frame_indices.astype(np.int).min()
-        max_frame_idx = frame_indices.astype(np.int).max()
+        frame_indices = detections_in[:, 0].astype(np.int16)
+        min_frame_idx = frame_indices.astype(np.int16).min()
+        max_frame_idx = frame_indices.astype(np.int16).max()
         for frame_idx in range(min_frame_idx, max_frame_idx + 1):
             print("Frame %05d/%05d" % (frame_idx, max_frame_idx))
             mask = frame_indices == frame_idx

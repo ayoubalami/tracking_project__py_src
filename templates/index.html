@@ -56,18 +56,23 @@
                 
           <div id="RaspberryServoCameraInput" class="form-group col-md-4 d-flex align-self-flex-end "  >
             <div class="d-flex" style="align-items: baseline;">
-              <label for="x_axisServoDegreeSlider" class="me-3" style="align-self: cente">X Axis : </label>
+              <label for="x_axisServoDegree_slider" class="me-3" style="align-self: cente">X Axis : </label>
               <code><h4 id="x_axisServoDegree_valueText"> 0° </h4></code>
             </div>
-            <input type="range" onchange="updateServoMotorValue('x')" min="0" max="180" value="0" step="1"
-              class="slider w-100" id="x_axisServoDegreeSlider">
+            <input type="range" onchange="updateServoMotorValue('x')" min="-90" max="90" value="0" step="1"
+              class="slider w-100" id="x_axisServoDegree_slider">
             <div class="d-flex" style="align-items: baseline;">
-              <label for="y_axisServoDegreeSlider" class="me-3" style="align-self: cente">Y Axis : </label>
+              <label for="y_axisServoDegrees_slider" class="me-3" style="align-self: cente">Y Axis : </label>
               <code><h4 id="y_axisServoDegree_valueText"> 0° </h4></code>
             </div>
-            <input type="range" onchange="updateServoMotorValue('y')" min="0" max="180" value="0" step="1"
-              class="slider w-100" id="y_axisServoDegreeSlider">
-            
+            <input type="range" onchange="updateServoMotorValue('y')" min="-90" max="90" value="0" step="1"
+              class="slider w-100" id="y_axisServoDegree_slider">
+            <div class="d-flex" style="align-items: baseline;">
+              <label for="cameraZoom_slider" class="me-3" style="align-self: cente">Camera zoom : </label>
+              <code><h4 id="cameraZoom_valueText"> 1 </h4></code>
+            </div>
+            <input type="range" onchange="updateRaspberryCameraZoomValue()" min="1" max="4" value="1" step=".2"
+              class="slider w-100" id="cameraZoom_slider">
           </div>
 
           <div id="videoFilesSelect" class="form-group col-md-4 d-flex align-self-flex-end "  >

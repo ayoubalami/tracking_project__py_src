@@ -21,7 +21,6 @@ from classes.webcam_reader import WebcamReader
 from classes.raspberry_camera_reader import RaspberryCameraReader
 from classes.tracking_service.offline_tracker import OfflineTracker
 from utils_lib.enums import ClientStreamTypeEnum
-from servo_motor import ServoMotor
 
 class AppService:  
 
@@ -58,13 +57,7 @@ class AppService:
 
         if stream_source==StreamSourceEnum.RASPBERRY_CAM:
             self.raspberry_camera=RaspberryCameraReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service,tracking_service=self.tracking_service)
-            self.y_servo_motor=ServoMotor(servo_pin=18)
-            self.x_servo_motor=ServoMotor(servo_pin=23)
-            # self.y_servo_motor.goToAngle(angle=0 )  
-            self.x_servo_motor.goToAngleWithSpeed(angle=int(0),speed=0.001 )
-
-            # self.x_servo_motor.goToAngle(angle=0 )  
-            self.y_servo_motor.goToAngleWithSpeed(angle=int(0),speed=0.001 )
+           
 
         # self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
 
@@ -315,9 +308,13 @@ class AppService:
     def rotate_servo_motor(self,axis,value):
         if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
             if axis=='x':
-                # self.x_servo_motor.goToAngle(angle=int(value) )
-                self.x_servo_motor.goToAngleWithSpeed(angle=int(value),speed=0.005 )
+                self.raspberry_camera.x_servo_motor.goToAngleWithSpeed(angle=int(value),speed=0.005 )
             elif axis=='y':
-                self.y_servo_motor.goToAngleWithSpeed(angle=int(value),speed=0.005) 
-
+                self.raspberry_camera.y_servo_motor.goToAngleWithSpeed(angle=int(value),speed=0.005) 
         return jsonify(result=value)
+
+
+    def update_raspberry_camera_zoom(self,zoom):
+        if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
+            self.raspberry_camera.zoom= float(zoom)
+        return jsonify(result=zoom)

@@ -7,6 +7,7 @@
 
 // var $SCRIPT_ROOT = "http://"+api_server+":8000"
 var $SCRIPT_ROOT = "http://192.168.137.226:8000"
+
 var secondApiIpChecked=false
 
 var intervalID = null;
@@ -124,6 +125,7 @@ function initVideoStreamFrame(){
 }
 
 function initData(){
+    
     initStreamSourceParams()
     getObjectDetectionList();
     if (videoInitialized==false)
@@ -133,7 +135,8 @@ function initData(){
         if (stream_source=='RASPBERRY_CAM'){
             onClickToggleStopStart();
         }
-     }, 500); 
+    }, 500); 
+    initMouseClickEvent();
    }
 
 function onClickReset(){
@@ -664,9 +667,9 @@ function initStreamSourceParams(){
     }
 }
 
+
 function updateServoMotorValue(axis){
-    
-    var newDegreeFromSlider= $( "#"+axis+"_axisServoDegreeSlider" )[0].value;
+    var newDegreeFromSlider= $( "#"+axis+"_axisServoDegree_slider" )[0].value;
     $( "#"+axis+"_axisServoDegree_valueText" ).text( newDegreeFromSlider);
     $.ajax({
         type: "POST",
@@ -677,6 +680,51 @@ function updateServoMotorValue(axis){
         },
         error: function (errMsg) {
             console.log(" ERROR /rotate_servo_motor ")
+        }
+    });  
+}
+
+
+function updateRaspberryCameraZoomValue(){
+    var newZoomFromSlider= $( "#cameraZoom_slider" )[0].value;
+    $( "#cameraZoom_valueText" ).text( newZoomFromSlider);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/update_raspberry_camera_zoom/'+newZoomFromSlider,
+        dataType: "json",
+        success: function (data) {
+            console.log("/update_raspberry_camera_zoom is done!")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /update_raspberry_camera_zoom ")
+        }
+    });  
+}
+
+function initMouseClickEvent(){
+    $('#backgroundSubStream_2').click(function(event) {
+        // Get the mouse click position
+        var x = event.pageX - $(this).offset().left;
+        var y = event.pageY - $(this).offset().top;
+        var width = $(this).width();
+        var height = $(this).height();
+        console.log("ratio width : " + (x/width).toFixed(4) + ",ratio height: " + (y/height).toFixed(4));
+        x=(x/width).toFixed(4);
+        y=(y/height).toFixed(4);
+        sendTrackedPosition(x,y)
+    });
+}
+
+function sendTrackedPosition(x,y){
+     $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/set_tracked_position/'+x+'/'+y,
+        dataType: "json",
+        success: function (data) {
+            console.log("/set_tracked_position is done!")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /set_tracked_position ")
         }
     });  
 }

@@ -16,6 +16,7 @@ from utils_lib.deep_sort.detection import Detection
 from utils_lib.deep_sort.tracker import Tracker
 from _collections import deque
 from utils_lib.deep_sort.tools import generate_detections as gdet
+# from utils_lib.deep_sort.tools import generate_detections_lite as gdet
 class TrackingService():
     track_object_by_background_sub=False
     track_object_by_cnn_detection=True
@@ -30,7 +31,7 @@ class TrackingService():
     max_age=30
     threshold_feature_distance=0.2
     max_iou_distance = 0.5
-    feature_extractor_model_file='utils_lib/deep_sort/models/mars-small128.pb'
+    feature_extractor_model_file='utils_lib/deep_sort/feature_extractors/mars-small128.pb'
     encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
     colors = {}
     use_cnn_feature_extraction=False
@@ -79,6 +80,8 @@ class TrackingService():
             features = self.encoder(detection_frame, bboxes)
         else:
             features=  [np.array([]) for _  in bboxes] 
+            # features=  [ np.empty(shape=(1), dtype=np.float32) for _  in bboxes] 
+
         tracking_detections = [Detection(bbox, score, class_name, feature) for bbox, score, class_name, feature in
                   zip(bboxes, scores, class_names, features)]
 

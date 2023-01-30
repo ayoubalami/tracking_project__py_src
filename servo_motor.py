@@ -2,7 +2,6 @@
 import pigpio
 import time
 
- 
 class ServoMotor:    
 
     def __init__(self,servo_pin):
@@ -12,6 +11,7 @@ class ServoMotor:
         self.max_pulse=2400 
 
     def goToAngleWithSpeed(self,angle,speed):
+        angle=angle+90
         target_pulse_width=round(((self.max_pulse-self.min_pulse)*angle)/180)+self.min_pulse
         print(target_pulse_width)
         current_pulse_width = self.pi.get_servo_pulsewidth(self.servo_pin)
@@ -26,13 +26,14 @@ class ServoMotor:
         print("Done")
  
     def goToAngle(self,angle):
+        angle=angle+90
         pulse_width=(((self.max_pulse-self.min_pulse)*angle)/180)+self.min_pulse
         print(pulse_width)
         self.pi.set_servo_pulsewidth(self.servo_pin, pulse_width)
         
 # motor=ServoMotor(servo_pin=23)
 # # motor=ServoMotor(servo_pin=18) 
-# # motor.goToAngle(angle=180) 
+# motor.goToAngle(angle=180) 
 # # time.sleep(2)
 # motor.goToAngle(angle=0) 
 # time.sleep(1)
