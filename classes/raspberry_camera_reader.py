@@ -23,7 +23,7 @@ class RaspberryCameraReader :
         self.detection_service=detection_service
         self.background_subtractor_service=background_subtractor_service
         self.tracking_service=tracking_service
-        
+        self.tracking_service.raspberry_camera=self
         self.threshold=0.5
         self.nms_threshold=0.5
         self.zoom=1
@@ -116,3 +116,18 @@ class RaspberryCameraReader :
             detection_frame ,inference_time = self.detection_service.detect_objects(origin_frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
             return detection_frame,inference_time
         return origin_frame,-1
+
+    def rotateServoMotor(self,axis,angle,speed=0.005):
+        if axis=='y':    
+            self.y_servo_motor.goToAngleWithSpeed(angle=angle,speed=speed) 
+        if axis=='x':    
+            self.x_servo_motor.goToAngleWithSpeed(angle=angle,speed=speed) 
+
+    def moveServoMotorToCoordinates(self,origins,coordinates,speed=0.005):
+       
+        (width,heigth)=origins
+        (x,y)=coordinates
+        centerX=int(width/2)
+        centerY=int(heigth/2)
+        print(centerX-x)
+        print(centerY-y)

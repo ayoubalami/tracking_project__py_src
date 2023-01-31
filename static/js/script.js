@@ -669,7 +669,7 @@ function initStreamSourceParams(){
     console.log(stream_source);
     if (stream_source=='RASPBERRY_CAM'){
         $( "#videoFilesSelect" ).attr('style','display:none !important');
-        $( "#RaspberryServoCameraInput" ).attr('style','display:block !important');
+        $( "#RaspberryServoCameraInput" ).attr('style','display:flex !important');
     }
     else{
         $( "#videoFilesSelect" ).attr('style','display:flex !important');
@@ -712,29 +712,30 @@ function updateRaspberryCameraZoomValue(){
 }
 
 function initMouseClickEvent(){
-    $('#backgroundSubStream_2').click(function(event) {
+    $('#trackingStream_1').click(function(event) {
         // Get the mouse click position
         var x = event.pageX - $(this).offset().left;
         var y = event.pageY - $(this).offset().top;
         var width = $(this).width();
         var height = $(this).height();
+        console.log("origin width : " + x + ", height: " + y);
         console.log("ratio width : " + (x/width).toFixed(4) + ",ratio height: " + (y/height).toFixed(4));
         x=(x/width).toFixed(4);
         y=(y/height).toFixed(4);
-        sendTrackedPosition(x,y)
+        updateTrackedCoordinates(x,y)
     });
 }
 
-function sendTrackedPosition(x,y){
+function updateTrackedCoordinates(x,y){
      $.ajax({
         type: "POST",
-        url: $SCRIPT_ROOT + '/set_tracked_position/'+x+'/'+y,
+        url: $SCRIPT_ROOT + '/update_tracked_coordinates/'+x+'/'+y,
         dataType: "json",
         success: function (data) {
-            console.log("/set_tracked_position is done!")
+            console.log("/update_tracked_coordinates is done!")
         },
         error: function (errMsg) {
-            console.log(" ERROR /set_tracked_position ")
+            console.log(" ERROR /update_tracked_coordinates ")
         }
     });  
 }

@@ -6,17 +6,15 @@ import cv2
 import numpy as np
 from utils_lib.enums import SurveillanceRegionEnum
 from classes.background_subtractor_service import BackgroundSubtractorService
-
 from classes.detection_service import IDetectionService
-from utils_lib.utils_functions import addTrackingFrameFps,addTrackingAndDetectionTime
-
+from utils_lib.utils_functions import addTrackingAndDetectionTimeAndFPS
 from utils_lib.deep_sort import preprocessing
 from utils_lib.deep_sort import nn_matching
 from utils_lib.deep_sort.detection import Detection
 from utils_lib.deep_sort.tracker import Tracker
 from _collections import deque
 from utils_lib.deep_sort.tools import generate_detections as gdet
-# from utils_lib.deep_sort.tools import generate_detections_lite as gdet
+
 class TrackingService():
     track_object_by_background_sub=False
     track_object_by_cnn_detection=True
@@ -36,6 +34,8 @@ class TrackingService():
     colors = {}
     use_cnn_feature_extraction=False
     activate_detection_for_tracking=True
+    tracked_coordinates=(None,None)
+    raspberry_camera=None
 
     def __init__(self,detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService):
         self.background_subtractor_service=background_subtractor_service
@@ -62,16 +62,17 @@ class TrackingService():
         tracking_time=round(time.perf_counter()-tracking_time,4)
 
         if round(time.perf_counter()-start_time,3)>0:
-            fps=1/round(time.perf_counter()-start_time,3)
-            addTrackingFrameFps(detection_frame,fps)
+            tracking_fps=1/round(time.perf_counter()-start_time,3)
         else :
-            addTrackingFrameFps(detection_frame,None)
+            tracking_fps=0
+            
+        if self.raspberry_camera:
+            self.goToTrackedPosition(detection_frame)
 
-        addTrackingAndDetectionTime(detection_frame,detection_time,tracking_time)
+        addTrackingAndDetectionTimeAndFPS(detection_frame,detection_time,tracking_time,tracking_fps)
         return detection_frame
 
     def trackAndDrawBox(self,detection_frame,raw_detection_data):
-        
         bboxes = [np.array(raw_data[0]) for raw_data  in raw_detection_data]       
         scores = [raw_data[1] for raw_data  in raw_detection_data]       
         class_names = [raw_data[2] for raw_data  in raw_detection_data]       
@@ -149,6 +150,29 @@ class TrackingService():
             res = cv2.addWeighted(sub_frame, 0.5, white_rect, 0.2, 1.0)
             frame[y:y+h, x:x+w]=res
             # cv2.rectangle(frame, ( x,y), (x+w,y+h), (255,255,255), 3)
+
+
+    def goToTrackedPosition(self,frame):
+        self.drawCenterLinesTarget(frame)
+        x,y = self.tracked_coordinates
+        if x and y:
+            heigth,width=frame.shape[:2]
+            x=round(x*width)
+            y=round(y*heigth)
+            print("Go to "+str(x)+' '+str(y))
+            self.raspberry_camera.moveServoMotorToCoordinates(origins=(width,heigth),coordinates=(x,y),speed=0.009)
+            self.tracked_coordinates=(None,None)
+
+    def drawCenterLinesTarget(self,frame):
+        heigth,width=frame.shape[:2]
+        
+        line_size=75 if self.raspberry_camera.zoom==1 else 75/self.raspberry_camera.zoom
+        thickness=7 if self.raspberry_camera.zoom==1 else int(7/self.raspberry_camera.zoom)
+
+        cv2.line(frame, (  int(width/2 - line_size),int(heigth/2)), (  int(width/2 + line_size),int(heigth/2)),  ( 0,255, 0),  thickness, cv2.LINE_AA)
+        cv2.line(frame, (  int(width/2),int(heigth/2-line_size)), (  int(width/2 ),int(heigth/2+line_size)),  ( 0,255, 0),  thickness, cv2.LINE_AA)
+       
+        # cv2.line(frame, (  width/2 - 50,heigth/2), (  width/2 + 50,heigth/2),  ( 0,255, 0),  5, cv2.LINE_AA)
 
 
 

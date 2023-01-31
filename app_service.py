@@ -315,14 +315,18 @@ class AppService:
 
     def rotate_servo_motor(self,axis,value):
         if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
-            if axis=='x':
-                self.raspberry_camera.x_servo_motor.goToAngleWithSpeed(angle=int(value),speed=0.005 )
-            elif axis=='y':
-                self.raspberry_camera.y_servo_motor.goToAngleWithSpeed(angle=int(value),speed=0.005) 
-        return jsonify(result=value)
+            self.raspberry_camera.rotateServoMotor(axis=axis,angle=int(value),speed=0.005)
 
+        return jsonify(result=value)
 
     def update_raspberry_camera_zoom(self,zoom):
         if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
             self.raspberry_camera.zoom= float(zoom)
         return jsonify(result=zoom)
+
+    def update_tracked_coordinates(self,x,y):
+        if self.stream_source==StreamSourceEnum.RASPBERRY_CAM and self.tracking_service:
+            self.tracking_service.tracked_coordinates=(float(x),float(y))
+
+        return jsonify(result=x)
+

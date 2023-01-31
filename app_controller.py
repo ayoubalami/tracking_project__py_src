@@ -217,6 +217,12 @@ def update_raspberry_camera_zoom(zoom):
     return app_service.update_raspberry_camera_zoom(zoom=zoom) 
 
 
+@app.route('/update_tracked_coordinates/<x>/<y>', methods = ['POST'])
+def update_tracked_coordinates(x,y):
+    return app_service.update_tracked_coordinates(x,y) 
+
+
+
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)
 
