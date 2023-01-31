@@ -71,7 +71,7 @@ class Track:
         self.hits = 1
         self.age = 1
         self.time_since_update = 0
-
+        self.detection_bbox=None
         self.state = TrackState.Tentative
         self.features = []
         if feature is not None:

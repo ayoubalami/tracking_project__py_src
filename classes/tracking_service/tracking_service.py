@@ -25,7 +25,7 @@ class TrackingService():
     detection_service:IDetectionService=None    
     d_start,d_height,tr_start,tr_height= 200,100,300,500
     is_region_initialization_done=False   
-    n_init=2
+    n_init=3
     max_age=30
     threshold_feature_distance=0.2
     max_iou_distance = 0.5
@@ -54,7 +54,7 @@ class TrackingService():
         # # cv2.rectangle(frame, (int(width/2)-100, 50), (int(width/2)+100, heigth), (0,0,0), -1)
         # cv2.rectangle(frame, (0, 0), (int(width), heigth), (255,255,255), -1)
         # frame=cv2.resize(frame,(int(width/16),int(heigth/16)))
-        detection_frame  ,raw_detection_data=self.getRawDetection(frame,threshold=threshold ,nms_threshold=nms_threshold)
+        detection_frame  ,raw_detection_data=self.getRawDetections(frame,threshold=threshold ,nms_threshold=nms_threshold)
         detection_time=round(time.perf_counter()-start_time,3)
         
         tracking_time=time.perf_counter()
@@ -76,46 +76,21 @@ class TrackingService():
         bboxes = [np.array(raw_data[0]) for raw_data  in raw_detection_data]       
         scores = [raw_data[1] for raw_data  in raw_detection_data]       
         class_names = [raw_data[2] for raw_data  in raw_detection_data]       
-        self.drawDetectedBBoxes(detection_frame,bboxes)
         if self.use_cnn_feature_extraction:
             features = self.encoder(detection_frame, bboxes)
         else:
             features=  [np.array([]) for _  in bboxes] 
-            # features=  [ np.empty(shape=(1), dtype=np.float32) for _  in bboxes] 
 
         tracking_detections = [Detection(bbox, score, class_name, feature) for bbox, score, class_name, feature in
                   zip(bboxes, scores, class_names, features)]
 
         self.tracker.update(tracking_detections)
         self.tracker.predict()
+       
+        self.drawTrackedBBoxes(detection_frame)
+        self.drawDetectedBBoxes(detection_frame,bboxes)
 
-        for track in self.tracker.tracks:
-            if (not track.is_confirmed() or track.time_since_update >1):
-                if self.show_missing_tracks:
-                    bbox = track.to_tlbr()
-                    cv2.rectangle(detection_frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])), (255,255,255), 2)
-                    cv2.putText(detection_frame, "?", (int(((bbox[0]) + (bbox[2]))/2)-10, int(((bbox[1]) + (bbox[3]))/2)), 0, 0.85,
-                                (255, 255, 255), 2)  
-            else:
-                bbox = track.to_tlbr()
-                class_name= track.get_class()
-                color = self.getTrackedColor(int(track.track_id))
-                # color = (32,122,200)
-                cv2.rectangle(detection_frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])), color, 2)
-                cv2.rectangle(detection_frame, (int(bbox[0]), int(bbox[1]-20)), (int(bbox[0])+(len(class_name)
-                            +len(str(track.track_id)))*17, int(bbox[1])), color, -1)
-                cv2.putText(detection_frame, class_name+"-"+str(track.track_id), (int(bbox[0]), int(bbox[1]-3)), 0, 0.6,
-                            (255, 255, 255), 2)        
-                center = (int(((bbox[0]) + (bbox[2]))/2), int(((bbox[1])+(bbox[3]))/2))
-                self.pts[track.track_id].append(center)
-
-                for j in range(1, len(self.pts[track.track_id])):
-                    if self.pts[track.track_id][j-1] is None or self.pts[track.track_id][j] is None:
-                        continue
-                    thickness = int(np.sqrt(64/float(j+1))*1.5)
-                    cv2.line(detection_frame, (self.pts[track.track_id][j-1]), (self.pts[track.track_id][j]), color, thickness)
-
-    def getRawDetection(self,origin_frame,threshold=0.5 ,nms_threshold=0.5): 
+    def getRawDetections(self,origin_frame,threshold=0.5 ,nms_threshold=0.5): 
         if self.activate_detection_for_tracking:
             if self.track_object_by_cnn_detection==True and self.detection_service !=None and self.detection_service.get_selected_model() !=None:
                 return  self.detection_service.detect_objects(origin_frame,threshold= threshold ,nms_threshold=nms_threshold,boxes_plotting=False)
@@ -143,13 +118,42 @@ class TrackingService():
     def  drawDetectedBBoxes (self,frame,bboxes):
         for bbox in bboxes:
             x,y,w,h=bbox
-            # print(bbox)
             sub_frame=frame[y:y+h, x:x+w] 
             white_rect = np.zeros(sub_frame.shape, dtype=np.uint8) 
-            white_rect[:, :, 1] = 255
+            white_rect[:, :, 1] = 200
             res = cv2.addWeighted(sub_frame, 0.5, white_rect, 0.2, 1.0)
             frame[y:y+h, x:x+w]=res
             # cv2.rectangle(frame, ( x,y), (x+w,y+h), (255,255,255), 3)
+
+
+    def drawTrackedBBoxes(self,frame):
+        for track in self.tracker.tracks:
+            if (not track.is_confirmed() or track.time_since_update >1):
+                if self.show_missing_tracks:
+                    bbox = track.to_tlbr()
+                    cv2.rectangle(frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])), (255,255,255), 2)
+                    cv2.putText(frame, "?", (int(((bbox[0]) + (bbox[2]))/2)-10, int(((bbox[1]) + (bbox[3]))/2)), 0, 0.85,
+                                (255, 255, 255), 2)  
+            else:
+                bbox = track.to_tlbr()
+                # bbox = track.detection_bbox.to_tlbr()
+
+                class_name= track.get_class()
+                color = self.getTrackedColor(int(track.track_id))
+                
+                cv2.rectangle(frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])), color, 2)
+                cv2.rectangle(frame, (int(bbox[0]), int(bbox[1]-20)), (int(bbox[0])+(len(class_name)
+                            +len(str(track.track_id)))*14, int(bbox[1])), color, -1)
+                cv2.putText(frame, class_name+"-"+str(track.track_id), (int(bbox[0]), int(bbox[1]-3)), 0, 0.55,
+                            (255, 255, 255), 2)        
+                center = (int(((bbox[0]) + (bbox[2]))/2), int(((bbox[1])+(bbox[3]))/2))
+                self.pts[track.track_id].append(center)
+
+                for j in range(1, len(self.pts[track.track_id])):
+                    if self.pts[track.track_id][j-1] is None or self.pts[track.track_id][j] is None:
+                        continue
+                    thickness = int(np.sqrt(64/float(j+1))*1.5)
+                    cv2.line(frame, (self.pts[track.track_id][j-1]), (self.pts[track.track_id][j]), color, thickness)
 
 
     def goToTrackedPosition(self,frame):

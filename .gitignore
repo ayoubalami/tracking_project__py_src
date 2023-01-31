@@ -1,4 +1,4 @@
-*.mp4
+# *.mp4
 fb.py
 *.csv
 *.tar.gz
@@ -7,5 +7,6 @@ fb.py
 models/
 storages/
 out_videos/
+videos/
 __pycache__/
 *.pt
