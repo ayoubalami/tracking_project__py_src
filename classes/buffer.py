@@ -11,14 +11,13 @@ class Buffer:
     def init_params(self):
         self.buffer_frames = []
         self.batch_size=50 # 200 frame 
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.frames_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.width  = self.cap.get(3)    
         self.height = self.cap.get(4)
-        print("self.width" )
-        print(  self.width)
-        print( self.height)
+        print("VIDEO DIMENSION : " +str(self.width) +" x "+ str(self.height))
+         
         self.frame_duration= 1/self.fps 
         self.video_duration = self.frames_count/ self.fps
         # self.last_loaded_frame_index=0
@@ -28,7 +27,6 @@ class Buffer:
         self.last_frame_of_last_batch=floor(self.frames_count%self.batch_size)
         self.download_new_batch=True
         self.stop_buffring_event=threading.Event() 
-       
 
     def __init__(self, stream_source : StreamSourceEnum, video_src=None): 
         self.video_play=None
@@ -39,7 +37,6 @@ class Buffer:
                 self.reset_youtube_buffer(youtube_url=video_src)
                 self.batch_size=150
         
-
     def init_youtube_video_play(self,youtube_url):
         urlPafy = pafy.new(youtube_url)
         self.video_play = urlPafy.getbest(preftype="any")

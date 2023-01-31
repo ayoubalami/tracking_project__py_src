@@ -72,11 +72,6 @@ class OnnxDetectionService(IDetectionService):
         self.modelName= self.selected_model['name']
         self.download_model_if_not_exists()
         self.model = cv2.dnn.readNetFromONNX(self.modelPath)    
-        # self.model = torch.hub.load('ultralytics/yolov5', 'custom', path='/root/shared/yolov5n.pt' )  # or yolov5m, yolov5l, yolov5x, etc.
-      
-        #  model = torch.hub.load('ultralytics/yolov5', 'custom', path='/root/shared/models/opencv_onnx_models/yolov5n.pt')  # local model
-
-
         self.readClasses()
 
     def get_selected_model(self):
@@ -98,9 +93,7 @@ class OnnxDetectionService(IDetectionService):
             [ 59.40987365, 197.51795215,  34.32644182],
             [ 42.21779254, 156.23398212,  60.88976857]]
     
-          
-
-    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5):
+    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5,boxes_plotting=True):
         
         if  self.model ==None:
             return None,0
@@ -140,25 +133,30 @@ class OnnxDetectionService(IDetectionService):
                     box = np.array([x1,y1,width,height])
                     boxes.append(box)              
         indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
+        raw_detection_data=[]
+
         for i in indices:
             x1,y1,w,h = boxes[i]
-           
             label = self.classesList[classes_ids[i]]
             classColor = (236,106,240)
-           
             if (classes_ids[i] in self.classAllowed)==True:
                 label = self.classesList[classes_ids[i]]
                 classColor = self.colorList[self.classAllowed.index(classes_ids[i])]
-
             conf = confidences[i]
             displayText = '{}: {:.2f}'.format(label, conf) 
 
-            cv2.rectangle(img,(x1,y1),(x1+w,y1+h),color=classColor,thickness=2)
-            cv2.putText(img, displayText, (x1,y1-2),cv2.FONT_HERSHEY_PLAIN, 1.5,classColor,2)
-                
-        fps= 1 /round(time.perf_counter()-start_time,3)
-        self.addFrameFps(img,fps)
-        return img , inference_time
+            if boxes_plotting :
+                cv2.rectangle(img,(x1,y1),(x1+w,y1+h),color=classColor,thickness=2)
+                cv2.putText(img, displayText, (x1,y1-2),cv2.FONT_HERSHEY_PLAIN, 1.5,classColor,2)
+            else:
+                raw_detection_data.append(([x1, y1, w, h],conf,label))
+
+        if boxes_plotting :
+            fps= 1 /round(time.perf_counter()-start_time,3)
+            self.addFrameFps(img,fps)
+            return img,inference_time
+        else:
+            return img,raw_detection_data
 
     def init_object_detection_models_list(self):
         self.detection_method_list_with_url=self.detection_method_list

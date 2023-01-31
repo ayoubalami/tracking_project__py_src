@@ -1,7 +1,25 @@
-.form-check-input{
-    width: 50px !important;
-    height: 24px;
+.accordion-button{
+    padding: 10px;
 }
+.form-check-input[type=checkbox]{
+    width: 55px !important;
+    height: 30px;
+}
+
+.form-check-input[type=radio]{
+    width: 30px !important; 
+    height: 30px !important;
+}
+
+.form-check-label{
+    font-size: 20px;
+    padding: 0 10px;
+}
+
+#tracking_accordionFlushBackgroundSubtraction{
+    display: none;
+}
+
 .accordion-flush .accordion-item:last-child {
     border-bottom: 0;
     border-left: 1px solid #99c8ef;
@@ -31,4 +49,9 @@
     background-color: #fff;
     border-color: #aab2b9 #acb8c5 #e4efff;
     background: #62a0fd2b;
+}
+
+#RaspberryServoCameraInput label{
+    font-size: large;
+    font-weight: bold;
 }

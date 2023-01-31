@@ -4,7 +4,10 @@
 // var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
 // var $SCRIPT_ROOT = "http://Raspberrypi.local:8000/"
-var $SCRIPT_ROOT = "http://"+api_server+":8000/"
+
+var $SCRIPT_ROOT = "http://"+api_server+":8000"
+// var $SCRIPT_ROOT = "http://192.168.137.226:8000"
+
 var secondApiIpChecked=false
 
 var intervalID = null;
@@ -17,6 +20,8 @@ var objectDetectionList=[];
 var loadingDetectionModel=false;
 var selected_model_name=null;
 var showBackgroundSubtractionStream=false;
+var showMissingTracks=false;
+var main_video_stream_error_count=0;
 
 window.onbeforeunload = function(event){
 
@@ -39,62 +44,68 @@ window.onbeforeunload = function(event){
     }
 
 
-    function updateThresholdValue(){
-        var thresholdValueText =  $( "#thresholdValueText" )
-        var newThresholdValue=$( "#thresholdSlider" )[0].value;
-        thresholdValueText.text( newThresholdValue);
+    function updateCNNDetectorParamValue(param){
+        var newParamValueFromSlider= $( "#"+param+"_Slider" )[0].value;
+        $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
+
+        if (param.startsWith('tracking_')){
+            $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
+            param=param.substring(9)
+            $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
+            $( "#"+param+"_Slider" )[0].value= newParamValueFromSlider;
+        }else{
+            $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"_ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"_Slider" )[0].value= newParamValueFromSlider;
+        }
+         
         $.ajax({
             type: "POST",
-            url: $SCRIPT_ROOT + '/models/update_threshold/'+newThresholdValue,
+            url: $SCRIPT_ROOT + '/models/update_cnn_detector_param/'+param+'/'+newParamValueFromSlider,
             dataType: "json",
             success: function (data) {
-                console.log("/models/threshold")
-                
+                // paramValueText.text( newParamValueFromSlider);
+                console.log("/models/update_cnn_detector_param is done!") 
             },
             error: function (errMsg) {
-            }
-        });  
-    }
-
-    function updateNmsThresholdValue(){
-       
-        var nmsThresholdValueText =  $( "#nmsThresholdValueText" )
-        var newNmsThresholdValue=$( "#nmsThresholdSlider" )[0].value;
-
-        nmsThresholdValueText.text( newNmsThresholdValue);
-        $.ajax({
-            type: "POST",
-            url: $SCRIPT_ROOT + '/models/update_nms_threshold/'+newNmsThresholdValue,
-            dataType: "json",
-            success: function (data) {
-                console.log("/models/nms_threshold") 
-            },
-            error: function (errMsg) {
+                console.log(" ERROR /models/update_cnn_detector_param ") 
             }
         });  
     }
 
     function updateBackgroundSubtractionParamValue(param){
-        var paramValueText = $( "#"+param+"ValueText" )
+        // tracking_varThreshold
         var newParamValueFromSlider= $( "#"+param+"Slider" )[0].value;
+
+        if (param.startsWith('tracking_')){
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            param=param.substring(9)
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#"+param+"Slider" )[0].value= newParamValueFromSlider;
+        }else{
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"Slider" )[0].value= newParamValueFromSlider;
+        }
+
         $.ajax({
             type: "POST",
             url: $SCRIPT_ROOT + '/models/update_background_subtraction_param/'+param+'/'+newParamValueFromSlider,
             dataType: "json",
             success: function (data) {
-                paramValueText.text( newParamValueFromSlider);
+                // paramValueText.text( newParamValueFromSlider);
                 console.log("/models/update_background_subtraction_param is done!") 
             },
             error: function (errMsg) {
                 console.log(" ERROR /models/update_background_subtraction_param ") 
             }
         });  
-
     }
     
 function initVideoStreamFrame(){
     var eventSource = new EventSource('/main_video_stream');
     eventSource.onmessage = function(event) {
+        main_video_stream_error_count=0
         var result = JSON.parse(event.data);
         streamKeys=Object.keys(result)
         streamKeys.forEach(stream => {
@@ -102,18 +113,31 @@ function initVideoStreamFrame(){
             videoFrame.attr("src", 'data:image/jpeg;base64,' + result[stream]);
         });        
     };
+    eventSource.onerror = (err) => {
+        main_video_stream_error_count++;
+        console.log("Stream ERROR :", err);
+        console.error("Stream done :", err);
+        if(main_video_stream_error_count>5)
+            eventSource.close();
+      };
+
     videoInitialized=true;
 }
 
-
-
 function initData(){
+    
+    initStreamSourceParams()
     getObjectDetectionList();
     if (videoInitialized==false)
         initVideoStreamFrame()
-
-    // src="{{ url_for('video_stream') }}"
-}
+    
+    setTimeout(function(){
+        if (stream_source=='RASPBERRY_CAM'){
+            onClickToggleStopStart();
+        }
+    }, 500); 
+    initMouseClickEvent();
+   }
 
 function onClickReset(){
     toggleDisabledResetButton(true);
@@ -135,7 +159,6 @@ function onClickReset(){
     });  
 }
 
-
 function stopStreamOnReset(){
     if(is_running_stream){
         toggleDisabledStartStopButton(true);
@@ -144,7 +167,6 @@ function stopStreamOnReset(){
         sendStopVideoRequest();
         is_running_stream=!is_running_stream
     }
-    
 } 
 
 function onClickStartOfflineDetection(){
@@ -153,19 +175,22 @@ function onClickStartOfflineDetection(){
     toggleDisabledDetectionMethodSelect(true);
     toggleDisabledLoadingModelButton(true,showSpinner=false);
     toggleDisabledResetButton(true);
-
+    toggleDisabledNextFrameButton(true);
     $("#offlineDetectionButton").attr("disabled", true);
     $("#offlineDetectionButton").children().css( "display", "inline-block" )
-
+    selectedVideo=$('#inputVideoFile').find(":selected").val();
+    // selectedResolution=$('#inputVideoResolution').find(":selected").val();
+     
     $.ajax({
         type: "POST",
-        url: $SCRIPT_ROOT + '/start_offline_detection',
+        url: $SCRIPT_ROOT + '/start_offline_detection/'+selectedVideo,
         dataType: "json",
         success: function (data) {
             toggleDisabledStartStopButton(false);
             toggleDisabledDetectionMethodSelect(false);
             toggleDisabledLoadingModelButton(false,showSpinner=false);
             toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false);
             $("#offlineDetectionButton").attr("disabled", false);
             $("#offlineDetectionButton").children().css( "display", "none" )
             console.log("  start_offline_detection  success")
@@ -177,7 +202,6 @@ function onClickStartOfflineDetection(){
             toggleDisabledResetButton(false);
             $("#offlineDetectionButton").attr("disabled", false);
             $("#offlineDetectionButton").children().css( "display", "none" )
-
             console.log(" ERROR IN start_offline_detection")
         }
     });  
@@ -189,13 +213,16 @@ function onClickToggleStopStart(){
         toggleDisabledDetectionMethodSelect(false);
         toggleDisabledLoadingModelButton(false);
         toggleDisabledResetButton(false);
+        toggleDisabledNextFrameButton(false)
         sendStopVideoRequest();
     }else{
         toggleDisabledStartStopButton(true);
         toggleDisabledDetectionMethodSelect(true);
         toggleDisabledLoadingModelButton(true,showSpinner=false);
         toggleDisabledResetButton(true);
+        toggleDisabledNextFrameButton(true)
         sendStartVideoRequest();
+
         // toggleDisabledResetButton(false)
     }
     is_running_stream=!is_running_stream
@@ -204,25 +231,30 @@ function onClickToggleStopStart(){
 
 function fillobjectDetectionSelect(methodsList){
     var objectDetectionSelect = $("#objectDetectionSelect");
+    var tracking_objectDetectionSelect = $("#tracking_objectDetectionSelect");
+
     console.log(methodsList);
     methodsList.forEach(method => {
         var el = document.createElement("option");
         el.textContent = method.name;
         el.value = method.name;
         objectDetectionSelect.append(el);
+        el = document.createElement("option");
+        el.textContent = method.name;
+        el.value = method.name;
+        tracking_objectDetectionSelect.append(el);
     });
 }
 
 function setModelNameText(text){
-    var selectModelText = $("#selectModelText");
-    selectModelText.text(text);
+    $("#selectModelText").text(text);
+    $("#tracking_selectModelText").text(text);
 }
 
 function setModelNameTextToLoadState(newSelectedModel){
-    var selectModelText = $("#selectModelText");
-    selectModelText.text(newSelectedModel + " est en cours de chargement ...");
+    $("#selectModelText").text(newSelectedModel + " est en cours de chargement ...");
+    $("#tracking_selectModelText").text(newSelectedModel + " est en cours de chargement ...");
 }
-
 
 function getObjectDetectionList(){
         $.ajax({
@@ -241,16 +273,21 @@ function getObjectDetectionList(){
     }
 
 
-function onClickLoadModel(){
+function onClickLoadModel(source){
     toggleDisabledLoadingModelButton(true);
     toggleDisabledStartStopButton(true);
     toggleDisabledResetButton(true);
-    
+    toggleDisabledNextFrameButton(true);
+    $("#offlineDetectionButton").attr("disabled", true);
+    $("#offlineTrackingButton").attr("disabled", true);
+
     if (selected_model_name==null){
-        selected_model_name=$( "#objectDetectionSelect" )[0].value
+        if (source=='for_tracking')
+            selected_model_name=$( "#tracking_objectDetectionSelect" )[0].value;
+        else
+            selected_model_name=$( "#objectDetectionSelect" )[0].value;
     }    
     setModelNameTextToLoadState();
-   
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/models/load/'+selected_model_name,
@@ -261,13 +298,20 @@ function onClickLoadModel(){
             toggleDisabledLoadingModelButton(false);
             toggleDisabledStartStopButton(false);
             toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false);
+            $("#offlineDetectionButton").attr("disabled", false);
+            $("#offlineTrackingButton").attr("disabled", false);
+        
             setModelNameText(""+selected_model_name +" est chargé correctement.") 
             // return e
         },
         error: function (errMsg) {
             console.log(" ERROR IN stop_stream")
-            setModelNameText("Error in loading "+selected_model_name +"!!")
-
+            setModelNameText("ERROR in loading "+selected_model_name +"!!")
+            toggleDisabledLoadingModelButton(false);
+            toggleDisabledStartStopButton(false);
+            toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false);
         }
     });
 }
@@ -292,15 +336,23 @@ function sendStopVideoRequest(){
         }
     });
 }
+
+function onChangeVideoResolution(){
+    var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
+    $( "#nmsThreshold_ValueText" ).text( selectedResolution+" %");
+}
+
 function sendStartVideoRequest(){
     selectedVideo=$('#inputVideoFile').find(":selected").val();
-      $.ajax({
+    var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
+    // $( "#"+param+"ValueText" ).text( selectedResolution+" %");
+
+    $.ajax({
         type: "POST",
-        url: $SCRIPT_ROOT + '/start_stream/'+selectedVideo,
+        url: $SCRIPT_ROOT + '/start_stream/'+selectedResolution+'/'+selectedVideo,
         dataType: "json",
         success: function (data) {
             console.log(" start_stream "+selectedVideo)
-           
             // intervalID = setInterval(update_values, 600);
             $('#startStopButton').html( 'Stop');
             // $('#startStopButton').attr("class","btn btn-danger btn-lg w-25");
@@ -317,14 +369,14 @@ function sendStartVideoRequest(){
 }
 
  
-
-
-
-
-function onChangeObjectDetection(){
-    console.log($( "#objectDetectionSelect" )[0].value );
-    selected_model_name=$( "#objectDetectionSelect" )[0].value
-    
+function onChangeObjectDetection(source){
+    if (source=='for_tracking'){
+        selected_model_name=$( "#tracking_objectDetectionSelect" )[0].value;
+        $( "#objectDetectionSelect" )[0].value=selected_model_name
+    }else{
+        selected_model_name=$( "#objectDetectionSelect" )[0].value
+        $( "#tracking_objectDetectionSelect" )[0].value=selected_model_name
+    }
 }
 
 function toggleDisabledResetButton(setToDisabled){
@@ -338,8 +390,10 @@ function toggleDisabledResetButton(setToDisabled){
 function toggleDisabledDetectionMethodSelect(setToDisabled){
     if(setToDisabled){
         $("#objectDetectionSelect").prop('disabled', true);
+        $("#tracking_objectDetectionSelect").prop('disabled', true);
     }else{
         $("#objectDetectionSelect").prop('disabled', false);
+        $("#tracking_objectDetectionSelect").prop('disabled', false);
     }
 }
 
@@ -356,13 +410,18 @@ function toggleDisabledStartStopButton(setToDisabled){
 function toggleDisabledLoadingModelButton(setToDisabled,showSpinner=true){
     if (setToDisabled){
         $("#loadModelButton").attr("disabled", true);
+        $("#tracking_loadModelButton").attr("disabled", true);
+        
         if(showSpinner){
             $("#loadModelButton").children().css( "display", "inline-block" )
+            $("#tracking_loadModelButton").children().css( "display", "inline-block" )
         }
         loadingDetectionModel=true;
     }else{
         $("#loadModelButton").attr("disabled", false);
         $("#loadModelButton").children().css( "display", "none" )
+        $("#tracking_loadModelButton").attr("disabled", false);
+        $("#tracking_loadModelButton").children().css( "display", "none" )
         loadingDetectionModel=false;
     }
 }
@@ -386,10 +445,8 @@ function update_values() {
 function load_duration() {
     $.getJSON($SCRIPT_ROOT + '/video_duration',
         function (data) {
-
             video_duration = data.result
             $('#myRange').attr("max", data.result)
-
         });
 }
 
@@ -415,7 +472,6 @@ function onClickSwitchTab(stream){
     });  
 }
 
-
 function changeServerApi(){
 
     if  (secondApiIpChecked==false){
@@ -428,48 +484,257 @@ function changeServerApi(){
         $SCRIPT_ROOT = "http://"+api_server+":8000/"
         secondApiIpChecked=true
         getObjectDetectionList()
-
     }
-
 }
-// function onCheckedBackgroundSubtractionService(){
-//     showBackgroundSubtractionStream=$("#backgroundSubtractionCheckChecked").prop("checked")
-//     toggleDisabledBackgroundSubtractionStream();
+ 
+function sendGoToNextFrameRequest(){
+    toggleDisabledNextFrameButton(true);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/get_next_frame',
+        dataType: "json",
+        success: function (data) {
+            console.log(" get_next_frame ")
+            toggleDisabledNextFrameButton(false);
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN start_stream")
+            toggleDisabledNextFrameButton(false)
+        }
+    });    
+}
 
-//     $.ajax({
-//         type: "POST",
-//         url: $SCRIPT_ROOT + '/background_subtraction/show_stream/'+showBackgroundSubtractionStream,
-//         dataType: "json",
-//         success: function (data) {
-//             console.log("  toggleDisabledBackgroundSubtractionStream  ")
-//         },
-//         error: function (errMsg) {
-//             console.log(" error toggleDisabledBackgroundSubtractionStream true")
-//         }
-//     });  
+function onClickGoToNextFrame(){        
+    if(is_running_stream==false){
+        sendGoToNextFrameRequest();
+    }
+}
 
-// }
+function toggleDisabledNextFrameButton(setToDisabled){
+    if (setToDisabled){
+        $("#goToNextFrameButton").attr("disabled", true);
+    }else{
+        $("#goToNextFrameButton").attr("disabled", false);
+    }
+}
 
-// window.onbeforeunload = function (e) {
-//     var e = e || window.event;
-//     alert("clean_memory")
-//     $.ajax({
-//         type: "POST",
-//         url: $SCRIPT_ROOT + '/clean_memory',
-//         // The key needs to match your method's input parameter (case-sensitive).
-//         // data: JSON.stringify({ Markers: markers }),
-//         // contentType: "application/json; charset=utf-8",
-//         dataType: "json",
-//         success: function (data) {
-//             console.log(" memory cleaned")
-//             // alert("")
-//             return e
-//         },
-//         error: function (errMsg) {
-//             console.log(" ERROR IN memory cleaning")
-//         }
-//     });
+function onClickTrackWithDetection(){
+    $("#tracking_accordionFlushDetectorParams").show();
+    $("#tracking_accordionFlushBackgroundSubtraction").hide();
+    send_track_with_request('cnn_detection')
+}
+
+function onClickTrackWithBackgroundSubtraction(){
+    $("#tracking_accordionFlushDetectorParams").hide();
+    $("#tracking_accordionFlushBackgroundSubtraction").show();
+    send_track_with_request('background_subtraction')
+}
+
+function send_track_with_request(param){
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/track_with/'+param,
+        dataType: "json",
+        success: function (data) {
+            console.log(" track_with ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN start_stream")
+        }
+    });    
+}
+
+function onCheckedShowMissingTracks(){
+    showMissingTracks=$("#showMissingTracksCheckbox")[0].checked;
+    console.log(showMissingTracks);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/show_missing_tracks/'+showMissingTracks,
+        dataType: "json",
+        success: function (data) {
+            console.log(" show_missing_tracks ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN show_missing_tracks")
+        }
+    });    
+}
+
+function onClickStartOfflineTracking(){
+
+    toggleDisabledStartStopButton(true);
+    toggleDisabledDetectionMethodSelect(true);
+    toggleDisabledLoadingModelButton(true,showSpinner=false);
+    toggleDisabledResetButton(true);
+    toggleDisabledNextFrameButton(true)
+    $("#offlineDetectionButton").attr("disabled", true);
+    $("#offlineDetectionButton").children().css( "display", "inline-block" )
+    $("#offlineTrackingButton").attr("disabled", true);
+    $("#offlineTrackingButton").children().css( "display", "inline-block" )
+    selectedVideo=$('#inputVideoFile').find(":selected").val();
+
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/start_offline_tracking/'+selectedVideo,
+        dataType: "json",
+        success: function (data) {
+            toggleDisabledStartStopButton(false);
+            toggleDisabledDetectionMethodSelect(false);
+            toggleDisabledLoadingModelButton(false,showSpinner=false);
+            toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false)
+            $("#offlineDetectionButton").attr("disabled", false);
+            $("#offlineDetectionButton").children().css( "display", "none" )
+            $("#offlineTrackingButton").attr("disabled", false);
+            $("#offlineTrackingButton").children().css( "display", "none" )
+            console.log("  start_offline_tracking  success")
+        },
+        error: function (errMsg) {
+            toggleDisabledStartStopButton(true);
+            toggleDisabledDetectionMethodSelect(true);
+            toggleDisabledLoadingModelButton(true,showSpinner=false);
+            toggleDisabledResetButton(false);
+            toggleDisabledNextFrameButton(false)
+            $("#offlineDetectionButton").attr("disabled", false);
+            $("#offlineDetectionButton").children().css( "display", "none" )
+            $("#offlineTrackingButton").attr("disabled", false);
+            $("#offlineTrackingButton").children().css( "display", "none" )
+            console.log(" ERROR IN start_offline_tracking")
+        }
+    });  
+}
+
+function onCheckedActivateStreamSimulation(){
+    activateStreamSimulation=$("#streamStimulationCheckbox")[0].checked;
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/activate_stream_simulation/'+activateStreamSimulation,
+        dataType: "json",
+        success: function (data) {
+            console.log(" activate_stream_simulation ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN activate_stream_simulation")
+        }
+    });
+}
+
+function onCheckedUseCNNFeatureExtraction(){
+    useCNNFeatureExtractionCheckbox=$("#useCNNFeatureExtractionCheckbox")[0].checked;
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/use_cnn_feature_extraction_on_tracking/'+useCNNFeatureExtractionCheckbox,
+        dataType: "json",
+        success: function (data) {
+            console.log(" activate_stream_simulation ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN activate_stream_simulation")
+        }
+    });   
+}
+
+function onCheckedActivateDetection(){
+    activateDetection=$("#activateDetectionCheckbox")[0].checked;
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/activate_detection/'+activateDetection,
+        dataType: "json",
+        success: function (data) {
+            console.log(" activate_detection ")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN activate_detection")
+        }
+    });
+}
+
+function updateTrackingParamValue(param){
+    var newParamValueFromSlider= $( "#"+param+"Slider" )[0].value;
+    $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/update_tracking_param/'+param+'/'+newParamValueFromSlider,
+        dataType: "json",
+        success: function (data) {
+            console.log("/update_tracking_param is done!")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /update_tracking_param ")
+        }
+    });  
+}
+
+function initStreamSourceParams(){
+    console.log(stream_source);
+    if (stream_source=='RASPBERRY_CAM'){
+        $( "#videoFilesSelect" ).attr('style','display:none !important');
+        $( "#RaspberryServoCameraInput" ).attr('style','display:block !important');
+    }
+    else{
+        $( "#videoFilesSelect" ).attr('style','display:flex !important');
+        $( "#RaspberryServoCameraInput" ).attr('style','display:none !important');
+    }
+}
 
 
-// };
-//  </script>
+function updateServoMotorValue(axis){
+    var newDegreeFromSlider= $( "#"+axis+"_axisServoDegree_slider" )[0].value;
+    $( "#"+axis+"_axisServoDegree_valueText" ).text( newDegreeFromSlider);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/rotate_servo_motor/'+axis+'/'+newDegreeFromSlider,
+        dataType: "json",
+        success: function (data) {
+            console.log("/rotate_servo_motor is done!")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /rotate_servo_motor ")
+        }
+    });  
+}
+
+
+function updateRaspberryCameraZoomValue(){
+    var newZoomFromSlider= $( "#cameraZoom_slider" )[0].value;
+    $( "#cameraZoom_valueText" ).text( newZoomFromSlider);
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/update_raspberry_camera_zoom/'+newZoomFromSlider,
+        dataType: "json",
+        success: function (data) {
+            console.log("/update_raspberry_camera_zoom is done!")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /update_raspberry_camera_zoom ")
+        }
+    });  
+}
+
+function initMouseClickEvent(){
+    $('#backgroundSubStream_2').click(function(event) {
+        // Get the mouse click position
+        var x = event.pageX - $(this).offset().left;
+        var y = event.pageY - $(this).offset().top;
+        var width = $(this).width();
+        var height = $(this).height();
+        console.log("ratio width : " + (x/width).toFixed(4) + ",ratio height: " + (y/height).toFixed(4));
+        x=(x/width).toFixed(4);
+        y=(y/height).toFixed(4);
+        sendTrackedPosition(x,y)
+    });
+}
+
+function sendTrackedPosition(x,y){
+     $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/set_tracked_position/'+x+'/'+y,
+        dataType: "json",
+        success: function (data) {
+            console.log("/set_tracked_position is done!")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /set_tracked_position ")
+        }
+    });  
+}
