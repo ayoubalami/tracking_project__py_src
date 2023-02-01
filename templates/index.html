@@ -291,12 +291,12 @@
                       </div>
                       <div class="col-md-6 py-1">
                         <div class="d-flex" style="align-items: baseline;">
-                          <h5 class="me-3" style="align-self: cente">Blur kernel size : </h5>
+                          <h5 class="me-3" style="align-self: cente">Gaussien Blur kernel size : </h5>
                           <code>
-                            <h4 id="blurKernelSizeValueText"> 3 </h4>
+                            <h4 id="blurKernelSizeValueText"> 1 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('blurKernelSize')" min="1" max="11" value="5" step="2"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('blurKernelSize')" min="1" max="11" value="1" step="2"
                           class="slider w-100" id="blurKernelSizeSlider">
                       </div>
                       <div class="col-md-6 py-1">
@@ -306,7 +306,7 @@
                             <h4 id="minBoxSizeValueText"> 300 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('minBoxSize')" min="100" max="2500" value="300" step="100"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('minBoxSize')" min="50" max="1500" value="300" step="50"
                           class="slider w-100" id="minBoxSizeSlider">
                       </div> 
                     </div>      
@@ -315,8 +315,13 @@
             </div>
           </div>
           <div  class="col" style="display: flex; flex-direction: column;width: 100%;">
+            <h2>Foreground Masks detection Detection</h2>
             <img id="backgroundSubStream_1" />
+            <h2>Resized Foreground objects Detection</h2>
             <img id="backgroundSubStream_2" />
+            <h2>Merged Foreground objects Detection</h2>
+            <img id="backgroundSubStream_3" />
+            
           </div>
         </div>
         <div class="tab-pane container px-0  fade" id="trackingStream">  
@@ -534,12 +539,12 @@
                       </div>
                       <div class="col-md-6 py-1">
                         <div class="d-flex" style="align-items: baseline;">
-                          <h5 class="me-3" style="align-self: cente">Blur kernel size : </h5>
+                          <h5 class="me-3" style="align-self: cente">Gaussien Blur kernel size : </h5>
                           <code>
-                            <h4 id="tracking_blurKernelSizeValueText"> 3 </h4>
+                            <h4 id="tracking_blurKernelSizeValueText"> 1 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_blurKernelSize')" min="1" max="11" value="5" step="2"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_blurKernelSize')" min="1" max="11" value="1" step="2"
                           class="slider w-100" id="tracking_blurKernelSizeSlider">
                       </div>
                       <div class="col-md-6 py-1">
@@ -549,7 +554,7 @@
                             <h4 id="tracking_minBoxSizeValueText"> 300 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_minBoxSize')" min="100" max="2500" value="300" step="100"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_minBoxSize')" min="50" max="1500" value="300" step="50"
                           class="slider w-100" id="tracking_minBoxSizeSlider">
                       </div> 
                     </div>      

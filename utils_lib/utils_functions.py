@@ -18,10 +18,7 @@ def runcmd(cmd, verbose = False, *args, **kwargs):
         print(std_out.strip(), std_err)
     pass
 
-def addFrameFps(img,detection_fps):
-    width=img.shape[1]
-    cv2.putText(img, f'FPS: {round(detection_fps,2)}', (int(width/2)-20,50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255,25,50), 2)
-    
+
 def addTrackingAndDetectionTimeAndFPS(img,detection_time,tracking_time,tracking_fps):
     width=img.shape[1]
     cv2.rectangle(img,(int(width-195),10),(int(width-10),85),color=(240,240,240),thickness=-1)

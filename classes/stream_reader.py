@@ -26,7 +26,7 @@ class StreamReader:
     threshold=0.5
     network_input_size=None
     video_resolution_ratio=1
-
+    jpeg_compression_ratio=75
     np.random.seed(123)
 
     def clean_memory(self):
@@ -90,7 +90,8 @@ class StreamReader:
         if self.stream_source == StreamSourceEnum.YOUTUBE :
             self.buffer.reset_youtube_buffer(youtube_url=self.video_src)   
         if self.stream_source == StreamSourceEnum.FILE:
-            self.buffer.reset_file_buffer(file_src=self.video_src)   
+            self.buffer.reset_file_buffer(file_src=self.video_src) 
+        self.background_subtractor_service.reset()  
         self.current_time=0
         self.current_sec=0
         self.current_frame_index=0
@@ -266,9 +267,9 @@ class StreamReader:
  
     def getNextFrame(self):
         origin_frame,self.current_batch=self.getCurrentFrame() 
-        if self.video_resolution_ratio!=None and self.video_resolution_ratio!=1  :
-            img_height,img_width = origin_frame.shape[:2] 
-            origin_frame=cv2.resize(origin_frame, (int(img_width*self.video_resolution_ratio) ,int(img_height*self.video_resolution_ratio) ))
+        # if self.video_resolution_ratio!=None and self.video_resolution_ratio!=1  :
+        #     img_height,img_width = origin_frame.shape[:2] 
+            # origin_frame=cv2.resize(origin_frame, (int(img_width*self.video_resolution_ratio) ,int(img_height*self.video_resolution_ratio) ))
 
         return origin_frame
 
@@ -282,28 +283,36 @@ class StreamReader:
             if self.save_detectors_results:
                 self.inference_time_records.append(inference_time)
             self.addFrameTime(detection_frame)
-            result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=71)
+            result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
 
         elif self.current_selected_stream== ClientStreamTypeEnum.BACKGROUND_SUBTRACTION:
-            foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(copy_frame)
+            merged_foreground_detection_frame,resized_foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(frame=copy_frame,resolution_ratio=self.video_resolution_ratio)
             # self.addInferenceTime(subtraction_frame,inference_time)
-            self.addFrameTime(foreground_detection_frame)
-            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=71)
-            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=71)
-        
+            self.addFrameTime(resized_foreground_detection_frame)
+            self.addFrameTime(merged_foreground_detection_frame)
+            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
+            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=resized_foreground_detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
+            result['backgroundSubStream_3']=self.encodeStreamingFrame(frame=merged_foreground_detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
+
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
             tracking_frame=self.tracking_service.apply(copy_frame,threshold= self.threshold ,nms_threshold=self.nms_threshold)
             self.addFrameTime(tracking_frame)
-            result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=71)
+            result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
             # result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
             # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)
         yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 
     def encodeStreamingFrame(self,frame,resize_ratio=1,jpeg_quality=100):
+        copy_frame=frame.copy()
         if resize_ratio!=1:
-            img_width, img_height = frame.shape[1], frame.shape[0]
-            frame=cv2.resize(frame, (int(img_width*resize_ratio) ,int(img_height*resize_ratio) ))
-        ret,buffer=cv2.imencode('.jpg',frame, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
+            img_width, img_height = copy_frame.shape[1], copy_frame.shape[0]
+            copy_frame=cv2.resize(copy_frame, (int(img_width*resize_ratio) ,int(img_height*resize_ratio) ))
+        
+        if jpeg_quality!=100:
+            ret,buffer=cv2.imencode('.jpg',copy_frame, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
+        else:
+            ret,buffer=cv2.imencode('.jpg',copy_frame)
+            
         img_bytes=buffer.tobytes()
         return  base64.b64encode(img_bytes).decode()
 

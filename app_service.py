@@ -46,7 +46,6 @@ class AppService:
         self.background_subtractor_service=BackgroundSubtractorService()
         self.tracking_service=TrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
 
-       
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
             print( "Service name : ",self.detection_service.service_name())

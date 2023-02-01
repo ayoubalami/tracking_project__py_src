@@ -20,7 +20,7 @@ class TrackingService():
     track_object_by_cnn_detection=True
     # feature_detector = cv2.BRISK_create()
     show_missing_tracks=False
-    pts = [deque(maxlen=50) for _ in range(1000)]
+    pts = [deque(maxlen=50) for _ in range(10000)]
     background_subtractor_service:BackgroundSubtractorService=None    
     detection_service:IDetectionService=None    
     d_start,d_height,tr_start,tr_height= 200,100,300,500
@@ -111,7 +111,7 @@ class TrackingService():
     def reset(self):
         self.tracker.tracks=[]
         self.tracker=Tracker(self.metric,max_iou_distance=self.max_iou_distance, max_age=self.max_age, n_init=self.n_init)
-        self.pts = [deque(maxlen=30) for _ in range(1000)]
+        self.pts = [deque(maxlen=30) for _ in range(10000)]
         self.colors={}
         # pass
 
