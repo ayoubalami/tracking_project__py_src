@@ -25,7 +25,7 @@ class StreamReader:
     nms_threshold=0.5
     threshold=0.5
     network_input_size=None
-    video_resolution_ratio=1
+
     jpeg_compression_ratio=75
     np.random.seed(123)
 
@@ -286,7 +286,7 @@ class StreamReader:
             result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
 
         elif self.current_selected_stream== ClientStreamTypeEnum.BACKGROUND_SUBTRACTION:
-            merged_foreground_detection_frame,resized_foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(frame=copy_frame,resolution_ratio=self.video_resolution_ratio)
+            merged_foreground_detection_frame,resized_foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(frame=copy_frame)
             # self.addInferenceTime(subtraction_frame,inference_time)
             self.addFrameTime(resized_foreground_detection_frame)
             self.addFrameTime(merged_foreground_detection_frame)

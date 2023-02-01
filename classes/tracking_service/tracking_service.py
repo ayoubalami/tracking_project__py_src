@@ -7,7 +7,7 @@ import numpy as np
 from utils_lib.enums import SurveillanceRegionEnum
 from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.detection_service import IDetectionService
-from utils_lib.utils_functions import addTrackingAndDetectionTimeAndFPS
+
 from utils_lib.deep_sort import preprocessing
 from utils_lib.deep_sort import nn_matching
 from utils_lib.deep_sort.detection import Detection
@@ -67,9 +67,11 @@ class TrackingService():
             tracking_fps=0
             
         if self.raspberry_camera:
-            self.goToTrackedPosition(detection_frame)
+            pass
+            # self.raspberry_camera.tracked_object=
+            # self.goToTrackedPosition(detection_frame)
 
-        addTrackingAndDetectionTimeAndFPS(detection_frame,detection_time,tracking_time,tracking_fps)
+        self.addTrackingAndDetectionTimeAndFPS(detection_frame,detection_time,tracking_time,tracking_fps)
         return detection_frame
 
     def trackAndDrawBox(self,detection_frame,raw_detection_data):
@@ -143,8 +145,8 @@ class TrackingService():
                 
                 cv2.rectangle(frame, (int(bbox[0]),int(bbox[1])), (int(bbox[2]),int(bbox[3])), color, 2)
                 cv2.rectangle(frame, (int(bbox[0]), int(bbox[1]-20)), (int(bbox[0])+(len(class_name)
-                            +len(str(track.track_id)))*14, int(bbox[1])), color, -1)
-                cv2.putText(frame, class_name+"-"+str(track.track_id), (int(bbox[0]), int(bbox[1]-3)), 0, 0.55,
+                            +len(str(track.track_id)))*13, int(bbox[1])), color, -1)
+                cv2.putText(frame, class_name+"-"+str(track.track_id), (int(bbox[0]), int(bbox[1]-3)), 0, 0.50,
                             (255, 255, 255), 2)        
                 center = (int(((bbox[0]) + (bbox[2]))/2), int(((bbox[1])+(bbox[3]))/2))
                 self.pts[track.track_id].append(center)
@@ -155,17 +157,16 @@ class TrackingService():
                     thickness = int(np.sqrt(64/float(j+1))*1.5)
                     cv2.line(frame, (self.pts[track.track_id][j-1]), (self.pts[track.track_id][j]), color, thickness)
 
-
-    def goToTrackedPosition(self,frame):
-        self.drawCenterLinesTarget(frame)
-        x,y = self.tracked_coordinates
-        if x and y:
-            heigth,width=frame.shape[:2]
-            x=round(x*width)
-            y=round(y*heigth)
-            print("Go to "+str(x)+' '+str(y))
-            self.raspberry_camera.moveServoMotorToCoordinates(origins=(width,heigth),coordinates=(x,y),speed=0.009)
-            self.tracked_coordinates=(None,None)
+    # def goToTrackedPosition(self,frame):
+    #     self.drawCenterLinesTarget(frame)
+    #     x,y = self.tracked_coordinates
+    #     if x and y:
+    #         heigth,width=frame.shape[:2]
+    #         x=round(x*width)
+    #         y=round(y*heigth)
+    #         print("Go to "+str(x)+' '+str(y))
+    #         self.raspberry_camera.moveServoMotorToCoordinates(origins=(width,heigth),destination_coordinates=(x,y),speed=0.009)
+    #         self.tracked_coordinates=(None,None)
 
     def drawCenterLinesTarget(self,frame):
         heigth,width=frame.shape[:2]
@@ -176,6 +177,13 @@ class TrackingService():
         cv2.line(frame, (  int(width/2 - line_size),int(heigth/2)), (  int(width/2 + line_size),int(heigth/2)),  ( 0,255, 0),  thickness, cv2.LINE_AA)
         cv2.line(frame, (  int(width/2),int(heigth/2-line_size)), (  int(width/2 ),int(heigth/2+line_size)),  ( 0,255, 0),  thickness, cv2.LINE_AA)
        
+    def addTrackingAndDetectionTimeAndFPS(self,img,detection_time,tracking_time,tracking_fps):
+        width=img.shape[1]
+        cv2.rectangle(img,(int(width-195),10),(int(width-10),85),color=(240,240,240),thickness=-1)
+        cv2.putText(img, f'FPS: {round(tracking_fps,2)}', (int(width-190),30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (25,25,250), 2)
+        cv2.putText(img, f'Det. time: {round(detection_time*1000)}ms', (int(width-190),52), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
+        cv2.putText(img, f'Tra. time: {round(tracking_time*1000)}ms', (int(width-190),73), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
+
         # cv2.line(frame, (  width/2 - 50,heigth/2), (  width/2 + 50,heigth/2),  ( 0,255, 0),  5, cv2.LINE_AA)
 
 

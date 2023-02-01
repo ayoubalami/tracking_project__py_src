@@ -111,8 +111,8 @@ class AppService:
             if video_resolution_ratio>1:
                 video_resolution_ratio=1
 
-            if video_resolution_ratio!=self.stream_reader.video_resolution_ratio :
-                self.stream_reader.video_resolution_ratio = video_resolution_ratio
+            self.background_subtractor_service.video_resolution_ratio = video_resolution_ratio
+
             if (selected_video!= self.stream_reader.video_src):
                 self.video_src=selected_video
                 self.stream_reader.change_video_file(selected_video)

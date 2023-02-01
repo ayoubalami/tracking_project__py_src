@@ -19,7 +19,7 @@ class RaspberryCameraReader :
         from picamera2.encoders import H264Encoder
         self.start_reading_action=False
         self.current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR
-
+        self.jpeg_compression_ratio=75
         self.detection_service=detection_service
         self.background_subtractor_service=background_subtractor_service
         self.tracking_service=tracking_service
@@ -29,6 +29,8 @@ class RaspberryCameraReader :
         self.zoom=1
         self.y_servo_motor=ServoMotor(servo_pin=18)
         self.x_servo_motor=ServoMotor(servo_pin=23)  
+        self.tracked_object=None
+        
         try:
             self.x_servo_motor.goToAngleWithSpeed(angle=int(0),speed=0.001 )
         except:
@@ -82,21 +84,23 @@ class RaspberryCameraReader :
     def ProcessAndYieldFrame(self,frame):
         result={}
         copy_frame=frame.copy()
+
         # copy_frame=copy_frame[:,:,1:4]
         # copy_frame=copy_frame[:,:,:3]
 
         if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
             detection_frame,inference_time=self.applyDetection(copy_frame)
-            result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=80)
+            result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
 
         elif self.current_selected_stream== ClientStreamTypeEnum.BACKGROUND_SUBTRACTION:
-            foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(copy_frame)
-            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=80)
-            result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=foreground_detection_frame,resize_ratio=1,jpeg_quality=80)
-        
+            merged_foreground_detection_frame,resized_foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(copy_frame)
+            result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
+            # result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=resized_foreground_detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
+            result['backgroundSubStream_3']=self.encodeStreamingFrame(frame=merged_foreground_detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
+
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
             tracking_frame=self.tracking_service.apply(copy_frame,threshold= self.threshold ,nms_threshold=self.nms_threshold)
-            result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=80)
+            result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
          
         yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 
@@ -123,11 +127,32 @@ class RaspberryCameraReader :
         if axis=='x':    
             self.x_servo_motor.goToAngleWithSpeed(angle=angle,speed=speed) 
 
-    def moveServoMotorToCoordinates(self,origins,coordinates,speed=0.005):
-       
-        (width,heigth)=origins
-        (x,y)=coordinates
-        centerX=int(width/2)
-        centerY=int(heigth/2)
-        print(centerX-x)
-        print(centerY-y)
+    # def moveServoMotorToCoordinates(self,origins,destination_coordinates,speed=0.005):
+        
+    #     epsilon=2
+    #     (width,heigth)=origins
+    #     (dest_x,dest_y)=destination_coordinates
+    #     centerX=int(width/2)
+    #     centerY=int(heigth/2)
+    #     # while(abs(centerX-dest_x)>epsilon):
+    #     if (centerX-dest_x)>epsilon:
+    #         self.x_servo_motor.addAngleWithSpeed(angle_to_add=1,speed=0.005) 
+    #     elif (centerX-dest_x)<epsilon :
+    #         self.x_servo_motor.addAngleWithSpeed(angle_to_add=-1,speed=0.005) 
+
+    #     # # while(abs(centerX-dest_x)>epsilon):
+    #     # i=0
+    #     # while(i<50):
+    #     #     print(centerX)
+    #     #     print(dest_x)
+    #     #     print("====")
+    #     #     print(centerX-dest_x)
+    #     #     if centerX>dest_x:
+    #     #         self.x_servo_motor.moveRight()
+    #     #     else:
+    #     #         self.x_servo_motor.moveLeft()
+    #     #     i+=1
+    #     #     time.sleep(0.01)
+
+    #     print(centerX-dest_x)
+    #     print(centerY-dest_y)
