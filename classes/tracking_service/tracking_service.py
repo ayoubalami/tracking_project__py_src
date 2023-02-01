@@ -34,8 +34,12 @@ class TrackingService():
     colors = {}
     use_cnn_feature_extraction=False
     activate_detection_for_tracking=True
-    tracked_coordinates=(None,None)
+    mouse_tracked_coordinates=None
     raspberry_camera=None
+    activate_camera_tracking=True
+    
+    # to rasp
+    tracked_object=None
 
     def __init__(self,detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService):
         self.background_subtractor_service=background_subtractor_service
@@ -66,11 +70,19 @@ class TrackingService():
         else :
             tracking_fps=0
             
-        if self.raspberry_camera:
+        
+        # if self.activate_camera_tracking and self.raspberry_camera :
+        if self.activate_camera_tracking  :
+            self.drawCenterLinesTarget(frame)
+            # self.raspberry_camera.tracked_object=self.returnSelectedTrackedObject(frame)
+            self.tracked_object=self.returnSelectedTrackedObject(frame)
             pass
-            # self.raspberry_camera.tracked_object=
-            # self.goToTrackedPosition(detection_frame)
 
+        # if self.raspberry_camera.tracked_object:
+        #     print("raspberry_camera GO AFTER TRACKED : " +str(self.raspberry_camera.tracked_object.track_id))
+        if self.tracked_object:
+            print("[PROVISOIRE] GO AFTER TRACKED : " +str(self.tracked_object.track_id))
+            print(self.tracked_object.to_tlwh())
         self.addTrackingAndDetectionTimeAndFPS(detection_frame,detection_time,tracking_time,tracking_fps)
         return detection_frame
 
@@ -171,8 +183,11 @@ class TrackingService():
     def drawCenterLinesTarget(self,frame):
         heigth,width=frame.shape[:2]
         
-        line_size=75 if self.raspberry_camera.zoom==1 else 75/self.raspberry_camera.zoom
-        thickness=7 if self.raspberry_camera.zoom==1 else int(7/self.raspberry_camera.zoom)
+        line_size=75
+        thickness=7
+        if self.raspberry_camera:
+            line_size=75 if self.raspberry_camera.zoom==1 else 75/self.raspberry_camera.zoom
+            thickness=7 if self.raspberry_camera.zoom==1 else int(7/self.raspberry_camera.zoom)
 
         cv2.line(frame, (  int(width/2 - line_size),int(heigth/2)), (  int(width/2 + line_size),int(heigth/2)),  ( 0,255, 0),  thickness, cv2.LINE_AA)
         cv2.line(frame, (  int(width/2),int(heigth/2-line_size)), (  int(width/2 ),int(heigth/2+line_size)),  ( 0,255, 0),  thickness, cv2.LINE_AA)
@@ -183,8 +198,44 @@ class TrackingService():
         cv2.putText(img, f'FPS: {round(tracking_fps,2)}', (int(width-190),30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (25,25,250), 2)
         cv2.putText(img, f'Det. time: {round(detection_time*1000)}ms', (int(width-190),52), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
         cv2.putText(img, f'Tra. time: {round(tracking_time*1000)}ms', (int(width-190),73), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
+ 
+    def returnSelectedTrackedObject(self,frame):
+        if self.mouse_tracked_coordinates:
+            x,y = self.mouse_tracked_coordinates
+            heigth,width=frame.shape[:2]
+            x=round(x*width)
+            y=round(y*heigth)
+            for track in self.tracker.tracks:
+                if ( track.is_confirmed() and track.time_since_update <=1):
+                    # FONCTION ERROR
+                    (l,t,r,b) = track.to_tlbr()
+                    if y>=t and y<=b and x>=l and x<=r:
+                        self.mouse_tracked_coordinates=None
+                        return track
+            self.mouse_tracked_coordinates=None
+            print("NO OBJECT FOUNDED") 
+            return None
+        
+        if self.tracked_object and self.tracked_object.is_confirmed():
+            print("CONTINUE TRACKING  - 30 TTL : "+str(self.tracked_object.time_since_update )) 
+            return self.tracked_object
 
-        # cv2.line(frame, (  width/2 - 50,heigth/2), (  width/2 + 50,heigth/2),  ( 0,255, 0),  5, cv2.LINE_AA)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

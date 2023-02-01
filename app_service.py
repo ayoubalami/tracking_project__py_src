@@ -324,8 +324,9 @@ class AppService:
         return jsonify(result=zoom)
 
     def update_tracked_coordinates(self,x,y):
-        if self.stream_source==StreamSourceEnum.RASPBERRY_CAM and self.tracking_service:
-            self.tracking_service.tracked_coordinates=(float(x),float(y))
+        # if self.stream_source==StreamSourceEnum.RASPBERRY_CAM and self.tracking_service:
+        if  self.tracking_service:
+            self.tracking_service.mouse_tracked_coordinates=(float(x),float(y))
 
         return jsonify(result=x)
 
