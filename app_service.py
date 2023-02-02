@@ -324,9 +324,16 @@ class AppService:
         return jsonify(result=zoom)
 
     def update_tracked_coordinates(self,x,y):
-        # if self.stream_source==StreamSourceEnum.RASPBERRY_CAM and self.tracking_service:
-        if  self.tracking_service:
-            self.tracking_service.mouse_tracked_coordinates=(float(x),float(y))
+        if  self.stream_source==StreamSourceEnum.RASPBERRY_CAM and self.tracking_service:
+            tracked_object=self.tracking_service.returnSelectedTrackedObject((float(x),float(y)))
+            
+            if tracked_object:
+                print("AN OBJECT TO TRACK IS FOUNDED : " +str(tracked_object.track_id)+" - "+str(tracked_object.to_tlwh())) 
+                self.raspberry_camera.moveServoMotorToCoordinates(tracked_object)
+
+            else:
+                self.raspberry_camera.terminate_tracking=True
+                print("NO OBJECT FOUNDED FROM APP_SERVICE")
 
         return jsonify(result=x)
 

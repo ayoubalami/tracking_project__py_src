@@ -37,9 +37,9 @@ class TrackingService():
     mouse_tracked_coordinates=None
     raspberry_camera=None
     activate_camera_tracking=True
-    
+    frame_size=None
     # to rasp
-    tracked_object=None
+    # tracked_object=None
 
     def __init__(self,detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService):
         self.background_subtractor_service=background_subtractor_service
@@ -52,7 +52,7 @@ class TrackingService():
 
     def apply(self,frame,threshold=0.5 ,nms_threshold=0.5): 
         start_time=time.perf_counter()
-       
+        self.frame_size=frame.shape
         # width=frame.shape[1]
         # heigth=frame.shape[0]
         # # cv2.rectangle(frame, (int(width/2)-100, 50), (int(width/2)+100, heigth), (0,0,0), -1)
@@ -70,19 +70,14 @@ class TrackingService():
         else :
             tracking_fps=0
             
-        
-        # if self.activate_camera_tracking and self.raspberry_camera :
-        if self.activate_camera_tracking  :
+
+        if self.activate_camera_tracking and self.raspberry_camera :
             self.drawCenterLinesTarget(frame)
-            # self.raspberry_camera.tracked_object=self.returnSelectedTrackedObject(frame)
-            self.tracked_object=self.returnSelectedTrackedObject(frame)
-            pass
+        #     self.raspberry_camera.tracked_object=self.returnSelectedTrackedObject(frame)
 
         # if self.raspberry_camera.tracked_object:
-        #     print("raspberry_camera GO AFTER TRACKED : " +str(self.raspberry_camera.tracked_object.track_id))
-        if self.tracked_object:
-            print("[PROVISOIRE] GO AFTER TRACKED : " +str(self.tracked_object.track_id))
-            print(self.tracked_object.to_tlwh())
+        #     print("raspberry_camera GO AFTER TRACKED : " +str(self.raspberry_camera.tracked_object.track_id)+" - "+self.raspberry_camera.tracked_object.to_tlwh())
+
         self.addTrackingAndDetectionTimeAndFPS(detection_frame,detection_time,tracking_time,tracking_fps)
         return detection_frame
 
@@ -199,26 +194,31 @@ class TrackingService():
         cv2.putText(img, f'Det. time: {round(detection_time*1000)}ms', (int(width-190),52), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
         cv2.putText(img, f'Tra. time: {round(tracking_time*1000)}ms', (int(width-190),73), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
  
-    def returnSelectedTrackedObject(self,frame):
+    def returnSelectedTrackedObject(self,coordinates):
+        self.mouse_tracked_coordinates=coordinates
         if self.mouse_tracked_coordinates:
             x,y = self.mouse_tracked_coordinates
-            heigth,width=frame.shape[:2]
+            heigth,width=self.frame_size[:2]
+            print(heigth,width)
+            print( x,y)
             x=round(x*width)
             y=round(y*heigth)
+            
             for track in self.tracker.tracks:
                 if ( track.is_confirmed() and track.time_since_update <=1):
                     # FONCTION ERROR
                     (l,t,r,b) = track.to_tlbr()
                     if y>=t and y<=b and x>=l and x<=r:
                         self.mouse_tracked_coordinates=None
+                        print("AN OBJECT TO TRACK IS FOUNDED : " +str(track.track_id)+" - "+str(track.to_tlwh()) )
                         return track
             self.mouse_tracked_coordinates=None
-            print("NO OBJECT FOUNDED") 
+            print("NO OBJECT FOUNDED")
             return None
         
-        if self.tracked_object and self.tracked_object.is_confirmed():
-            print("CONTINUE TRACKING  - 30 TTL : "+str(self.tracked_object.time_since_update )) 
-            return self.tracked_object
+        # if self.raspberry_camera.tracked_object and self.raspberry_camera.tracked_object.is_confirmed():
+        #     print("CONTINUE TRACKING  - 30 TTL : "+str(self.raspberry_camera.tracked_object.time_since_update )) 
+        #     return self.raspberry_camera.tracked_object
 
 
 

@@ -38,6 +38,8 @@ class ServoMotor:
                 current_pulse_width-=1
             else:
                 current_pulse_width+=1
+            if current_pulse_width>self.max_pulse or current_pulse_width<self.min_pulse:
+                break
             self.pi.set_servo_pulsewidth(self.servo_pin, current_pulse_width)
             time.sleep(speed)
         print("Done")
@@ -79,21 +81,38 @@ class ServoMotor:
         print(centerX-dest_x)
         print(centerY-dest_y)
 
+    def moveToRight(self,step=1):
+        current_pulse_width = self.pi.get_servo_pulsewidth(self.servo_pin)
+        if current_pulse_width<self.max_pulse-step:
+            self.pi.set_servo_pulsewidth(self.servo_pin, current_pulse_width+step)
+
+    def moveToLeft(self,step=1):
+        current_pulse_width = self.pi.get_servo_pulsewidth(self.servo_pin)
+        if current_pulse_width > self.min_pulse+step:  
+            self.pi.set_servo_pulsewidth(self.servo_pin, current_pulse_width-step)
+
+    def moveToDown(self,step=1):
+        current_pulse_width = self.pi.get_servo_pulsewidth(self.servo_pin)
+        if current_pulse_width< self.max_pulse-step:  
+            self.pi.set_servo_pulsewidth(self.servo_pin, current_pulse_width+step)
+
+    def moveToUp(self,step=1):
+        current_pulse_width = self.pi.get_servo_pulsewidth(self.servo_pin)
+        if current_pulse_width > self.min_pulse+step:  
+            self.pi.set_servo_pulsewidth(self.servo_pin, current_pulse_width-step)
 
 
-        
-#  def moveRight(self):
-#         current_pulse_width = self.pi.get_servo_pulsewidth(self.servo_pin)
-#         if direction=='R':
-#             destination_pulse=current_pulse_width+1
-#         if direction=='L':
-#             destination_pulse=current_pulse_width-1
-#         self.pi.set_servo_pulsewidth(self.servo_pin, destination_pulse)
+    #  def moveRight(self):
+    #         current_pulse_width = self.pi.get_servo_pulsewidth(self.servo_pin)
+    #         if direction=='R':
+    #             destination_pulse=current_pulse_width+1
+    #         if direction=='L':
+    #             destination_pulse=current_pulse_width-1
+    #         self.pi.set_servo_pulsewidth(self.servo_pin, destination_pulse)
 
-# motor=ServoMotor(servo_pin=23)
-# # motor=ServoMotor(servo_pin=18) 
-# motor.goToAngle(angle=180) 
-# # time.sleep(2)
-# motor.goToAngle(angle=0) 
-# time.sleep(1)
-
+    # motor=ServoMotor(servo_pin=23)
+    # # motor=ServoMotor(servo_pin=18) 
+    # motor.goToAngle(angle=180) 
+    # # time.sleep(2)
+    # motor.goToAngle(angle=0) 
+    # time.sleep(1)
