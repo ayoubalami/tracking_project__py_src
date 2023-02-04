@@ -10,12 +10,12 @@ from flask import (Flask, Response, jsonify, render_template,
 
 from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.buffer import Buffer
-from classes.detection_service import IDetectionService
+from classes.detection_services.detection_service import IDetectionService
 from classes.offline_detector import OfflineDetector
-from classes.opencv_detection_service import OpencvDetectionService
-from classes.onnx_detection_service import OnnxDetectionService
+from classes.detection_services.opencv_detection_service import OpencvDetectionService
+from classes.detection_services.onnx_detection_service import OnnxDetectionService
 from classes.stream_reader import StreamReader, StreamSourceEnum
-from classes.tensorflow_detection_service import TensorflowDetectionService
+from classes.detection_services.tensorflow_detection_service import TensorflowDetectionService
 from classes.tracking_service.tracking_service import TrackingService
 from classes.webcam_reader import WebcamReader
 from classes.tracking_service.offline_tracker import OfflineTracker
@@ -308,7 +308,7 @@ class AppService:
         if self.tracking_service:
             if param == 'maxCosDistance':
                 self.tracking_service.threshold_feature_distance= float(value)
-            if param =='maxIou':
+            if param =='maxDistance':
                 self.tracking_service.tracker.max_iou_distance= float(value)
         return jsonify(result=value)
 

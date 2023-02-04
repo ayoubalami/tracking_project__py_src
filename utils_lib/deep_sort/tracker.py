@@ -123,16 +123,19 @@ class Tracker:
         iou_track_candidates = unconfirmed_tracks + [
             k for k in unmatched_tracks_a if
             self.tracks[k].time_since_update == 1]
+
         unmatched_tracks_a = [
             k for k in unmatched_tracks_a if
             self.tracks[k].time_since_update != 1]
+
         matches_b, unmatched_tracks_b, unmatched_detections = \
             linear_assignment.min_cost_matching(
                 iou_matching.iou_cost, self.max_iou_distance, self.tracks,
                 detections, iou_track_candidates, unmatched_detections)
-        # print(self.max_iou_distance)
-
+                
+        # print("matches_a")
         # print(matches_a)
+        # print("matches_b")
         # print(matches_b)
         matches = matches_a + matches_b
         # print(matches)

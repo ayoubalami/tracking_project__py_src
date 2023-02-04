@@ -339,7 +339,7 @@ function sendStopVideoRequest(){
 
 function onChangeVideoResolution(){
     var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
-    $( "#nmsThreshold_ValueText" ).text( selectedResolution+" %");
+    $( "#inputVideoResolution_ValueText" ).text( selectedResolution+" %");
 }
 
 function sendStartVideoRequest(){

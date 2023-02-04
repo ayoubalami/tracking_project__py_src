@@ -6,15 +6,17 @@ from time import sleep,time
 from flask import jsonify,stream_with_context,Flask,render_template,Response
 from classes.buffer import Buffer
 from classes.stream_reader import StreamSourceEnum, StreamReader
-from classes.detection_service import IDetectionService
+from classes.detection_services.detection_service import IDetectionService
 from app_service import AppService
 from flask_cors import CORS
 import sys,argparse
-from classes.tensorflow_detection_service import TensorflowDetectionService
-from classes.opencv_detection_service import OpencvDetectionService
-from classes.onnx_detection_service import OnnxDetectionService
-from classes.yolov5_detection_service import Yolov5DetectionService
-from classes.trash.yolov8_detection_service import Yolov8DetectionService
+from classes.detection_services.tensorflow_detection_service import TensorflowDetectionService
+from classes.detection_services.tensorflow_lite_detection_service import TensorflowLiteDetectionService
+
+from classes.detection_services.opencv_detection_service import OpencvDetectionService
+from classes.detection_services.onnx_detection_service import OnnxDetectionService
+from classes.detection_services.yolov5_detection_service import Yolov5DetectionService
+# from classes.trash.yolov8_detection_service import Yolov8DetectionService
 
 def pars_args():
     file_src   =   "videos/highway2.mp4"
@@ -43,6 +45,8 @@ def pars_args():
                 detection_service=OnnxDetectionService()
             elif args.detection_service in( 'TENSORFLOW' ,'tf','tensorflow') :
                 detection_service=TensorflowDetectionService()
+            elif args.detection_service in( 'TENSORFLOW LITE' ,'tflite','tensorflow-lite') :
+                detection_service=TensorflowLiteDetectionService()
             elif args.detection_service in( 'YOLOV5' ,'yv5') :
                 detection_service=Yolov5DetectionService()
             # elif args.detection_service in( 'YOLOV8' ,'yv8') :

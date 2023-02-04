@@ -2,7 +2,7 @@
 from csv import writer
 from http import server
 import cv2,time,os,numpy as np
-from classes.detection_service import IDetectionService
+from classes.detection_services.detection_service import IDetectionService
 from utils_lib.utils_functions import runcmd
 import torch
 class OnnxDetectionService(IDetectionService):

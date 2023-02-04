@@ -1,10 +1,8 @@
 
-from asyncio import StreamReader
 import cv2
 
-
 class IDetectionService:
-    stream_reader:StreamReader
+    stream_reader=None
     selected_model=None
     network_input_size=416
     def init_selected_model(self):

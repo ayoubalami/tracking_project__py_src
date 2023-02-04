@@ -1,7 +1,7 @@
 # https://colab.research.google.com/drive/1V-F3erKkPun-vNn28BoOc6ENKmfo8kDh?usp=sharing#scrollTo=PlAqR7PJmvTL
 from csv import writer
 import cv2,time,os,numpy as np
-from classes.detection_service import IDetectionService
+from classes.detection_services.detection_service import IDetectionService
 # from utils_lib.ultralytics.ultralytics import YOLO
 
 class Yolov8DetectionService(IDetectionService):

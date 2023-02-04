@@ -11,7 +11,7 @@ from servo_motor import ServoMotor
 
 from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.tracking_service.tracking_service import TrackingService
-from classes.detection_service import IDetectionService
+from classes.detection_services.detection_service import IDetectionService
 
 class RaspberryCameraReader :
     def __init__(self,detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService,tracking_service:TrackingService): 

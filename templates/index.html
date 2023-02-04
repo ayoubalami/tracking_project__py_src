@@ -101,7 +101,7 @@
                <div class="d-flex" style="align-items: baseline;">
                 <h5 class="me-3" style="align-self: cente">Select Video Resolution : </h5>
                 <code>
-                  <h4 id="nmsThreshold_ValueText"> 100 %</h4>
+                  <h4 id="inputVideoResolution_ValueText"> 100 %</h4>
                 </code>
               </div>
               <input type="range" onchange="onChangeVideoResolution()"  min="25" max="100" value="100" step="5"
@@ -380,13 +380,13 @@
                     </div>
                     <div class="col-md-6 py-2">
                       <div class="d-flex" style="align-items: baseline;">
-                        <h5 class="me-3" style="align-self: cente">max iou between prediction and detection : </h5>
+                        <h5 class="me-3" style="align-self: cente">max distance between prediction and detection : </h5>
                         <code>
-                          <h4 id="maxIouValueText"> 0.5 </h4>
+                          <h4 id="maxDistanceValueText"> 0.5 </h4>
                         </code>
                       </div>
-                      <input type="range" onchange="updateTrackingParamValue('maxIou')" min="0" max="1" value="0.5" step="0.1"
-                        class="slider w-100" id="maxIouSlider">
+                      <input type="range" onchange="updateTrackingParamValue('maxDistance')" min="0" max="1" value="0.5" step="0.1"
+                        class="slider w-100" id="maxDistanceSlider">
                     </div>
                   </div>
                   <div class="row my-1">

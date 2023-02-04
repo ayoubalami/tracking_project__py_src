@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from utils_lib.enums import SurveillanceRegionEnum
 from classes.background_subtractor_service import BackgroundSubtractorService
-from classes.detection_service import IDetectionService
+from classes.detection_services.detection_service import IDetectionService
 
 from utils_lib.deep_sort import preprocessing
 from utils_lib.deep_sort import nn_matching
@@ -28,7 +28,7 @@ class TrackingService():
     n_init=3
     max_age=30
     threshold_feature_distance=0.2
-    max_iou_distance = 0.5
+    max_distance = 0.5
     feature_extractor_model_file='utils_lib/deep_sort/feature_extractors/mars-small128.pb'
     encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
     colors = {}
@@ -48,7 +48,7 @@ class TrackingService():
         # nms_max_overlap = 0.8
         # euclidean
         self.metric = nn_matching.NearestNeighborDistanceMetric('cosine', self.threshold_feature_distance, nn_budget)
-        self.tracker = Tracker(self.metric,max_iou_distance=self.max_iou_distance, max_age=self.max_age, n_init=self.n_init)
+        self.tracker = Tracker(self.metric,max_iou_distance=self.max_distance, max_age=self.max_age, n_init=self.n_init)
 
     def apply(self,frame,threshold=0.5 ,nms_threshold=0.5): 
         start_time=time.perf_counter()
@@ -119,7 +119,7 @@ class TrackingService():
   
     def reset(self):
         self.tracker.tracks=[]
-        self.tracker=Tracker(self.metric,max_iou_distance=self.max_iou_distance, max_age=self.max_age, n_init=self.n_init)
+        self.tracker=Tracker(self.metric,max_iou_distance=self.max_distance, max_age=self.max_age, n_init=self.n_init)
         self.pts = [deque(maxlen=30) for _ in range(10000)]
         self.colors={}
         # pass

@@ -9,7 +9,7 @@ from select import select
 import threading
 import cv2,time,os, numpy as np
 import pyshine as ps
-from classes.detection_service import IDetectionService
+from classes.detection_services.detection_service import IDetectionService
 from  classes.webcam_reader import WebcamReader
 from  classes.buffer import Buffer
 from classes.background_subtractor_service import BackgroundSubtractorService
