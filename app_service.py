@@ -12,15 +12,10 @@ from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.buffer import Buffer
 from classes.detection_services.detection_service import IDetectionService
 from classes.offline_detector import OfflineDetector
-from classes.detection_services.opencv_detection_service import OpencvDetectionService
-from classes.detection_services.onnx_detection_service import OnnxDetectionService
 from classes.stream_reader import StreamReader, StreamSourceEnum
-from classes.detection_services.tensorflow_detection_service import TensorflowDetectionService
 from classes.tracking_service.tracking_service import TrackingService
-from classes.webcam_reader import WebcamReader
 from classes.tracking_service.offline_tracker import OfflineTracker
 from utils_lib.enums import ClientStreamTypeEnum
-
 
 class AppService:  
 
@@ -164,6 +159,7 @@ class AppService:
         self.offline_tracker=OfflineTracker(tracking_service=self.tracking_service,stream_source=self.stream_source ,video_src=self.video_src ) 
         self.offline_tracker.threshold= self.stream_reader.threshold  
         self.offline_tracker.nms_threshold=self.stream_reader.nms_threshold
+        self.offline_tracker.network_input_size=self.detection_service.network_input_size
         self.offline_tracker.start()
         return jsonify(result='OfflineDetector started')
     

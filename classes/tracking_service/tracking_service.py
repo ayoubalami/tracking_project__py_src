@@ -28,7 +28,7 @@ class TrackingService():
     n_init=3
     max_age=30
     threshold_feature_distance=0.2
-    max_distance = 0.5
+    max_distance = 0.7
     feature_extractor_model_file='utils_lib/deep_sort/feature_extractors/mars-small128.pb'
     encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
     colors = {}

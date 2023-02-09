@@ -55,3 +55,15 @@
     font-size: large;
     font-weight: bold;
 }
+
+
+.select2-selection__choice__display{
+    font-size: 1.1rem;
+}
+
+.select2-selection__clear{
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    
+}
+ 

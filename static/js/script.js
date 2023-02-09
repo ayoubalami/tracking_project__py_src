@@ -1,15 +1,10 @@
 
 
-//  <script type="text/javascript">
-// var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-
 // var $SCRIPT_ROOT = "http://Raspberrypi.local:8000/"
-
 var $SCRIPT_ROOT = "http://"+api_server+":8000"
 // var $SCRIPT_ROOT = "http://192.168.137.226:8000"
 
 var secondApiIpChecked=false
-
 var intervalID = null;
 var video_duration = 1000000
 var current_time = 0
@@ -23,8 +18,33 @@ var showBackgroundSubtractionStream=false;
 var showMissingTracks=false;
 var main_video_stream_error_count=0;
 
-window.onbeforeunload = function(event){
 
+// function initData(){
+$( document ).ready(function(){
+
+    // $("#multiSelectClassesSelectAllCheckbox").click(function(){
+    //     onSelectAllClassesForDetection();
+    // });
+    initStreamSourceParams()
+    getObjectDetectionList();
+    if (videoInitialized==false)
+        initVideoStreamFrame()
+    
+    setTimeout(function(){
+        if (stream_source=='RASPBERRY_CAM'){
+            onClickToggleStopStart();
+        }
+    }, 500); 
+    initMouseClickEventForObjectTracking();
+    initMultiClassesSelect();
+
+
+
+
+});
+
+
+window.onbeforeunload = function(event){
     console.log("loading ....");
         $.ajax({
             type: "POST",
@@ -32,17 +52,13 @@ window.onbeforeunload = function(event){
             dataType: "json",
             success: function (data) {
                 console.log(" memory cleaned")
-                // alert("")
                 return true
             },
             error: function (errMsg) {
                 console.log(" ERROR IN memory cleaning")
             }
         });    
-        // return true    
-        // return confirm("Confirm refresh");
     }
-
 
     function updateCNNDetectorParamValue(param){
         var newParamValueFromSlider= $( "#"+param+"_Slider" )[0].value;
@@ -123,21 +139,7 @@ function initVideoStreamFrame(){
 
     videoInitialized=true;
 }
-
-function initData(){
-    
-    initStreamSourceParams()
-    getObjectDetectionList();
-    if (videoInitialized==false)
-        initVideoStreamFrame()
-    
-    setTimeout(function(){
-        if (stream_source=='RASPBERRY_CAM'){
-            onClickToggleStopStart();
-        }
-    }, 500); 
-    initMouseClickEvent();
-   }
+   
 
 function onClickReset(){
     toggleDisabledResetButton(true);
@@ -711,7 +713,7 @@ function updateRaspberryCameraZoomValue(){
     });  
 }
 
-function initMouseClickEvent(){
+function initMouseClickEventForObjectTracking(){
     $('#trackingStream_1').click(function(event) {
         // Get the mouse click position
         var x = event.pageX - $(this).offset().left;
@@ -739,3 +741,26 @@ function updateTrackedCoordinates(x,y){
         }
     });  
 }
+
+function initMultiClassesSelect(){
+    var mselect= $( '#multiSelectClasses' )
+    mselect.select2( {
+        theme: "bootstrap-5",
+        width: $( this ).data( 'width' ) ? $( this ).data( 'width' ) : $( this ).hasClass( 'w-100' ) ? '100%' : 'style',
+        placeholder: $( this ).data( 'placeholder' ),
+        closeOnSelect: false,
+        allowClear: true,
+
+    } );
+}
+
+// function onSelectAllClassesForDetection(){
+
+//     if(!$("#multiSelectClassesSelectAllCheckbox").is(':checked')){
+//         $("#multiSelectClasses > option").prop("selected", "selected");
+//         $("multiSelectClasses").trigger("change");
+//     } else {
+//         $("#multiSelectClasses > option").removeAttr("selected");
+//         $("#multiSelectClasses").trigger("change");
+//     }
+// }
