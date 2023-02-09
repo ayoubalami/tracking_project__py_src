@@ -5,6 +5,8 @@ class IDetectionService:
     stream_reader=None
     selected_model=None
     network_input_size=416
+    allowed_classes=[]
+
     def init_selected_model(self):
         self.selected_model=None
 

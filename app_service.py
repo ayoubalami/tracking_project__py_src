@@ -333,3 +333,25 @@ class AppService:
 
         return jsonify(result=x)
 
+    def get_class_labels(self):
+        classLables=[]
+        classFile ="coco.names" 
+        with open(classFile, 'r') as f:
+            lables = f.read().splitlines() 
+            i=0
+            for lable in lables:
+                classLables.append({'id':i,'label': lable })
+                i+=1
+
+        return jsonify(classLables)
+ 
+
+    def set_selected_classes( self,idx):
+        idx=list(map(int, idx.split(",")))
+        if not (len(idx)>0 and idx[0]==-1):
+            self.detection_service.allowed_classes=idx
+        else:
+            self.detection_service.allowed_classes=[]
+        return jsonify(result=idx)
+
+    

@@ -67,3 +67,10 @@
     
 }
  
+.select2-selection{
+    display: inline-flex !important;
+}
+
+.select2-selection__rendered{
+    display: contents !important;
+}

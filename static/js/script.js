@@ -25,6 +25,9 @@ $( document ).ready(function(){
     // $("#multiSelectClassesSelectAllCheckbox").click(function(){
     //     onSelectAllClassesForDetection();
     // });
+    initMultiClassesSelect();
+    
+   
     initStreamSourceParams()
     getObjectDetectionList();
     if (videoInitialized==false)
@@ -36,9 +39,13 @@ $( document ).ready(function(){
         }
     }, 500); 
     initMouseClickEventForObjectTracking();
-    initMultiClassesSelect();
 
 
+    // $(document).on('click','.select2-selection__clear',function(){
+    //     select2-selection__clear
+    //     alert(5);
+    //     // onButtonRemoveAllClasses();
+    // });
 
 
 });
@@ -743,24 +750,54 @@ function updateTrackedCoordinates(x,y){
 }
 
 function initMultiClassesSelect(){
-    var mselect= $( '#multiSelectClasses' )
-    mselect.select2( {
+    var multiSelectClasses= $( '#multiSelectClasses' )
+    multiSelectClasses.select2( {
         theme: "bootstrap-5",
         width: $( this ).data( 'width' ) ? $( this ).data( 'width' ) : $( this ).hasClass( 'w-100' ) ? '100%' : 'style',
         placeholder: $( this ).data( 'placeholder' ),
         closeOnSelect: false,
-        allowClear: true,
+        // allowClear: true,
 
     } );
+ 
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/get_class_labels',
+        dataType: "json",
+        success: function (classLabels) {
+            classLabels.forEach(_class => {
+                var el = document.createElement("option");
+                el.textContent = _class.label;
+                el.value = _class.id;
+                multiSelectClasses.append(el);
+            });
+            console.log("/get_class_labels is done!")
+
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /get_class_labels ")
+        }
+    });  
 }
 
-// function onSelectAllClassesForDetection(){
+function onClickMultiSelectClasses(){
+    var multiSelectClasses= $( '#multiSelectClasses' )
+    var selectedIdx=multiSelectClasses.val()
+    // console.log(selectedIdx); 
+    if (selectedIdx.length==0)
+        selectedIdx=-1
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/set_selected_classes/'+selectedIdx,
+        // data: selectedIdx,
+        dataType: "json",
+        success: function (classLabels) {
+            console.log(" /set_selected_classes is done")
+        },
+        error: function (errMsg) {
+            console.log(" ERROR /set_selected_classes ")
+        }
+    });  
+    }
 
-//     if(!$("#multiSelectClassesSelectAllCheckbox").is(':checked')){
-//         $("#multiSelectClasses > option").prop("selected", "selected");
-//         $("multiSelectClasses").trigger("change");
-//     } else {
-//         $("#multiSelectClasses > option").removeAttr("selected");
-//         $("#multiSelectClasses").trigger("change");
-//     }
-// }
+ 

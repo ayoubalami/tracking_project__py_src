@@ -29,7 +29,6 @@ class OpencvDetectionService(IDetectionService):
         self.readClasses()
         # self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
         # self.classAllowed=range(0, 80)
-        self.allowed_classes=[1,2,3]
         self.selected_model=None
         self.detection_method_list    =   [ 
                         # {'name': 'yolov2' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov2.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov2.weights' },
@@ -113,9 +112,6 @@ class OpencvDetectionService(IDetectionService):
     def readClasses(self): 
         with open(self.classFile, 'r') as f:
             self.classesList = f.read().splitlines()
-        #   delete all class except person and vehiccule 
-        # self.classesList=self.classesList[0:8]
-        # self.classesList.pop(4)
         print(self.classesList)
         # set static Colors of 8 first classes
         self.colorList =    [[23, 213, 104],
@@ -145,7 +141,9 @@ class OpencvDetectionService(IDetectionService):
         confidences=list(confidences)
         classIdx=list(classIdx)
         raw_detection_data=[]
+        
         allowed_condidats=self.keepSelectedClass(bboxs,confidences,classIdx)
+
         if not allowed_condidats :
             if boxes_plotting :
                 fps = 1 / np.round(time.perf_counter()-start_time,3)
@@ -187,19 +185,13 @@ class OpencvDetectionService(IDetectionService):
 
     def keepSelectedClass(self,bboxs,confidences,classIdx):
       
-        condidats=zip(bboxs,confidences,classIdx)
-        condidats=list(condidats)
-         # allowed_condidats = [condidat for index, condidat in enumerate(list(condidats)) if condidat[2] in self.allowed_classes]
-        allowed_condidats = [condidat for index, condidat in enumerate(condidats) if condidat[2] in self.allowed_classes]
- 
-        if len(allowed_condidats)>0:
-            return allowed_condidats
+        if len(self.allowed_classes)!=0 :
+            condidats=list(zip(bboxs,confidences,classIdx))
+            allowed_condidats = [condidat for index, condidat in enumerate(condidats) if condidat[2] in self.allowed_classes]
+            if len(allowed_condidats)>0:
+                return allowed_condidats
+            return None
+        else :
+            return list(zip(bboxs,confidences,classIdx))
 
-        return None
-        # if len(condidats)>0:
-        #     print("condidat[2]")
-        #     print(list(condidats)[0][2])
-        
-        # result = list(filter(lambda allowed_class: ( allowed_class in classIdx ), self.allowed_classes )) 
-        # print(result)
-        # return bboxs,confidences,classIdx
+ 

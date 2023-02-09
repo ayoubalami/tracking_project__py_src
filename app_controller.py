@@ -225,6 +225,13 @@ def update_raspberry_camera_zoom(zoom):
 def update_tracked_coordinates(x,y):
     return app_service.update_tracked_coordinates(x,y) 
 
+@app.route('/get_class_labels', methods = ['POST'])
+def get_class_labels( ):
+    return app_service.get_class_labels( ) 
+
+@app.route('/set_selected_classes/<idx>', methods = ['POST'])
+def set_selected_classes( idx):
+    return app_service.set_selected_classes(idx ) 
 
 
 if __name__=="__main__":
