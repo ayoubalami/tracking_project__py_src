@@ -19,16 +19,10 @@ class OpencvDetectionService(IDetectionService):
         # del self
    
     def __init__(self):
-        self.perf = []
-        self.classAllowed=[]
-        self.colorList=[]
         self.classFile ="coco.names" 
         self.modelName=None
         self.classesList=None
-        self.colorList=None
         self.readClasses()
-        # self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
-        # self.classAllowed=range(0, 80)
         self.selected_model=None
         self.detection_method_list    =   [ 
                         # {'name': 'yolov2' , 'url_cfg': 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov2.cfg' , 'url_weights' :'https://pjreddie.com/media/files/yolov2.weights' },
@@ -75,7 +69,6 @@ class OpencvDetectionService(IDetectionService):
                     runcmd("wget -P " + cacheDir + "   " + model_url_cfg, verbose = True)
                 else:
                     print("===> model cfg already exist ")
-
                 if not os.path.exists(   os.path.join(cacheDir,  'frozen_inference_graph.pb'    )):
                     print("===> download_model weights")
                     os.makedirs(cacheDir, exist_ok=True)
@@ -87,7 +80,6 @@ class OpencvDetectionService(IDetectionService):
 
 
     def load_model(self,model=None):
-
         self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)  
         self.modelName= self.selected_model['name']
         print("===> selected modelName : " +self.modelName )
@@ -99,33 +91,11 @@ class OpencvDetectionService(IDetectionService):
         if self.selected_model['type']=='ssd':
             self.model.setInputParams(size=(512, 512),mean=(127.5, 127.5, 127.5), scale=1.0/127.5, swapRB=True)
             self.classesList .insert(0,"__")
-            self.colorList .insert(0,(0,0,0))
-
+            self.colors_list .insert(0,(0,0,0))
         elif self.selected_model['type']=='yolo':
             self.model.setInputParams(size=(self.default_model_input_size, self.default_model_input_size), scale=1/255, swapRB=True)
-
         print("Model " + self.modelName + " loaded successfully...")
       
-    def get_selected_model(self):
-        return self.selected_model
-
-    def readClasses(self): 
-        with open(self.classFile, 'r') as f:
-            self.classesList = f.read().splitlines()
-        print(self.classesList)
-        # set static Colors of 8 first classes
-        self.colorList =    [[23, 213, 104],
-                            [168, 240,  62],
-                            [  3,   6, 240],
-                            [235, 119,  95],
-                            [138, 219, 166],
-                            [ 59, 197,  34],
-                            [ 42, 156,  60],
-                            [ 142, 56,  250]]
-        # add random colors to remaining colors
-        more_random_color=[[random.randint(0, 255),random.randint(0, 255),random.randint(0, 255)] for i in range(73)] 
-        self.colorList+=more_random_color
-
     def detect_objects(self, frame,threshold:float,nms_threshold:float,boxes_plotting=True):
        
         start_time= time.perf_counter()
@@ -142,8 +112,9 @@ class OpencvDetectionService(IDetectionService):
         classIdx=list(classIdx)
         raw_detection_data=[]
         
-        allowed_condidats=self.keepSelectedClass(bboxs,confidences,classIdx)
+        allowed_condidats=self.keepSelectedClassesOnly(bboxs,confidences,classIdx,threshold)
 
+        # IF NO OBJECT IS FOUND
         if not allowed_condidats :
             if boxes_plotting :
                 fps = 1 / np.round(time.perf_counter()-start_time,3)
@@ -151,47 +122,31 @@ class OpencvDetectionService(IDetectionService):
                 return frame,inference_time
             else:
                 return frame,raw_detection_data
-        else :
-            bboxs,confidences,classIdx=list(zip(*allowed_condidats))
-            bboxIdx=cv2.dnn.NMSBoxes(bboxs,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
-            if len(bboxIdx) !=0 :        
-                for i in range (0,len(bboxIdx)):
-                    bbox=bboxs[np.squeeze(bboxIdx[i])]
-                    classConfidence = confidences[bboxIdx[i]]
-                    classLabelID=np.squeeze(classIdx[bboxIdx[i]])
-                    classLabel = self.classesList[classLabelID]
-                    classColor  = self.colorList[classLabelID]
-                    displayText = '{}: {:.2f}'.format(classLabel, classConfidence)
-                    x,y,w,h=bbox
-                    if boxes_plotting :
-                        cv2.rectangle(frame,(x,y),(x+w,y+h),color=classColor,thickness=2)
-                        cv2.putText(frame, displayText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
-                    else:
-                        raw_detection_data.append(([x, y, w, h],classConfidence,classLabel))
-            if boxes_plotting :
-                fps = 1 / np.round(time.perf_counter()-start_time,3)
-                self.addFrameFps(frame,fps)
-                return frame,inference_time
-            else:
-                return frame,raw_detection_data
+
+        bboxs,confidences,classIdx=list(zip(*allowed_condidats))
+        bboxIdx=cv2.dnn.NMSBoxes(bboxs,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
+        if len(bboxIdx) !=0 :
+            for i in range (len(bboxIdx)):
+                x,y,w,h=bboxs[bboxIdx[i]]
+                classConfidence = confidences[bboxIdx[i]]
+                classLabelID=classIdx[bboxIdx[i]]
+                classLabel = self.classesList[classLabelID]
+                classColor  = self.colors_list[classLabelID]
+                displayText = '{}: {:.2f}'.format(classLabel, classConfidence)
+                if boxes_plotting :
+                    cv2.rectangle(frame,(x,y),(x+w,y+h),color=classColor,thickness=2)
+                    cv2.putText(frame, displayText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
+                else:
+                    raw_detection_data.append(([x, y, w, h],classConfidence,classLabel))
+        if boxes_plotting :
+            fps = 1 / np.round(time.perf_counter()-start_time,3)
+            self.addFrameFps(frame,fps)
+            return frame,inference_time
+        else:
+            return frame,raw_detection_data
 
 
-    def init_object_detection_models_list(self):
-        self.detection_method_list_with_url=self.detection_method_list
-
-    def get_object_detection_models(self):
-        return self.detection_method_list 
       
-
-    def keepSelectedClass(self,bboxs,confidences,classIdx):
-      
-        if len(self.allowed_classes)!=0 :
-            condidats=list(zip(bboxs,confidences,classIdx))
-            allowed_condidats = [condidat for index, condidat in enumerate(condidats) if condidat[2] in self.allowed_classes]
-            if len(allowed_condidats)>0:
-                return allowed_condidats
-            return None
-        else :
-            return list(zip(bboxs,confidences,classIdx))
+       
 
  

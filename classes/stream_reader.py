@@ -36,9 +36,6 @@ class StreamReader:
             self.stop_reading_to_clean=True
 
     def __init__(self, detection_service:IDetectionService,stream_source:StreamSourceEnum, video_src:str,save_detectors_results=False ):
-        self.perf = []
-        self.classAllowed= []
-        self.colorList= []
         self.inference_time_records = []
         self.fps_records = []
         self.current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR

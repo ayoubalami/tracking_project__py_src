@@ -28,6 +28,7 @@ def pars_args():
     parser = argparse.ArgumentParser()
     save_detectors_results=False
     host_server='localhost'
+    # host_server='10.10.23.116'
     
     parser.add_argument("-hs", "--host_server", help = "host_server host remote raspberry of local pc")
     parser.add_argument("-ss", "--stream_source", help = "Select stream source FILE, REMOTE_WEBCAM, RASPBERRY_CAM")

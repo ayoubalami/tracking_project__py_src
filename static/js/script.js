@@ -750,15 +750,22 @@ function updateTrackedCoordinates(x,y){
 }
 
 function initMultiClassesSelect(){
-    var multiSelectClasses= $( '#multiSelectClasses' )
-    multiSelectClasses.select2( {
+    var multiSelectClasses= $( '#multiSelectClasses' );
+    var tracking_multiSelectClasses= $('#tracking_multiSelectClasses');
+
+    tracking_multiSelectClasses.select2({
         theme: "bootstrap-5",
         width: $( this ).data( 'width' ) ? $( this ).data( 'width' ) : $( this ).hasClass( 'w-100' ) ? '100%' : 'style',
         placeholder: $( this ).data( 'placeholder' ),
         closeOnSelect: false,
-        // allowClear: true,
+    });
 
-    } );
+    multiSelectClasses.select2({
+        theme: "bootstrap-5",
+        width: $( this ).data( 'width' ) ? $( this ).data( 'width' ) : $( this ).hasClass( 'w-100' ) ? '100%' : 'style',
+        placeholder: $( this ).data( 'placeholder' ),
+        closeOnSelect: false,
+    });
  
     $.ajax({
         type: "POST",
@@ -770,6 +777,10 @@ function initMultiClassesSelect(){
                 el.textContent = _class.label;
                 el.value = _class.id;
                 multiSelectClasses.append(el);
+                var el = document.createElement("option");
+                el.textContent = _class.label;
+                el.value = _class.id;
+                tracking_multiSelectClasses.append(el);
             });
             console.log("/get_class_labels is done!")
 
@@ -780,24 +791,22 @@ function initMultiClassesSelect(){
     });  
 }
 
-function onClickMultiSelectClasses(){
-    var multiSelectClasses= $( '#multiSelectClasses' )
+function onClickMultiSelectClasses(id){
+    var multiSelectClasses= $( '#'+id )
     var selectedIdx=multiSelectClasses.val()
-    // console.log(selectedIdx); 
     if (selectedIdx.length==0)
         selectedIdx=-1
     $.ajax({
         type: "POST",
         url: $SCRIPT_ROOT + '/set_selected_classes/'+selectedIdx,
-        // data: selectedIdx,
         dataType: "json",
-        success: function (classLabels) {
+        success: function () {
             console.log(" /set_selected_classes is done")
         },
-        error: function (errMsg) {
+        error: function () {
             console.log(" ERROR /set_selected_classes ")
         }
     });  
-    }
+}
 
  

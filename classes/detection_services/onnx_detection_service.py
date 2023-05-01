@@ -4,7 +4,6 @@ from http import server
 import cv2,time,os,numpy as np
 from classes.detection_services.detection_service import IDetectionService
 from utils_lib.utils_functions import runcmd
-import torch
 class OnnxDetectionService(IDetectionService):
 
     np.random.seed(123)
@@ -18,22 +17,13 @@ class OnnxDetectionService(IDetectionService):
         # del self
    
     def __init__(self):
-        self.perf = []
-        self.classAllowed=[]
-        self.colorList=[]
-        # self.classFile ="models/coco.names" 
         self.classFile ="coco.names" 
         self.modelName=None
-        # self.cacheDir=None
         self.classesList=None
-        self.colorList=None
-        self.classAllowed=[0,1,2,3,5,6,7]  # detected only person, car , bicycle ... 
-        # self.classAllowed=range(0, 80)
         self.detection_method_list    =   [ 
                         # {'name': 'nanodet-plus-m-1.5x_320'  },
                         # {'name': 'nanodet-plus-m_320'  },
                         # {'name': 'yolov5n_err2'  },
-
                         {'name': 'yolov5n' , 'url':'https://github.com/ayoubalami/flask_python/releases/download/v0.1.0/yolov5n.onnx'  },
                         {'name': 'yolov5s' , 'url':'https://github.com/ayoubalami/flask_python/releases/download/v0.1.0/yolov5s.onnx' },
                         {'name': 'yolov5m' , 'url':'https://github.com/ayoubalami/flask_python/releases/download/v0.1.0/yolov5m.onnx' },
@@ -45,9 +35,7 @@ class OnnxDetectionService(IDetectionService):
                         {'name': 'yolov6m','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6m.onnx'  },
                         {'name': 'yolov6l','url':'https://github.com/meituan/YOLOv6/releases/download/0.2.0/yolov6l.onnx'  },
                         {'name': 'yolov8n','url':'_'},
-                       
                        ]
-
         self.init_object_detection_models_list()
     
     def service_name(self):
@@ -73,25 +61,6 @@ class OnnxDetectionService(IDetectionService):
         self.download_model_if_not_exists()
         self.model = cv2.dnn.readNetFromONNX(self.modelPath)    
         self.readClasses()
-
-    def get_selected_model(self):
-        return self.selected_model
-
-    def readClasses(self): 
-        with open(self.classFile, 'r') as f:
-            self.classesList = f.read().splitlines()
-        #   delete all class except person and vehiccule 
-        # self.classesList=self.classesList[0:8]
-        # self.classesList.pop(4)
-        print(self.classesList)
-        # set Color of box for each object
-        self.colorList =  [[23.82390253, 213.55385765, 104.61775798],
-            [168.73771775, 240.51614241,  62.50830085],
-            [  3.35575698,   6.15784347, 240.89335156],
-            [235.76073062, 119.16921962,  95.65283276],
-            [138.42940829, 219.02379358, 166.29923782],
-            [ 59.40987365, 197.51795215,  34.32644182],
-            [ 42.21779254, 156.23398212,  60.88976857]]
     
     def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5,boxes_plotting=True):
         
@@ -138,16 +107,12 @@ class OnnxDetectionService(IDetectionService):
         for i in indices:
             x1,y1,w,h = boxes[i]
             label = self.classesList[classes_ids[i]]
-            classColor = (236,106,240)
-            if (classes_ids[i] in self.classAllowed)==True:
-                label = self.classesList[classes_ids[i]]
-                classColor = self.colorList[self.classAllowed.index(classes_ids[i])]
+            color = self.colors_list[classes_ids[i]]
             conf = confidences[i]
             displayText = '{}: {:.2f}'.format(label, conf) 
-
             if boxes_plotting :
-                cv2.rectangle(img,(x1,y1),(x1+w,y1+h),color=classColor,thickness=2)
-                cv2.putText(img, displayText, (x1,y1-2),cv2.FONT_HERSHEY_PLAIN, 1.5,classColor,2)
+                cv2.rectangle(img,(x1,y1),(x1+w,y1+h),color=color,thickness=2)
+                cv2.putText(img, displayText, (x1,y1-2),cv2.FONT_HERSHEY_PLAIN, 1.5,color,2)
             else:
                 raw_detection_data.append(([x1, y1, w, h],conf,label))
 
@@ -158,9 +123,5 @@ class OnnxDetectionService(IDetectionService):
         else:
             return img,raw_detection_data
 
-    def init_object_detection_models_list(self):
-        self.detection_method_list_with_url=self.detection_method_list
 
-    def get_object_detection_models(self):
-        return self.detection_method_list 
        

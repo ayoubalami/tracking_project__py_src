@@ -177,20 +177,6 @@ class AppService:
                 return jsonify(error='ERROR model throw exception')
         return jsonify(result='ERROR model is null')
 
-    # def update_threshold_value(self,threshold):
-    #     if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
-    #         self.raspberry_camera.threshold=float(threshold)
-    #     else:
-    #         self.stream_reader.threshold=float(threshold)
-    #     return jsonify(result='threshold updated ')
-
-    # def update_nms_threshold_value(self,nms_threshold:float):
-    #     if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
-    #         self.raspberry_camera.nms_threshold=float(nms_threshold)
-    #     else:
-    #         self.stream_reader.nms_threshold=float(nms_threshold)
-    #     return jsonify(result='nmsthreshold updated ')
-
     def update_cnn_detector_param(self,param,value):
         if param=='networkInputSize':
             self.detection_service.network_input_size=int(value)
@@ -342,7 +328,6 @@ class AppService:
             for lable in lables:
                 classLables.append({'id':i,'label': lable })
                 i+=1
-
         return jsonify(classLables)
  
 

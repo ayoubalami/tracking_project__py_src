@@ -146,6 +146,4 @@ class TensorflowDetectionService(IDetectionService):
         url_template = "http://download.tensorflow.org/models/object_detection/tf2/{date}/{name}.tar.gz"
         self.detection_method_list_with_url=[ {'date':model['date'] , 'name' :model['name'] , 'url': url_template.format(date = model['date'] ,name=model['name'])}  for model in self.detection_method_list ]
 
-    def get_object_detection_models(self):
-        return self.detection_method_list 
-      
+    

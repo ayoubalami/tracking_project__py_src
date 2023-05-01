@@ -173,16 +173,10 @@
                       <div class="row my-1">
                         <div class="col-md-12">
                           <label for="multiSelectClasses">Select classes to detecte</label>
-                          <select class="form-select-lg" id="multiSelectClasses" data-placeholder="Detecte all classes" onchange="onClickMultiSelectClasses()" multiple>
+                          <select class="form-select-lg" id="multiSelectClasses" data-placeholder="Detecte all classes" onchange="onClickMultiSelectClasses('multiSelectClasses')" multiple>
                             <!-- <option selected="selected">SELECT ALL</option> -->
                           </select>
-                        </div>
-                        <!-- <div class="col-md-3 align-self-center">
-                          <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="multiSelectClassesSelectAllCheckbox"    >
-                            <label class="form-check-label mx-1" for="multiSelectClassesSelectAllCheckbox" >Select all</label>
-                          </div>
-                        </div> -->
+                        </div>                       
                       </div>
                       <div class="row my-1">
                         <div class="col-md-6 py-2">
@@ -427,25 +421,7 @@
                     </div>
                   </div>
                   <div class="row my-1">
-                    <div class="col-md-6">
-                      <div class="d-flex">
-                        <select class="form-select" id="multiSelectClasses" data-placeholder="Classes to detecte" multiple>
-                          <!-- align-self: flex-end; -->
-                          <option>Christmas Island</option>
-                          <option>South Sudan</option>
-                          <option>Jamaica</option>
-                          <option>Kenya</option>
-                          <option>Russia</option>
-                        </select>
-                        <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" id="multiSelectClassesSelectAllCheckbox"  onclick="onCheckedSelectAllClassesForDetection()"  >
-                          <label class="form-check-label mx-2" for="multiSelectClassesSelectAllCheckbox" >Select all</label>
-                        </div>
-                      </div>
-                    </div>
-                    <!-- <div class="col input-group"> -->
-                    <div class="col-md-6">
-                        
+                    <div class="col-md d-inline-flex">                            
                       <select id="tracking_objectDetectionSelect" onchange="onChangeObjectDetection('for_tracking')" class="p-2 form-select"
                         aria-label="Default select example">
                       </select>
@@ -455,9 +431,15 @@
                           aria-hidden="true"></span>
                         load model
                       </button>
-                    
                     </div>
                   </div>
+                  <!-- <div class="row my-1">
+                    <div class="col-md-12">
+                      <label for="tracking_multiSelectClasses">Select classes to detecte</label>
+                      <select class="form-select-lg" id="tracking_multiSelectClasses" data-placeholder="Detecte all classes" onchange="onClickMultiSelectClasses('tracking_multiSelectClasses')" multiple>
+                      </select>
+                    </div>                       
+                  </div> -->
                   <div class="row my-1">
                     <div class="col-md-6 py-2">
                       <div class="d-flex" style="align-items: baseline;">
