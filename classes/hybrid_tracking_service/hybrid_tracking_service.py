@@ -29,10 +29,9 @@ class HybridTrackingService():
     def apply(self,frame,threshold=0.5,nms_threshold=0.5): 
 
         start_time=time.perf_counter()
-
         if self.is_region_initialization_done==False:
             width,height=frame.shape[1],frame.shape[0]
-            self.init_regions(width,height )  
+            self.init_regions(width,height ) 
 
         resized_frame  ,raw_detection_data=self.background_subtractor_service.apply(frame=frame,boxes_plotting=False)
         original_frame=resized_frame.copy()
@@ -107,10 +106,7 @@ class HybridTrackingService():
     def consolidate_frame(self,original_frame,frame,detection_region,tracking_region):
         frame[self.d_region_y:self.d_region_y+self.d_region_h, self.d_region_x:self.d_region_x+self.d_region_w]=detection_region
         frame[self.tr_region_y:self.tr_region_y+self.tr_region_h, self.tr_region_x:self.tr_region_x+self.tr_region_w]=tracking_region
-       
-        frame=self.add_debug_surveillance_section(original_frame,frame)
-
-        
+        frame=self.add_debug_surveillance_section(original_frame,frame)        
         return frame
 
     def process_detection_region(self,detection_region):        
@@ -145,8 +141,8 @@ class HybridTrackingService():
         tracking_section = np.zeros((self.debug_surveillance_section_right_marge, frame.shape[1], 3), dtype=np.uint8)
         cnn_section = np.zeros((self.debug_surveillance_section_right_marge , frame.shape[1], 3), dtype=np.uint8)
 
-        detection_section[:,:,:] = (224, 223, 245)
-        tracking_section[:,:,:] = (245, 227, 213)
+        detection_section[:,:,:] = (245, 227, 213)
+        tracking_section[:,:,:] = (224, 223, 245)
         cnn_section[:,:,:] = (145, 227, 213)
 
         self.add_detected_objects_to_debug_section(original_frame,detection_section)
@@ -188,14 +184,17 @@ class HybridTrackingService():
             (x, y, w, h) = roi 
             object = original_frame[y:y+h, x:x+w]
             cnn_detections=self.detect_ROI_with_CNN(object)
+            # if cnn_detections:
+            #     self.draw_CNN_bbox_over_ROI(object,cnn_detections)
             if cnn_detections:
-                self.draw_CNN_bbox_over_ROI(object,cnn_detections)
+                for bbox,confidence,label in cnn_detections:
+                    bbox_x,bbox_y,bbox_w,bbox_h=bbox
+                    if offset+bbox_w<cnn_section.shape[1]:
+                        cnn_section[:bbox_h,offset:bbox_w+offset] = object[bbox_y:bbox_y+bbox_h,bbox_x:bbox_w+bbox_x]
+                        cv2.putText(cnn_section, label, ((offset ) , ( bbox_h) + 12 ), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (25,25,250), 1)
+                        cv2.putText(cnn_section,  str(round(confidence,2)), ((offset ) , ( bbox_h) + 28 ), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (25,25,250), 1)
 
-            # print("cnn_detection===")
-            # print(cnn_detection)
-            if offset+w<cnn_section.shape[1]:
-                cnn_section[:h,offset:w+offset] = object[:self.debug_surveillance_section_right_marge,:]
-            offset+=w
+                    offset+=bbox_w
         self.objects_in_detection_region=[]
 
     def detect_ROI_with_CNN(self,object,threshold=0.5 ,nms_threshold=0.5): 
