@@ -132,7 +132,10 @@
           <a class="nav-link" data-bs-toggle="tab" onclick="onClickSwitchTab('BACKGROUND_SUBTRACTION')" href="#backgroundSubtractionStreamTab">Background Subtraction Stream</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="tab" onclick="onClickSwitchTab('TRACKING_STREAM')" href="#trackingStream">trackingStream</a>
+          <a class="nav-link" data-bs-toggle="tab" onclick="onClickSwitchTab('TRACKING_STREAM')" href="#trackingStreamTab">tracking Stream</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" onclick="onClickSwitchTab('HYBRID_TRACKING_STREAM')" href="#hybridTrackingStreamTab">Hybrid tracking Stream</a>
         </li>
       </ul>
       
@@ -295,7 +298,7 @@
                             <h4 id="minBoxSizeValueText"> 300 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('minBoxSize')" min="50" max="1500" value="300" step="50"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('minBoxSize')" min="50" max="2500" value="300" step="50"
                           class="slider w-100" id="minBoxSizeSlider">
                       </div> 
                     </div>      
@@ -313,7 +316,7 @@
             
           </div>
         </div>
-        <div class="tab-pane container px-0  fade" id="trackingStream">  
+        <div class="tab-pane container px-0  fade" id="trackingStreamTab">  
           <div class="accordion accordion-flush px-0 py-2" id="tracking_accordionFlushMainParams">
             <div class="accordion-item">
               <h2 class="accordion-header" id="flush-headingOne">
@@ -549,7 +552,7 @@
                             <h4 id="tracking_minBoxSizeValueText"> 300 </h4>
                           </code>
                         </div>
-                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_minBoxSize')" min="50" max="1500" value="300" step="50"
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('tracking_minBoxSize')" min="50" max="2500" value="300" step="50"
                           class="slider w-100" id="tracking_minBoxSizeSlider">
                       </div> 
                     </div>      
@@ -560,6 +563,92 @@
           <div  class="col" style="display: flex; flex-direction: column;width: 100%;">
             <img id="trackingStream_1" />
             <img id="trackingStream_2" />
+          </div>
+        </div>
+        <div class="tab-pane container px-0  fade" id="hybridTrackingStreamTab">  
+         
+          <div class="accordion accordion-flush px-0 py-2" id="hybridTracking_accordionFlushBackgroundSubtraction">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="flush-headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-BackgroundSub" aria-expanded="true" aria-controls="flush-collapse-BackgroundSub" >
+                  <h4 class="m-0">
+                    Background subtraction Stream Parametres - for hybridTracking
+                  </h4>
+                </button>
+              </h2>
+              <div id="flush-collapse-BackgroundSub" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushBackgroundSubtraction">
+                <div class="accordion-body">
+                    <div class="row my-1">
+                      <div class="col-md-6 py-2 ">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">varThreshold : </h5>
+                          <code>
+                            <h4 id="hybridTracking_varThresholdValueText"> 100 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('hybridTracking_varThreshold')" min="1" max="255" value="100" step="1"
+                          class="slider w-100" id="hybridTracking_varThresholdSlider">
+                      </div> 
+                      <div class="col-md-6 py-2 ">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">history : </h5>
+                          <code>
+                            <h4 id="hybridTracking_historyValueText"> 400 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('hybridTracking_history')" min="0" max="1000" value="400" step="5"
+                          class="slider w-100" id="hybridTracking_historySlider">
+                      </div>
+                    </div>
+                    <div class="row my-1">
+                      <div class="col-md-6 py-1">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">morphologyEx iteration : </h5>
+                          <code>
+                            <h4 id="hybridTracking_morphologicalExValueText"> 3 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('hybridTracking_morphologicalEx')" min="0" max="5" value="3" step="1"
+                          class="slider w-100" id="hybridTracking_morphologicalExSlider">
+                      </div>
+                      <div class="col-md-6 py-1">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">kernel size : </h5>
+                          <code>
+                            <h4 id="hybridTracking_morphologicalKernelSizeValueText"> 7 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('hybridTracking_morphologicalKernelSize')" min="3" max="11" value="7" step="2"
+                          class="slider w-100" id="hybridTracking_morphologicalKernelSizeSlider">
+                      </div>
+                      <div class="col-md-6 py-1">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">Gaussien Blur kernel size : </h5>
+                          <code>
+                            <h4 id="hybridTracking_blurKernelSizeValueText"> 1 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('hybridTracking_blurKernelSize')" min="1" max="11" value="1" step="2"
+                          class="slider w-100" id="hybridTracking_blurKernelSizeSlider">
+                      </div>
+                      <div class="col-md-6 py-1">
+                        <div class="d-flex" style="align-items: baseline;">
+                          <h5 class="me-3" style="align-self: cente">min detected area : </h5>
+                          <code>
+                            <h4 id="hybridTracking_minBoxSizeValueText"> 300 </h4>
+                          </code>
+                        </div>
+                        <input type="range" onchange="updateBackgroundSubtractionParamValue('hybridTracking_minBoxSize')" min="50" max="2500" value="300" step="50"
+                          class="slider w-100" id="hybridTracking_minBoxSizeSlider">
+                      </div> 
+                    </div>      
+                </div>
+              </div>
+            </div>
+          </div>
+          <div  class="col" style="display: flex; flex-direction: column;width: 100%;">
+            <img id="hybridTrackingStream_1" />
+            <!-- <img id="trackingStream_2" /> -->
           </div>
         </div>
       </div>

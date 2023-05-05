@@ -107,6 +107,10 @@ class RaspberryCameraReader :
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
             tracking_frame=self.tracking_service.apply(copy_frame,threshold= self.threshold ,nms_threshold=self.nms_threshold)
             result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
+
+        # elif self.current_selected_stream== ClientStreamTypeEnum.HYBRID_TRACKING_STREAM:
+        #     tracking_frame=self.tracking_service.apply(copy_frame,threshold= self.threshold ,nms_threshold=self.nms_threshold)
+        #     result['hybridTrackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
          
         yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 

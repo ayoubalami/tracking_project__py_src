@@ -14,6 +14,7 @@ from  classes.webcam_reader import WebcamReader
 from  classes.buffer import Buffer
 from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.tracking_service.tracking_service import TrackingService
+from classes.hybrid_tracking_service.hybrid_tracking_service import HybridTrackingService
 from utils_lib.enums import ClientStreamTypeEnum, StreamSourceEnum
 import csv
 import json
@@ -54,6 +55,8 @@ class StreamReader:
         self.video_src=video_src
         self.stop_reading_to_clean=False
         self.tracking_service:TrackingService=None
+        self.hybrid_tracking_service:HybridTrackingService=None
+        
         self.background_subtractor_service=None
         self.activate_stream_simulation=True
 
@@ -249,7 +252,7 @@ class StreamReader:
     def addFrameTime(self,frame):
         if self.stream_source!=StreamSourceEnum.WEBCAM :
             frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
-
+            # pass
     def addInferenceTime(self, frame, inferenceTime):
         color = 2**16-1
         frame = cv2.putText(frame,str( "inf. time : {:02f}".format(inferenceTime)), (60, 45), cv2.FONT_HERSHEY_SIMPLEX, 3.3, color, 1, cv2.LINE_AA)
@@ -297,6 +300,14 @@ class StreamReader:
             result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
             # result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
             # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)
+
+        elif self.current_selected_stream== ClientStreamTypeEnum.HYBRID_TRACKING_STREAM:
+            hybrid_tracking_frame=self.hybrid_tracking_service.apply(frame=copy_frame,threshold= self.threshold ,nms_threshold=self.nms_threshold)
+            self.addFrameTime(hybrid_tracking_frame)
+            result['hybridTrackingStream_1']=self.encodeStreamingFrame(frame=hybrid_tracking_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
+            # result['trackingStream_2']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=50)
+            # result['testStream_first']=self.test_stream(origin_frame.copy(),detection_fps)
+        
         yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
 
     def encodeStreamingFrame(self,frame,resize_ratio=1,jpeg_quality=100):

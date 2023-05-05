@@ -105,10 +105,23 @@ window.onbeforeunload = function(event){
             param=param.substring(9)
             $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
             $( "#"+param+"Slider" )[0].value= newParamValueFromSlider;
-        }else{
+            $( "#hybridTracking_"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#hybridTracking_"+param+"Slider" )[0].value= newParamValueFromSlider;
+        }
+        else if (param.startsWith('hybridTracking_')){
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            param=param.substring(15)
+            $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#"+param+"Slider" )[0].value= newParamValueFromSlider;
+            $( "#tracking_"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#tracking_"+param+"Slider" )[0].value= newParamValueFromSlider;
+        }
+        else{
             $( "#"+param+"ValueText" ).text( newParamValueFromSlider);
             $( "#tracking_"+param+"ValueText" ).text( newParamValueFromSlider);
             $( "#tracking_"+param+"Slider" )[0].value= newParamValueFromSlider;
+            $( "#hybridTracking_"+param+"ValueText" ).text( newParamValueFromSlider);
+            $( "#hybridTracking_"+param+"Slider" )[0].value= newParamValueFromSlider;
         }
 
         $.ajax({

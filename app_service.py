@@ -14,6 +14,8 @@ from classes.detection_services.detection_service import IDetectionService
 from classes.offline_detector import OfflineDetector
 from classes.stream_reader import StreamReader, StreamSourceEnum
 from classes.tracking_service.tracking_service import TrackingService
+from classes.hybrid_tracking_service.hybrid_tracking_service import HybridTrackingService
+
 from classes.tracking_service.offline_tracker import OfflineTracker
 from utils_lib.enums import ClientStreamTypeEnum
 
@@ -23,6 +25,7 @@ class AppService:
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
     tracking_service: TrackingService=None
+    hybrid_tracking_service: HybridTrackingService=None
     stream_source: StreamSourceEnum=None
     buffering_thread=None   
     save_detectors_results=False
@@ -40,6 +43,7 @@ class AppService:
         
         self.background_subtractor_service=BackgroundSubtractorService()
         self.tracking_service=TrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
+        self.hybrid_tracking_service=HybridTrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
 
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
@@ -221,6 +225,7 @@ class AppService:
             self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src,save_detectors_results=self.save_detectors_results)        
             self.stream_reader.background_subtractor_service=self.background_subtractor_service
             self.stream_reader.tracking_service=self.tracking_service
+            self.stream_reader.hybrid_tracking_service=self.hybrid_tracking_service
 
             if self.stream_reader.buffer :
                 self.stream_reader.startBuffering()
@@ -235,6 +240,8 @@ class AppService:
                 self.stream_reader.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
             elif stream == 'TRACKING_STREAM':
                 self.stream_reader.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
+            elif stream == 'HYBRID_TRACKING_STREAM':
+                self.stream_reader.current_selected_stream= ClientStreamTypeEnum.HYBRID_TRACKING_STREAM
         
         elif self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
             if self.raspberry_camera!=None:

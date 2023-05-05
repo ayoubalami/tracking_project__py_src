@@ -12,6 +12,7 @@ class ClientStreamTypeEnum(Enum):
     CNN_DETECTOR = 1
     BACKGROUND_SUBTRACTION = 2
     TRACKING_STREAM=3
+    HYBRID_TRACKING_STREAM=4
  
 class SurveillanceRegionEnum(Enum):
     DETECTION_REGION = 1

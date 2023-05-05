@@ -46,9 +46,9 @@ class BackgroundSubtractorService():
 
         for contour in contours:
             if cv2.contourArea(contour) > self.min_box_size:
+                # print(str(self.min_box_size) , str(cv2.contourArea(contour)))
                 (x, y, w, h) = cv2.boundingRect(contour)
                 if boxes_plotting == False:
-                     
                     raw_detection_data.append((self.normalizedBBox([x, y, w, h]),1,'OBJ'))
                 else:
                     #DRAW BOUNDING BOX TO MASKS
