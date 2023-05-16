@@ -7,9 +7,6 @@ from utils_lib.enums import SurveillanceRegionEnum
 from classes.background_subtractor_service import BackgroundSubtractorService
 from skimage.metrics import structural_similarity
 import math
-from scipy.optimize import linear_sum_assignment
-from utils_lib.deep_sort.tools import generate_detections as gdet
-from sklearn.metrics.pairwise import cosine_similarity
 
 class HybridTrackingService():
     
@@ -28,21 +25,17 @@ class HybridTrackingService():
     objects_in_detection_region=[]
     objects_in_tracking_region=[]
     DVR=[]
-    DVR_vehicle_id=0
-    unique_vehicle_index=0
-
     debug_surveillance_section=[]
     debug_surveillance_section_right_marge=170
+    unique_vehicle_index=0
     DVR_temp=[]
     debug_mode=True
 
     # orb = cv2.ORB_create()
-    orb = cv2.ORB_create()
+    orb = cv2.ORB_create(scaleFactor=1.2)
     sift = cv2.SIFT_create() 
     sift_bf = cv2.BFMatcher()
     frame_size=None
-    feature_extractor_model_file='utils_lib/deep_sort/feature_extractors/mars-small128.pb'
-    encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
 
     def __init__(self, detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService  ):
         self.background_subtractor_service=background_subtractor_service
@@ -64,7 +57,7 @@ class HybridTrackingService():
         self.DVR_temp=self.DVR.copy()
         self.process_detection_region(original_frame,resized_frame,raw_detection_data,detection_region)
         self.process_tracking_region(original_frame,resized_frame,raw_detection_data,tracking_region)
-        # self.DVR=self.DVR_temp
+        self.DVR=self.DVR_temp
 
         if self.debug_mode:
             resized_frame=self.add_debug_surveillance_section(original_frame,resized_frame)
@@ -88,7 +81,6 @@ class HybridTrackingService():
 
     def process_detection_region(self,original_frame,frame,raw_detection_data,detection_region):        
         self.objects_in_detection_region=[]
-        self.active_detected_objects=[]
         count_in_detection_region=0
         for dd in raw_detection_data:
             (x, y, w, h) = dd[0]
@@ -114,23 +106,9 @@ class HybridTrackingService():
                         border_color=(255,255,0)
                         cv2.rectangle(frame, ( absolute_cnn_bbox_x, absolute_cnn_bbox_y), ( absolute_cnn_bbox_x+w, absolute_cnn_bbox_y+ h), border_color  , 2)
                         id=self.unique_vehicle_index
-
-                        kps, des = self.sift.detectAndCompute(cnn_crop, None)
-                        new_vehicle={ 'id':-1 ,'center_xy':(absolute_cnn_center_x,absolute_cnn_center_y), 'bbox_xywh':(absolute_cnn_bbox_x,absolute_cnn_bbox_y,w ,h) ,'confidence':confidence,'label':label, 'image':cnn_crop,'key_points':kps,'description':des, 'region':SurveillanceRegionEnum.DETECTION_REGION ,'status':'CAPTURED' ,'missing_count':0}
-                        
-                        # start_time=time.perf_counter()
-                        # # features = self.encoder(bb_blob,[np.array([x,y,w,h])])
-                        # kps, des = self.orb.detectAndCompute(cnn_crop, None)
-                        # # kps, des = self.sift.detectAndCompute(cnn_crop, None)
-                        # print("features")
-                        # print(time.perf_counter()-start_time)
-                        
-                        self.active_detected_objects.append(new_vehicle)
-                        # vehicle_regitred_properties=self.register_to_DVR(new_vehicle,SurveillanceRegionEnum.DETECTION_REGION)
+                        new_vehicle={ 'id':id ,'center_xy':(absolute_cnn_center_x,absolute_cnn_center_y), 'bbox_xywh':(absolute_cnn_bbox_x,absolute_cnn_bbox_y,w ,h) ,'confidence':confidence,'label':label, 'image':cnn_crop,'key_points':[],'description':[], 'region':SurveillanceRegionEnum.DETECTION_REGION  }
+                        vehicle_regitred_properties=self.register_to_DVR(new_vehicle,SurveillanceRegionEnum.DETECTION_REGION)
                 # vehicle_regitred_properties=self.register_to_DVR(roi=cnn_crop,bbox_xywh=cnn_bbox,confidence=confidence,label=label)
-        self.assigne_detected_objects()
-
-        # print(len(self.DVR))
 
         if self.debug_mode :
             height, width = detection_region.shape[:2]
@@ -141,11 +119,11 @@ class HybridTrackingService():
             frame[self.detection_y_start_position :self.detection_y_end_position, self.detection_x_start_position:self.detection_x_end_position] = colored_detection_region
             cv2.rectangle(frame, ( self.detection_x_start_position,self.detection_y_start_position), (self.detection_x_start_position+width, self.detection_y_start_position+height), border_color , 2)
             #  DRAW DETECTION BBOX 
-            # for (x, y, w, h) in self.objects_in_detection_region:
-            #     center_x=int(x+w/2)
-            #     center_y=int(y+h/2)
-            #     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), int(2*self.video_resolution_ratio))
-            #     cv2.circle(frame, (center_x,center_y), radius=2, color=(0, 255, 255), thickness=-1)
+            for (x, y, w, h) in self.objects_in_detection_region:
+                center_x=int(x+w/2)
+                center_y=int(y+h/2)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), int(2*self.video_resolution_ratio))
+                cv2.circle(frame, (center_x,center_y), radius=2, color=(0, 255, 255), thickness=-1)
 
         
     # def process_detection_region(self,original_frame,frame,raw_detection_data,detection_region):        
@@ -204,7 +182,7 @@ class HybridTrackingService():
 
                 id=self.unique_vehicle_index
                 new_vehicle={ 'id':id ,'center_xy':(center_x,center_y), 'bbox_xywh':(x, y, w, h) ,'confidence':-1,'label':None, 'image':bb_blob,'key_points':[],'description':[], 'region':SurveillanceRegionEnum.TRACKING_REGION  }
-                # vehicle_regitred_properties=self.register_to_DVR(new_vehicle,SurveillanceRegionEnum.TRACKING_REGION)
+                vehicle_regitred_properties=self.register_to_DVR(new_vehicle,SurveillanceRegionEnum.TRACKING_REGION)
     
         if self.debug_mode:
             height, width = tracking_region.shape[:2]
@@ -325,164 +303,6 @@ class HybridTrackingService():
         # cv2.putText(img, f'Tra. time: {round(tracking_time*1000)}ms', (int(width-190),73), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
 
 
-    def assigne_detected_objects(self):
-        
-        if len(self.DVR)==0:
-            self.init_DVR_with_active_detections()
-            return
-        INF=100000
-        similarity_threshold=0.01
-        matrix_dim= max( len(self.DVR),len(self.active_detected_objects))
-        score_matrix=[]
-        for i in range(matrix_dim):
-            score_array=[]
-            if len(self.active_detected_objects)>i :
-                for j in range(matrix_dim):
-                    if len(self.DVR)>j:
-                        score_array.append(self.calculate_similarity_score(self.active_detected_objects[i],self.DVR[j]))
-                    else:
-                        score_array.append(-INF)
-            else:
-                for j in range(matrix_dim):
-                    score_array.append(-INF)
-            score_matrix.append(score_array)
-
-        if len(score_matrix)==0:        
-            score_matrix=[[]]
-
-        score_matrix=np.array(score_matrix)
-        score_matrix = -score_matrix
-        print('===============')
-        print( [str(obj['id'])+"-"+str(obj['center_xy']) for obj in self.active_detected_objects])
-        print( [str(obj['id'])+"-"+str(obj['center_xy']) for obj in self.DVR])
-        print(score_matrix )
-
-        self.remained_active_detected_objects=self.active_detected_objects.copy()
-        self.remained_DVR=self.DVR.copy()
-
-        row_ind, col_ind =linear_sum_assignment(score_matrix )
-        for i in range(matrix_dim ):
-            # print(f"active vehicle {row_ind[i]} is assigned active_ {col_ind[i]} : cost{score_matrix[row_ind[i]][col_ind[i]]}")
-            if (score_matrix[row_ind[i]][col_ind[i]]<INF ):
-                if ( score_matrix[row_ind[i]][col_ind[i]]<-similarity_threshold):
-                    self.update_registerd_vehicle_properties(self.DVR[col_ind[i]],self.active_detected_objects[row_ind[i]])
-                    print(f">> update DVR  vehicle {self.DVR[col_ind[i]]['id']}")
-                else:
-                    self.register_new_vehicle(self.active_detected_objects[row_ind[i]])
-                    self.set_registerd_vehicle_state(self.DVR[col_ind[i]],"MISSED")
-                    print(f">> insert active vehicle {self.active_detected_objects[row_ind[i]]['id']}")
-            else:
-                print(f"###### active vehicle {row_ind[i]} is assigned active_ {col_ind[i]} : cost{score_matrix[row_ind[i]][col_ind[i]]}")
- 
-        # print("=====>>>>")
-        # print(len(self.remained_active_detected_objects))
-        # print(len(self.remained_DVR))
-        # print("=====>>>>")
-
-        self.update_DVR_remaining_vehicle_state()
-        # self.update_DVR_remaining_vehicle_state()
-
-    def set_registerd_vehicle_state(self,registred_vehicle,state):
-        registred_vehicle['status']=state
-        if state=='MISSED':
-            registred_vehicle['missing_count']+=1
-        else:
-            registred_vehicle['missing_count']=0
-
-    def update_DVR_remaining_vehicle_state(self):
-        for v in self.remained_DVR:
-            remained_DVR_vehicle=(next(filter(lambda vehicle: vehicle['id'] == v['id'], self.DVR)))
-            self.set_registerd_vehicle_state(remained_DVR_vehicle,"MISSED")
-            if remained_DVR_vehicle['missing_count']>5:
-                self.DVR.remove(remained_DVR_vehicle)
- 
-    def update_DVR_vehicle_state(self):
-        for v in self.DVR:
-            if  v['missing_count']>3:
-                self.DVR.remove(v)
-                continue
-
-            x,y,w,h =v['bbox_xywh'] 
-            # print(y,h)
-            if  math.fabs(y+h-self.detection_y_end_position)<30 :
-                v['status']='TRACKED'
-                print("SET OUT_DETECTION")
-                self.DVR.remove(v)
-            else:
-                print("NOT YET OUT_DETECTION")
-
-    def register_new_vehicle(self,vehicle):
-        self.DVR_vehicle_id+=1
-        vehicle['id']= self.DVR_vehicle_id
-        self.DVR.append( vehicle )
-
-    def init_DVR_with_active_detections(self):
-        for v in self.active_detected_objects:
-            self.register_new_vehicle(v)
-
-    def update_registerd_vehicle_properties(self,registred_vehicle,active_vehicle):
-
-        self.remained_active_detected_objects.remove(next(filter(lambda vehicle: vehicle['id'] == active_vehicle['id'], self.remained_active_detected_objects)))
-        self.remained_DVR.remove(next(filter(lambda vehicle: vehicle['id'] == registred_vehicle['id'], self.remained_DVR)))
-
-        registred_vehicle['bbox_xywh']=active_vehicle['bbox_xywh']
-        registred_vehicle['image']=active_vehicle['image']
-        registred_vehicle['key_points']=active_vehicle['key_points']
-        registred_vehicle['description']=active_vehicle['description']
-        registred_vehicle['center_xy']=active_vehicle['center_xy']
-        registred_vehicle['status']='DETECTED'
-        registred_vehicle['confidence']=active_vehicle['confidence']
-        registred_vehicle['label']=active_vehicle['label']
-        # x,y,w,h =active_vehicle['bbox_xywh'] 
-        # if  math.fabs(y+h-self.tracking_y_end_position)<10 and  h <=150:
-        #     registred_vehicle['status']='OUT'
-
-
-    def calculate_sift_similarity(self,active_vehicle,registred_vehicle):
-        # start_time=time.perf_counter()
-        # matches = self.sift_bf.match(active_vehicle['description'],registred_vehicle['description'])
-        
-        # max(len(active_vehicle['description']), len(registred_vehicle['description']))
-
-        # total_distance = sum([match.distance for match in matches])
-        # # similarity_score = 1 / (1 + total_distance)  # Higher score for better matches
-        # similarity_score = 1 / (1 + total_distance)  # Higher score for better matches
-        # print("SIFT MATCH TIME ")
-        # print(time.perf_counter()-start_time)
-        # print(len(active_vehicle['description']), len(registred_vehicle['description']), len(matches))
-        # cosine_similarities = cosine_similarity(active_vehicle['description'], registred_vehicle['description'])
-        # similarity_score = np.mean(cosine_similarities)
-
-        # print("SIFT MATCH TIME ")
-        # start_time=time.perf_counter()
-        # bf = cv2.BFMatcher()
-        matches = self.sift_bf.knnMatch(active_vehicle['description'], registred_vehicle['description'], k=2)
-        good_matches = []
-        for m, n in matches:
-            if m.distance < 0.75 * n.distance:
-                good_matches.append(m)
-                
-        matching_score = len(good_matches) / len(matches)
-        # print(time.perf_counter()-start_time)
-        return matching_score
-
-    def calculate_similarity_score(self,active_vehicle,registred_vehicle):
-        
-        active_vehicle_image=active_vehicle['image']
-        registred_vehicle_image=registred_vehicle['image']
-        registred_vehicle_image= cv2.resize(registred_vehicle_image, (active_vehicle_image.shape[1], active_vehicle_image.shape[0]))
-
-        # ssim = structural_similarity(active_vehicle_image, registred_vehicle_image, multichannel=True,channel_axis=-1)
-        # features = self.encoder(detection_frame, bboxes)
-        sift_similarity=self.calculate_sift_similarity(active_vehicle,registred_vehicle)
-        distance_score=self.euclidean_similarity(active_vehicle,registred_vehicle)
-
-        print("similarity_score====")
-        print(math.sqrt(distance_score))
-        print(sift_similarity)
-
-        return math.sqrt(distance_score)*sift_similarity
-
     def update_DVR_properties(self,new_vehicle,registerd_vehicle,region):
         # new_vehicle['id']=registerd_vehicle['id']
         vehicle_to_update= next(filter(lambda vehicle: vehicle['id'] == registerd_vehicle['id'], self.DVR_temp))
@@ -498,7 +318,15 @@ class HybridTrackingService():
         vehicle_to_update['description']=new_vehicle['description']
         vehicle_to_update['center_xy']=new_vehicle['center_xy']
         vehicle_to_update['status']=new_vehicle['status']
+
         x,y,w,h =new_vehicle['bbox_xywh'] 
+        # print("math.fabs(y-self.tracking_y_end_position<10)")
+        # print(new_vehicle['bbox_xywh'] )
+        # # print(y-self.tracking_y_end_position)
+
+        # print(math.fabs(y+h-self.tracking_y_end_position))
+        # print(h)
+        print(math.fabs(y+h-self.tracking_y_end_position),h)
         if  math.fabs(y+h-self.tracking_y_end_position)<10 and  h <=150:
             vehicle_to_update['status']='OUT'
 
@@ -578,7 +406,6 @@ class HybridTrackingService():
             if registred_vehicle['status']=='OUT':
                 continue
             # ADD shape similarity (width, hight) comparison
-            shape_similarity_score=self.shape_similarity(current_vehicle_image, registred_vehicle_image)
             if registred_vehicle['region']!=SurveillanceRegionEnum.DETECTION_REGION :
                 continue
             registred_vehicle_image= cv2.resize(registred_vehicle['image'], (current_vehicle_image.shape[1], current_vehicle_image.shape[0]))
@@ -603,7 +430,6 @@ class HybridTrackingService():
             if ssim>structural_similarity_max_score :
                 structural_similarity_max_score=ssim
                 structural_similarity_max_vehicle=registred_vehicle
-                shape_similarity_score
 
             if distance_score<euclidean_distance_min_score and distance_score!=-1:
                 euclidean_distance_min_score=distance_score
@@ -624,43 +450,29 @@ class HybridTrackingService():
             # print('<<<MATCH NOT FOUND>>>')
             return None
     
-    # def euclidean_similarity(self,vehicle_1,vehicle_2):
-
-    #     center_x_1,center_y_1=vehicle_1['center_xy']
-    #     center_x_2,center_y_2=vehicle_2['center_xy']
-    #     score_x= math.fabs(center_x_1-center_x_2) 
-    #     score_y= (center_y_1-center_y_2) 
-
-    #     if score_y+10<0:
-    #         return -1
-    #     return score_x+score_y
-
     def euclidean_similarity(self,vehicle_1,vehicle_2):
-
+        epsilon=1e-4
+        # (x1,y1,w1,h1)= vehicle_1['bbox_xywh']
+        # (x2,y2,w2,h2)= vehicle_2['bbox_xywh']
+        # center_x_1=int(x1+w1/2);center_y_1=int(y1+h1/2)
+        # center_x_2=int(x2+w2/2);center_y_2=int(y2+h2/2)     
         center_x_1,center_y_1=vehicle_1['center_xy']
         center_x_2,center_y_2=vehicle_2['center_xy']
-        # score_x= 1/math.fabs(center_x_1-center_x_2)+1
-        # score_y= 1/math.fabs(center_y_1-center_y_2)+1
-        # print(center_x_1,center_y_1)
-        # print(center_x_2,center_y_2)
-        score= 1/(math.fabs(center_x_1-center_x_2)+math.fabs(center_y_1-center_y_2)+1)
-        return score
-    
-    def shape_similarity(self,vehicle_1,vehicle_2):
- 
-        x1,y1,w1,h1=vehicle_1['bbox_xywh']
-        x2,y2,w2,h2=vehicle_2['bbox_xywh']
-        score_w= (w1-w2) 
-        score_h= (h1-h2) 
+        # score_x=(center_x_1-center_x_2)/self.frame_size[1]
+        # score_y=(center_y_1-center_y_2)/self.frame_size[0]
 
-        if score_w+10<0 and score_h+10<0:
+        score_x= math.fabs(center_x_1-center_x_2) 
+        score_y= (center_y_1-center_y_2) 
+
+        if score_y+10<0:
             return -1
-        return score_w+score_h
-
+        return score_x+score_y
+        # return score_x,score_y
+        # return 1/(math.sqrt((center_x_2 - center_x_1)**2 + (center_y_2 - center_y_1)**2)+epsilon)
+        # return math.sqrt((center_x_2 - center_x_1)**2 + (center_y_2 - center_y_1)**2)
 
     def reset(self):
         self.DVR=[]
-        self.DVR_vehicle_id=0
         self.DVR_temp=[]
         self.objects_in_detection_region=[]
         self.objects_in_tracking_region=[]

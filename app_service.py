@@ -75,6 +75,8 @@ class AppService:
             self.stream_reader.reset()
         if self.tracking_service:
             self.tracking_service.reset()
+        if self.hybrid_tracking_service:
+            self.hybrid_tracking_service.reset()
         return jsonify('reset stream')
   
     def index(self):
@@ -184,17 +186,22 @@ class AppService:
     def update_cnn_detector_param(self,param,value):
         if param=='networkInputSize':
             self.detection_service.network_input_size=int(value)
-        else :
-            if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
-                if param=='threshold':
-                    self.raspberry_camera.threshold=float(value)
-                if param=='nmsThreshold':
-                    self.raspberry_camera.nms_threshold=float(value)
-            else:
-                if param=='threshold':
-                    self.stream_reader.threshold=float(value)
-                if param=='nmsThreshold':
-                    self.stream_reader.nms_threshold=float(value)
+        elif param=='threshold':
+            self.detection_service.threshold=float(value)
+        elif param=='nmsThreshold':
+            self.detection_service.nms_threshold=float(value)
+
+        # else :
+        #     if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
+        #         if param=='threshold':
+        #             self.raspberry_camera.threshold=float(value)
+        #         if param=='nmsThreshold':
+        #             self.raspberry_camera.nms_threshold=float(value)
+        #     else:
+        #         if param=='threshold':
+        #             self.stream_reader.threshold=float(value)
+        #         if param=='nmsThreshold':
+        #             self.stream_reader.nms_threshold=float(value)
                 
         return jsonify(result=param+' updated ')
 

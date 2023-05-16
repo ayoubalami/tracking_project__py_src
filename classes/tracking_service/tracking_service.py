@@ -50,7 +50,7 @@ class TrackingService():
         self.metric = nn_matching.NearestNeighborDistanceMetric('cosine', self.threshold_feature_distance, nn_budget)
         self.tracker = Tracker(self.metric,max_iou_distance=self.max_distance, max_age=self.max_age, n_init=self.n_init)
 
-    def apply(self,frame,threshold=0.5 ,nms_threshold=0.5): 
+    def apply(self,frame): 
         start_time=time.perf_counter()
         self.frame_size=frame.shape
         # width=frame.shape[1]
@@ -58,7 +58,7 @@ class TrackingService():
         # # cv2.rectangle(frame, (int(width/2)-100, 50), (int(width/2)+100, heigth), (0,0,0), -1)
         # cv2.rectangle(frame, (0, 0), (int(width), heigth), (255,255,255), -1)
         # frame=cv2.resize(frame,(int(width/16),int(heigth/16)))
-        detection_frame  ,raw_detection_data=self.getRawDetections(frame,threshold=threshold ,nms_threshold=nms_threshold)
+        detection_frame  ,raw_detection_data=self.getRawDetections(frame)
         detection_time=round(time.perf_counter()-start_time,3)
         
         tracking_time=time.perf_counter()
@@ -99,10 +99,10 @@ class TrackingService():
         self.drawTrackedBBoxes(detection_frame)
         self.drawDetectedBBoxes(detection_frame,bboxes)
 
-    def getRawDetections(self,origin_frame,threshold=0.5 ,nms_threshold=0.5): 
+    def getRawDetections(self,origin_frame): 
         if self.activate_detection_for_tracking:
             if self.track_object_by_cnn_detection==True and self.detection_service !=None and self.detection_service.get_selected_model() !=None:
-                return  self.detection_service.detect_objects(origin_frame,threshold= threshold ,nms_threshold=nms_threshold,boxes_plotting=False)
+                return  self.detection_service.detect_objects(origin_frame,boxes_plotting=False)
             if self.track_object_by_background_sub==True and self.background_subtractor_service !=None :
                 return  self.background_subtractor_service.apply(origin_frame,boxes_plotting=False)
         return origin_frame,[]

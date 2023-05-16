@@ -8,7 +8,8 @@ class OpencvDetectionService(IDetectionService):
 
     np.random.seed(123)
     model=None
-    default_model_input_size=416
+    default_model_input_size=96
+    # default_model_input_size=416
     show_all_classes=True
 
     def clean_memory(self):
@@ -96,15 +97,15 @@ class OpencvDetectionService(IDetectionService):
             self.model.setInputParams(size=(self.default_model_input_size, self.default_model_input_size), scale=1/255, swapRB=True)
         print("Model " + self.modelName + " loaded successfully...")
       
-    def detect_objects(self, frame,threshold:float,nms_threshold:float,boxes_plotting=True):
-       
+    def detect_objects(self, frame,boxes_plotting=True):
+
         start_time= time.perf_counter()
         if self.network_input_size!=None and self.network_input_size != self.default_model_input_size:
             self.default_model_input_size=self.network_input_size
             print("UPDATE YOLO NETWORK INPUT SIZE ... ")
             self.model.setInputParams(size=(self.default_model_input_size, self.default_model_input_size), scale=1/255, swapRB=True)
              
-        classIdx,confidences,bboxs= self.model.detect(frame,confThreshold=threshold)
+        classIdx,confidences,bboxs= self.model.detect(frame,confThreshold=self.threshold)
 
         inference_time=np.round(time.perf_counter()-start_time,3)
         bboxs=list(bboxs)
@@ -112,7 +113,7 @@ class OpencvDetectionService(IDetectionService):
         classIdx=list(classIdx)
         raw_detection_data=[]
         
-        allowed_condidats=self.keepSelectedClassesOnly(bboxs,confidences,classIdx,threshold)
+        allowed_condidats=self.keepSelectedClassesOnly(bboxs,confidences,classIdx,self.threshold)
 
         # IF NO OBJECT IS FOUND
         if not allowed_condidats :
@@ -124,7 +125,7 @@ class OpencvDetectionService(IDetectionService):
                 return frame,raw_detection_data
 
         bboxs,confidences,classIdx=list(zip(*allowed_condidats))
-        bboxIdx=cv2.dnn.NMSBoxes(bboxs,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
+        bboxIdx=cv2.dnn.NMSBoxes(bboxs,confidences,score_threshold=self.threshold,nms_threshold=self.nms_threshold)
         if len(bboxIdx) !=0 :
             for i in range (len(bboxIdx)):
                 x,y,w,h=bboxs[bboxIdx[i]]

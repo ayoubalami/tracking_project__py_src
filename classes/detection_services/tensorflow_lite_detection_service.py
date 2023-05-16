@@ -54,7 +54,7 @@ class TensorflowLiteDetectionService(IDetectionService):
         print("Model " + self.modelName + " loaded successfully...")
         self.readClasses()
  
-    def detect_objects(self, frame,threshold= 0.5,nms_threshold=0.5,boxes_plotting=True):         
+    def detect_objects(self, frame,boxes_plotting=True):         
         image_data = cv2.resize(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), (self.const_network_input_size,self.const_network_input_size ))
         images_list = np.asarray([image_data]).astype(np.uint8)  
         start_time= time.perf_counter()  
@@ -76,7 +76,7 @@ class TensorflowLiteDetectionService(IDetectionService):
         # total_detections=output_dict['num_detections']
  
         raw_detection_data=[]
-        allowed_condidats=self.keepSelectedClassesOnly(bboxes,confidences,class_idx,threshold)
+        allowed_condidats=self.keepSelectedClassesOnly(bboxes,confidences,class_idx,self.threshold)
         if not allowed_condidats :
             if boxes_plotting :
                 fps = 1 / np.round(time.perf_counter()-start_time,3)
@@ -87,13 +87,13 @@ class TensorflowLiteDetectionService(IDetectionService):
 
         bboxes,confidences,class_idx=list(zip(*allowed_condidats))        
         nms_bbox_idx = tf.image.non_max_suppression(bboxes, confidences, max_output_size=150, 
-            iou_threshold=nms_threshold, score_threshold=threshold)
+            iou_threshold=self.nms_threshold, score_threshold=self.threshold)
 
         for i in nms_bbox_idx:
             class_id=class_idx[i]
             bbox=bboxes[i]
             confidence=round(confidences[i],3)
-            if confidence>threshold:
+            if confidence>self.threshold:
                 ymin, xmin, ymax, xmax = bbox
                 xmin, xmax, ymin, ymax = (xmin * width, xmax * width, ymin * heigth, ymax * heigth) 
                 xmin, xmax, ymin, ymax = int(xmin), int(xmax), int(ymin), int(ymax)

@@ -35,7 +35,7 @@ class OfflineDetector:
         while True:
             success, frame = self.cap.read()
             if self.detection_service !=None and self.detection_service.get_selected_model()!=None:
-                frame , _= self.detection_service.detect_objects(frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
+                frame , _= self.detection_service.detect_objects(frame)
                 
             if success == False or i > last_frame :
                 break

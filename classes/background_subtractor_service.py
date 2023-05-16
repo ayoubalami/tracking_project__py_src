@@ -9,7 +9,7 @@ class BackgroundSubtractorService():
         self.morphological_ex_iteration=3
         self.morphological_kernel_size=7
         self.blur_kernel_size=1
-        self.background_subtractor = cv2.createBackgroundSubtractorMOG2(history=400,varThreshold=100,detectShadows=True)
+        self.background_subtractor = cv2.createBackgroundSubtractorMOG2(history=400,varThreshold=160,detectShadows=True)
         self.background_subtractor.setShadowValue(0)
         self.min_box_size=300
         self.deviation=0
@@ -23,8 +23,8 @@ class BackgroundSubtractorService():
 
     def apply(self,frame,boxes_plotting=True): 
 
+        img_height,img_width = frame.shape[:2] 
         if self.video_resolution_ratio<1:
-            img_height,img_width = frame.shape[:2] 
             resized_frame=cv2.resize(frame, (int(img_width*self.video_resolution_ratio) ,int(img_height*self.video_resolution_ratio) ))
         else:
             resized_frame=frame.copy()
@@ -43,11 +43,35 @@ class BackgroundSubtractorService():
             mask_frame = cv2.morphologyEx( mask_frame, cv2.MORPH_DILATE, kernel, iterations=self.morphological_ex_iteration)
         contours, _ = cv2.findContours(mask_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)        
         raw_detection_data=[]
-
+        
+        # print("__________________________________________")
+        self.min_side_size=30
+        # self.max_side_size=40
+        relative_img_height=(img_height*self.video_resolution_ratio)
+        section_count=15
+        perspective_expension_ratio=0.65
+        # top_margin=200
         for contour in contours:
-            if cv2.contourArea(contour) > self.min_box_size:
+            (x, y, w, h) = cv2.boundingRect(contour)
+            if y<150:
+                continue
+            current_section=1+((y-150)*section_count)//relative_img_height
+            # print("self.min_box_size*up_ratio")
+            # print(img_height)
+            # print((x, y, w, h))
+            # print( current_section)
+            # print( w*h) 
+            # print( cv2.contourArea(contour))
+            # print(self.min_side_size*current_section*perspective_expension_ratio)
+            # print(self.max_side_size*current_section*perspective_expension_ratio)
+            # print( self.video_resolution_ratio)
+ 
+            # print("______________")
+ 
+            if  w >self.min_side_size*current_section*perspective_expension_ratio  :
+            # if  w*self.video_resolution_ratio >self.min_side_size*current_section and h*self.video_resolution_ratio>self.min_side_size*current_section:
+            # if cv2.contourArea(contour) > self.min_box_size*section:
                 # print(str(self.min_box_size) , str(cv2.contourArea(contour)))
-                (x, y, w, h) = cv2.boundingRect(contour)
                 if boxes_plotting == False:
                     raw_detection_data.append((self.normalizedBBox([x, y, w, h]),1,'OBJ'))
                 else:

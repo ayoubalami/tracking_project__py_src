@@ -5,9 +5,12 @@ import random
 class IDetectionService:
     stream_reader=None
     selected_model=None
-    network_input_size=416
+    network_input_size=128
+    # network_input_size=416
     allowed_classes=[]
     colors_list=[]
+    threshold=0.3
+    nms_threshold=0.5
 
     def init_selected_model(self):
         self.selected_model=None
@@ -21,7 +24,7 @@ class IDetectionService:
     def load_model(self,model=None):
         pass
 
-    def detect_objects(self, frame,threshold:float,nms_threshold:float,boxes_plotting=True):
+    def detect_objects(self, frame,boxes_plotting=True):
         pass
 
     def clean_memory(self):

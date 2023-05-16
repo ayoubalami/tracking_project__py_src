@@ -62,7 +62,7 @@ class OnnxDetectionService(IDetectionService):
         self.model = cv2.dnn.readNetFromONNX(self.modelPath)    
         self.readClasses()
     
-    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5,boxes_plotting=True):
+    def detect_objects(self, frame,boxes_plotting=True):
         
         if  self.model ==None:
             return None,0

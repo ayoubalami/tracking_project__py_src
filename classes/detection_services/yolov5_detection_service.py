@@ -49,7 +49,7 @@ class Yolov5DetectionService(IDetectionService):
     def get_object_detection_models(self):
         return self.detection_method_list 
       
-    def detect_objects(self, frame,threshold= 0.5,nms_threshold= 0.5,boxes_plotting=True ):
+    def detect_objects(self, frame,boxes_plotting=True ):
         start_time = time.perf_counter()
         if self.network_input_size!=None and self.network_input_size != self.default_model_input_size:
             self.default_model_input_size=self.network_input_size
@@ -57,12 +57,12 @@ class Yolov5DetectionService(IDetectionService):
         # frame=cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         labels, cord , inference_time = self.score_frame(frame)
         if boxes_plotting:
-            frame , _ = self.plot_boxes((labels, cord ), frame,threshold=threshold,nms_threshold=nms_threshold,boxes_plotting=True)
+            frame , _ = self.plot_boxes((labels, cord ), frame,threshold=self.threshold,nms_threshold=self.nms_threshold,boxes_plotting=True)
             fps = 1 / np.round(time.perf_counter()-start_time,3)
             self.addFrameFps(frame,fps)
             return frame,inference_time
         else:
-            return self.plot_boxes((labels, cord ), frame,threshold=threshold,nms_threshold=nms_threshold,boxes_plotting=False)
+            return self.plot_boxes((labels, cord ), frame,threshold=self.threshold,nms_threshold=self.nms_threshold,boxes_plotting=False)
     
     def score_frame(self, frame):
         # self.model.to(self.device)

@@ -99,7 +99,7 @@ class TensorflowDetectionService(IDetectionService):
         self.colorList.insert(0,-1)
     
 
-    def detect_objects(self, frame,threshold= 0.5,nms_threshold=0.5):
+    def detect_objects(self, frame):
         inputTensor = cv2.cvtColor( frame.copy(), cv2.COLOR_BGR2RGB ) 
         inputTensor = tf.convert_to_tensor(inputTensor, dtype=tf.uint8) 
         inputTensor = inputTensor[tf.newaxis,...]
@@ -115,7 +115,7 @@ class TensorflowDetectionService(IDetectionService):
     
         #     NON MAX SUPRESSION
         bboxIdx = tf.image.non_max_suppression(bboxs, classScores, max_output_size=150, 
-            iou_threshold=nms_threshold, score_threshold=threshold)
+            iou_threshold=self.nms_threshold, score_threshold=self.threshold)
  
         if len(bboxIdx) != 0: 
             for i in bboxIdx: 

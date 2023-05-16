@@ -173,7 +173,7 @@ class OpencvTensorflowDetectionService(IDetectionService):
       
     
 
-    def detect_objects(self, frame,threshold:float,nms_threshold:float):
+    def detect_objects(self, frame):
       
         img=frame.copy()
        
@@ -199,7 +199,7 @@ class OpencvTensorflowDetectionService(IDetectionService):
                 boxes.append(box)       
                 cv2.rectangle(img, (int(left), int(top)), (int(right), int(bottom)), (23, 230, 210), thickness=2)
         
-        indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
+        indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=self.threshold,nms_threshold=self.nms_threshold)
 
         for i in indices:
             x1,y1,w,h = boxes[i]

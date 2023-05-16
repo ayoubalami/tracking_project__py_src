@@ -24,8 +24,8 @@ class RaspberryCameraReader :
         self.background_subtractor_service=background_subtractor_service
         self.tracking_service=tracking_service
         self.tracking_service.raspberry_camera=self
-        self.threshold=0.5
-        self.nms_threshold=0.5
+        # self.threshold=0.5
+        # self.nms_threshold=0.5
         self.zoom=1
         self.y_servo_motor=ServoMotor(servo_pin=18)
         self.x_servo_motor=ServoMotor(servo_pin=23)  
@@ -105,7 +105,7 @@ class RaspberryCameraReader :
             result['backgroundSubStream_3']=self.encodeStreamingFrame(frame=merged_foreground_detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
 
         elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
-            tracking_frame=self.tracking_service.apply(copy_frame,threshold= self.threshold ,nms_threshold=self.nms_threshold)
+            tracking_frame=self.tracking_service.apply(copy_frame)
             result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
 
         # elif self.current_selected_stream== ClientStreamTypeEnum.HYBRID_TRACKING_STREAM:
@@ -127,7 +127,7 @@ class RaspberryCameraReader :
         # resize_ratio=.5
         # origin_frame=cv2.resize(origin_frame, (int(self.buffer.width*resize_ratio) ,int(self.buffer.height*resize_ratio) ))
         if self.detection_service !=None  and self.detection_service.get_selected_model() !=None:
-            detection_frame ,inference_time = self.detection_service.detect_objects(origin_frame, threshold= self.threshold ,nms_threshold=self.nms_threshold)
+            detection_frame ,inference_time = self.detection_service.detect_objects(origin_frame)
             return detection_frame,inference_time
         return origin_frame,-1
 
