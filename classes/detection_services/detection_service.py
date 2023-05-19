@@ -5,11 +5,11 @@ import random
 class IDetectionService:
     stream_reader=None
     selected_model=None
-    network_input_size=128
+    network_input_size=192
     # network_input_size=416
     allowed_classes=[]
     colors_list=[]
-    threshold=0.3
+    threshold=0.4
     nms_threshold=0.5
 
     def init_selected_model(self):

@@ -17,32 +17,39 @@ class HybridTrackingService():
     detection_service:IDetectionService=None   
     # d_start,d_height,tr_start,tr_height= 200,100,300,500
 
-    detection_y_start_ratio,detection_y_end_ratio=0.33,.5
-    tracking_y_start_ratio,tracking_y_end_ratio=0.5,1
+    detection_y_start_ratio,detection_y_end_ratio=0.37,.53
+    tracking_y_start_ratio,tracking_y_end_ratio=0.53,1
 
-    detection_x_start_ratio,detection_x_end_ratio=0.33,.52
-    tracking_x_start_ratio,tracking_x_end_ratio=0.05,0.52
+    detection_x_start_ratio,detection_x_end_ratio=0.31,.52
+    tracking_x_start_ratio,tracking_x_end_ratio=0,0.52
 
     is_region_initialization_done=False
     video_resolution_ratio=1
     objects_in_detection_region=[]
     objects_in_tracking_region=[]
     DVR=[]
+    TVR=[]
     DVR_vehicle_id=0
     unique_vehicle_index=0
+    remained_active_detected_objects=[]
 
     debug_surveillance_section=[]
     debug_surveillance_section_right_marge=170
     DVR_temp=[]
     debug_mode=True
+    
+    x_padding=0
+    y_padding=70
 
     # orb = cv2.ORB_create()
-    orb = cv2.ORB_create()
+    # orb = cv2.ORB_create()
     sift = cv2.SIFT_create() 
     sift_bf = cv2.BFMatcher()
     frame_size=None
-    feature_extractor_model_file='utils_lib/deep_sort/feature_extractors/mars-small128.pb'
-    encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
+    similarity_threshold=0.01
+
+    # feature_extractor_model_file='utils_lib/deep_sort/feature_extractors/mars-small128.pb'
+    # encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
 
     def __init__(self, detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService  ):
         self.background_subtractor_service=background_subtractor_service
@@ -99,35 +106,35 @@ class HybridTrackingService():
                 count_in_detection_region+=1
 
         if count_in_detection_region>0:
-            bb_blob = original_frame[self.detection_y_start_position  :self.detection_y_end_position, self.detection_x_start_position:self.detection_x_end_position]
+            bb_blob = original_frame[self.detection_y_start_position -self.y_padding :self.detection_y_end_position +self.y_padding, self.detection_x_start_position:self.detection_x_end_position]
             cnn_detections=self.detect_ROI_with_CNN(bb_blob)
             for cnn_bbox,confidence,label in cnn_detections:
                 x,y,w,h=cnn_bbox
-                if y>1 and y< self.detection_y_end_position-self.detection_y_start_position-h-2 and x>1 :  
+                # print(self.detection_y_end_position-self.detection_y_start_position-h-2 , y)
+                # print(self.detection_y_end_position,self.detection_y_start_position )
+                # print(self.detection_y_end_position-self.detection_y_start_position-h )
+                
+                y=y-self.y_padding
+                # print( x,y,w,h)
+                is_a_large_vehicle= self.detection_y_end_position-self.detection_y_start_position-h<10
+                # print(self.detection_y_end_position,self.detection_y_start_position,h,y)
+                # print(is_a_large_vehicle)
+
+                if (y>1 and y< self.detection_y_end_position-self.detection_y_start_position-h-2 or is_a_large_vehicle )  and x>1 :  
                     absolute_cnn_center_x,absolute_cnn_center_y=self.detection_x_start_position +x+(w//2),self.detection_y_start_position +y+(h//2)
                     absolute_cnn_bbox_x,absolute_cnn_bbox_y =x+self.detection_x_start_position,y+self.detection_y_start_position
 
-                    if absolute_cnn_center_y>self.detection_y_start_position and absolute_cnn_center_y<self.detection_y_end_position\
-                    and absolute_cnn_center_x>self.detection_x_start_position and absolute_cnn_center_x<self.detection_x_end_position: 
-                        cnn_crop=bb_blob[y:min(self.debug_surveillance_section_right_marge+y,h+y),x:x+w]
-                        # cnn_crop
-                        border_color=(255,255,0)
-                        cv2.rectangle(frame, ( absolute_cnn_bbox_x, absolute_cnn_bbox_y), ( absolute_cnn_bbox_x+w, absolute_cnn_bbox_y+ h), border_color  , 2)
-                        id=self.unique_vehicle_index
-
-                        kps, des = self.sift.detectAndCompute(cnn_crop, None)
-                        new_vehicle={ 'id':-1 ,'center_xy':(absolute_cnn_center_x,absolute_cnn_center_y), 'bbox_xywh':(absolute_cnn_bbox_x,absolute_cnn_bbox_y,w ,h) ,'confidence':confidence,'label':label, 'image':cnn_crop,'key_points':kps,'description':des, 'region':SurveillanceRegionEnum.DETECTION_REGION ,'status':'CAPTURED' ,'missing_count':0}
-                        
-                        # start_time=time.perf_counter()
-                        # # features = self.encoder(bb_blob,[np.array([x,y,w,h])])
-                        # kps, des = self.orb.detectAndCompute(cnn_crop, None)
-                        # # kps, des = self.sift.detectAndCompute(cnn_crop, None)
-                        # print("features")
-                        # print(time.perf_counter()-start_time)
-                        
-                        self.active_detected_objects.append(new_vehicle)
-                        # vehicle_regitred_properties=self.register_to_DVR(new_vehicle,SurveillanceRegionEnum.DETECTION_REGION)
-                # vehicle_regitred_properties=self.register_to_DVR(roi=cnn_crop,bbox_xywh=cnn_bbox,confidence=confidence,label=label)
+                    # if absolute_cnn_center_y>self.detection_y_start_position and absolute_cnn_center_y<self.detection_y_end_position\
+                    # and absolute_cnn_center_x>self.detection_x_start_position and absolute_cnn_center_x<self.detection_x_end_position: 
+                    cnn_crop=bb_blob[y+self.y_padding:min(self.debug_surveillance_section_right_marge+y+self.y_padding,h+y+self.y_padding),x:x+w]
+                    # cnn_crop
+                    border_color=(255,255,0)
+                    cv2.rectangle(frame, ( absolute_cnn_bbox_x, absolute_cnn_bbox_y), ( absolute_cnn_bbox_x+w, absolute_cnn_bbox_y+ h), border_color  , 2)
+                    kps, des = self.sift.detectAndCompute(cnn_crop, None)
+                    new_vehicle={ 'id':-1 ,'center_xy':(absolute_cnn_center_x,absolute_cnn_center_y), 'bbox_xywh':(absolute_cnn_bbox_x,absolute_cnn_bbox_y,w ,h) ,'confidence':confidence,'label':label, 'image':cnn_crop,'key_points':kps,'description':des, 'region':SurveillanceRegionEnum.DETECTION_REGION ,'status':'CAPTURED' ,'missing_count':0,'speed':0}
+                    self.active_detected_objects.append(new_vehicle)
+                    # vehicle_regitred_properties=self.register_to_DVR(new_vehicle,SurveillanceRegionEnum.DETECTION_REGION)
+                    # vehicle_regitred_properties=self.register_to_DVR(roi=cnn_crop,bbox_xywh=cnn_bbox,confidence=confidence,label=label)
         self.assigne_detected_objects()
 
         # print(len(self.DVR))
@@ -202,8 +209,8 @@ class HybridTrackingService():
                 self.objects_in_tracking_region.append((x, y, w, h))
                 bb_blob = original_frame[y:y+h, x:x+w]
 
-                id=self.unique_vehicle_index
-                new_vehicle={ 'id':id ,'center_xy':(center_x,center_y), 'bbox_xywh':(x, y, w, h) ,'confidence':-1,'label':None, 'image':bb_blob,'key_points':[],'description':[], 'region':SurveillanceRegionEnum.TRACKING_REGION  }
+                new_vehicle={ 'id':-1 ,'center_xy':(center_x,center_y), 'bbox_xywh':(x, y, w, h) ,'confidence':-1,'label':None, 'image':bb_blob,'key_points':[],'description':[], 'region':SurveillanceRegionEnum.TRACKING_REGION  }
+                # self.assigne_tracked_objects(new_vehicle)
                 # vehicle_regitred_properties=self.register_to_DVR(new_vehicle,SurveillanceRegionEnum.TRACKING_REGION)
     
         if self.debug_mode:
@@ -302,6 +309,7 @@ class HybridTrackingService():
                 cv2.putText(cnn_section,  region, ((offset ) , ( bbox_h) + 44 ), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (250,25,50), 2)
                 cv2.putText(cnn_section, "ID : "+str(cnn_object['id']), ((offset ) , ( bbox_h) + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (250,125,50), 2)
                 cv2.putText(cnn_section, str(cnn_object['status']), ((offset ) , ( bbox_h) + 78), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (250,125,150), 2)
+                cv2.putText(cnn_section, str(cnn_object['speed']), ((offset ) , ( bbox_h) + 95), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,125,150), 2)
                 
                 offset+=bbox_w+35
 
@@ -325,21 +333,27 @@ class HybridTrackingService():
         # cv2.putText(img, f'Tra. time: {round(tracking_time*1000)}ms', (int(width-190),73), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
 
 
+    def assigne_tracked_objects(self):
+        if len(self.DVR)==0:
+            return
+        print()
+
     def assigne_detected_objects(self):
-        
         if len(self.DVR)==0:
             self.init_DVR_with_active_detections()
             return
         INF=100000
-        similarity_threshold=0.01
-        matrix_dim= max( len(self.DVR),len(self.active_detected_objects))
+
+        non_tracked_vehicles_from_DVR=[v for v in self.DVR if v['status']!='TRACKED' ]
+
+        matrix_dim= max( len(non_tracked_vehicles_from_DVR),len(self.active_detected_objects))
         score_matrix=[]
         for i in range(matrix_dim):
             score_array=[]
             if len(self.active_detected_objects)>i :
                 for j in range(matrix_dim):
-                    if len(self.DVR)>j:
-                        score_array.append(self.calculate_similarity_score(self.active_detected_objects[i],self.DVR[j]))
+                    if len(non_tracked_vehicles_from_DVR)>j:
+                        score_array.append(self.calculate_similarity_score(self.active_detected_objects[i],non_tracked_vehicles_from_DVR[j]))
                     else:
                         score_array.append(-INF)
             else:
@@ -347,44 +361,57 @@ class HybridTrackingService():
                     score_array.append(-INF)
             score_matrix.append(score_array)
 
+        self.remained_active_detected_objects=self.active_detected_objects.copy()
+        self.remained_DVR=non_tracked_vehicles_from_DVR.copy()
         if len(score_matrix)==0:        
             score_matrix=[[]]
+        else:
+            score_matrix=np.array(score_matrix)
+            score_matrix = -score_matrix
+            # print('===============')
+            # print( [str(obj['id'])+"-"+str(obj['center_xy']) for obj in self.active_detected_objects])
+            # print( [str(obj['id'])+"-"+str(obj['center_xy']) for obj in non_tracked_vehicles_from_DVR])
+            # print(score_matrix )
 
-        score_matrix=np.array(score_matrix)
-        score_matrix = -score_matrix
-        print('===============')
-        print( [str(obj['id'])+"-"+str(obj['center_xy']) for obj in self.active_detected_objects])
-        print( [str(obj['id'])+"-"+str(obj['center_xy']) for obj in self.DVR])
-        print(score_matrix )
-
-        self.remained_active_detected_objects=self.active_detected_objects.copy()
-        self.remained_DVR=self.DVR.copy()
-
-        row_ind, col_ind =linear_sum_assignment(score_matrix )
-        for i in range(matrix_dim ):
-            # print(f"active vehicle {row_ind[i]} is assigned active_ {col_ind[i]} : cost{score_matrix[row_ind[i]][col_ind[i]]}")
-            if (score_matrix[row_ind[i]][col_ind[i]]<INF ):
-                if ( score_matrix[row_ind[i]][col_ind[i]]<-similarity_threshold):
-                    self.update_registerd_vehicle_properties(self.DVR[col_ind[i]],self.active_detected_objects[row_ind[i]])
-                    print(f">> update DVR  vehicle {self.DVR[col_ind[i]]['id']}")
-                else:
-                    self.register_new_vehicle(self.active_detected_objects[row_ind[i]])
-                    self.set_registerd_vehicle_state(self.DVR[col_ind[i]],"MISSED")
-                    print(f">> insert active vehicle {self.active_detected_objects[row_ind[i]]['id']}")
-            else:
-                print(f"###### active vehicle {row_ind[i]} is assigned active_ {col_ind[i]} : cost{score_matrix[row_ind[i]][col_ind[i]]}")
- 
-        # print("=====>>>>")
-        # print(len(self.remained_active_detected_objects))
-        # print(len(self.remained_DVR))
-        # print("=====>>>>")
+            row_ind, col_ind =linear_sum_assignment(score_matrix )
+            for i in range(matrix_dim ):
+                # print(f"active vehicle {row_ind[i]} is assigned active_ {col_ind[i]} : cost{score_matrix[row_ind[i]][col_ind[i]]}")
+                if (score_matrix[row_ind[i]][col_ind[i]]<INF ):
+                    if ( score_matrix[row_ind[i]][col_ind[i]]<-self.similarity_threshold):
+                        self.update_registerd_vehicle_properties(non_tracked_vehicles_from_DVR[col_ind[i]],self.active_detected_objects[row_ind[i]])
+                        # print(f">> update DVR  vehicle {self.DVR[col_ind[i]]['id']}")
+                    else:
+                        self.register_new_vehicle(self.active_detected_objects[row_ind[i]])
+                        self.set_registerd_vehicle_state(non_tracked_vehicles_from_DVR[col_ind[i]],"MISSED")
+                        # print(f">> insert active vehicle {self.active_detected_objects[row_ind[i]]['id']}")
+            # else:
+            #     print(f"###### active vehicle {row_ind[i]} is assigned active_ {col_ind[i]} : cost{score_matrix[row_ind[i]][col_ind[i]]}")
 
         self.update_DVR_remaining_vehicle_state()
-        # self.update_DVR_remaining_vehicle_state()
+        self.register_remaining_active_vehicles()
+        # self.delete_tracked_vehicles_from_DVR()
+
+        # print(len(self.remained_active_detected_objects))
+        # print(len(self.remained_DVR))
+        # print("||||=====>>>>\n")
+
+    def delete_tracked_vehicles_from_DVR(self):
+        for v in self.DVR:
+            if v['status']=='TRACKED':
+                self.TVR.append(v)
+                self.DVR.remove(v)
+
+
+    def register_remaining_active_vehicles(self):
+        for v in self.remained_active_detected_objects:
+            self.register_new_vehicle(v)
 
     def set_registerd_vehicle_state(self,registred_vehicle,state):
         registred_vehicle['status']=state
         if state=='MISSED':
+            # if self.check_if_vehicle_enter_tracking_region(registred_vehicle):
+            #     registred_vehicle['missing_count']=0
+            # else:
             registred_vehicle['missing_count']+=1
         else:
             registred_vehicle['missing_count']=0
@@ -395,36 +422,55 @@ class HybridTrackingService():
             self.set_registerd_vehicle_state(remained_DVR_vehicle,"MISSED")
             if remained_DVR_vehicle['missing_count']>5:
                 self.DVR.remove(remained_DVR_vehicle)
+            self.remained_DVR.remove(v)
  
-    def update_DVR_vehicle_state(self):
-        for v in self.DVR:
-            if  v['missing_count']>3:
-                self.DVR.remove(v)
-                continue
+    # def update_DVR_vehicle_state(self):
+    #     for v in self.DVR:
+    #         if  v['missing_count']>3:
+    #             self.DVR.remove(v)
+    #             continue
 
-            x,y,w,h =v['bbox_xywh'] 
-            # print(y,h)
-            if  math.fabs(y+h-self.detection_y_end_position)<30 :
-                v['status']='TRACKED'
-                print("SET OUT_DETECTION")
-                self.DVR.remove(v)
-            else:
-                print("NOT YET OUT_DETECTION")
+    #         x,y,w,h =v['bbox_xywh'] 
+    #         # print(y,h)
+    #         if  math.fabs(y+h-self.detection_y_end_position)<30 :
+    #             v['status']='TRACKED'
+    #             print("SET OUT_DETECTION")
+    #             self.DVR.remove(v)
+    #         else:
+    #             print("NOT YET OUT_DETECTION")
 
     def register_new_vehicle(self,vehicle):
-        self.DVR_vehicle_id+=1
-        vehicle['id']= self.DVR_vehicle_id
-        self.DVR.append( vehicle )
+
+        # print("TO REMOVE REMAIN")
+        # print(vehicle['id'])
+        ignore_registration=False
+        vehicles_to_not_track=[v for v in self.DVR if v['status']=='TRACKED' ]
+
+        for v in vehicles_to_not_track:
+            similarity_score= self.calculate_similarity_score(vehicle,v)
+            print(f" CAlculated similiarty with tracked {similarity_score}" )
+            if similarity_score>self.similarity_threshold:
+                print("ignore registation  already tracked" )
+                print(v['id'])
+                ignore_registration=True 
+  
+        if self.remained_active_detected_objects:
+            print(next(filter(lambda v: v['center_xy'][0] == vehicle['center_xy'][0] and v['center_xy'][1] == vehicle['center_xy'][1], self.remained_active_detected_objects))['center_xy'])
+            to_remove=next(filter(lambda v: v['center_xy'][0] == vehicle['center_xy'][0] and v['center_xy'][1] == vehicle['center_xy'][1], self.remained_active_detected_objects))
+            self.remained_active_detected_objects.remove(to_remove)
+        
+        if not ignore_registration:
+            self.DVR_vehicle_id+=1
+            vehicle['id']= self.DVR_vehicle_id
+            self.DVR.append( vehicle )
 
     def init_DVR_with_active_detections(self):
         for v in self.active_detected_objects:
             self.register_new_vehicle(v)
 
     def update_registerd_vehicle_properties(self,registred_vehicle,active_vehicle):
-
-        self.remained_active_detected_objects.remove(next(filter(lambda vehicle: vehicle['id'] == active_vehicle['id'], self.remained_active_detected_objects)))
+        self.remained_active_detected_objects.remove(next(filter(lambda vehicle: vehicle['center_xy'] == active_vehicle['center_xy'], self.remained_active_detected_objects)))
         self.remained_DVR.remove(next(filter(lambda vehicle: vehicle['id'] == registred_vehicle['id'], self.remained_DVR)))
-
         registred_vehicle['bbox_xywh']=active_vehicle['bbox_xywh']
         registred_vehicle['image']=active_vehicle['image']
         registred_vehicle['key_points']=active_vehicle['key_points']
@@ -433,38 +479,42 @@ class HybridTrackingService():
         registred_vehicle['status']='DETECTED'
         registred_vehicle['confidence']=active_vehicle['confidence']
         registred_vehicle['label']=active_vehicle['label']
-        # x,y,w,h =active_vehicle['bbox_xywh'] 
-        # if  math.fabs(y+h-self.tracking_y_end_position)<10 and  h <=150:
-        #     registred_vehicle['status']='OUT'
+        registred_vehicle['speed']=self.calculate_vehicle_speed(registred_vehicle)
+        
+        self.check_if_vehicle_enter_tracking_region(registred_vehicle)
 
+    def check_if_vehicle_enter_tracking_region(self,vehicle):
+        x,y,w,h =vehicle['bbox_xywh']
+        print( "math.fabs(y+h-self.detection_y_end_position)")
+        print( y,h,self.detection_y_end_position)
+        print( math.fabs(y+h-self.detection_y_end_position))
+
+        tracking_min_distance=27
+        # if vehicle['status']=='MISSED':
+        #     tracking_min_distance=20
+
+        if  math.fabs(y+h-self.detection_y_end_position)<tracking_min_distance :
+            vehicle['status']='TRACKED'
+
+            print(f"SEND VEH TO TRACKED : {vehicle['id']}")
+            return True
+
+        return False
 
     def calculate_sift_similarity(self,active_vehicle,registred_vehicle):
         # start_time=time.perf_counter()
-        # matches = self.sift_bf.match(active_vehicle['description'],registred_vehicle['description'])
-        
-        # max(len(active_vehicle['description']), len(registred_vehicle['description']))
-
-        # total_distance = sum([match.distance for match in matches])
-        # # similarity_score = 1 / (1 + total_distance)  # Higher score for better matches
-        # similarity_score = 1 / (1 + total_distance)  # Higher score for better matches
-        # print("SIFT MATCH TIME ")
-        # print(time.perf_counter()-start_time)
-        # print(len(active_vehicle['description']), len(registred_vehicle['description']), len(matches))
-        # cosine_similarities = cosine_similarity(active_vehicle['description'], registred_vehicle['description'])
-        # similarity_score = np.mean(cosine_similarities)
-
-        # print("SIFT MATCH TIME ")
-        # start_time=time.perf_counter()
-        # bf = cv2.BFMatcher()
         matches = self.sift_bf.knnMatch(active_vehicle['description'], registred_vehicle['description'], k=2)
         good_matches = []
         for m, n in matches:
             if m.distance < 0.75 * n.distance:
                 good_matches.append(m)
-                
         matching_score = len(good_matches) / len(matches)
         # print(time.perf_counter()-start_time)
         return matching_score
+
+    def calculate_vehicle_speed(self,vehicle):
+        speed=0
+        return speed
 
     def calculate_similarity_score(self,active_vehicle,registred_vehicle):
         
@@ -483,62 +533,62 @@ class HybridTrackingService():
 
         return math.sqrt(distance_score)*sift_similarity
 
-    def update_DVR_properties(self,new_vehicle,registerd_vehicle,region):
-        # new_vehicle['id']=registerd_vehicle['id']
-        vehicle_to_update= next(filter(lambda vehicle: vehicle['id'] == registerd_vehicle['id'], self.DVR_temp))
-        self.DVR.remove(registerd_vehicle)
-        vehicle_to_update['bbox_xywh']=new_vehicle['bbox_xywh']
+    # def update_DVR_properties(self,new_vehicle,registerd_vehicle,region):
+    #     # new_vehicle['id']=registerd_vehicle['id']
+    #     vehicle_to_update= next(filter(lambda vehicle: vehicle['id'] == registerd_vehicle['id'], self.DVR_temp))
+    #     self.DVR.remove(registerd_vehicle)
+    #     vehicle_to_update['bbox_xywh']=new_vehicle['bbox_xywh']
 
-        if region==SurveillanceRegionEnum.DETECTION_REGION:
-            vehicle_to_update['confidence']=new_vehicle['confidence']
-            vehicle_to_update['label']=new_vehicle['label']
+    #     if region==SurveillanceRegionEnum.DETECTION_REGION:
+    #         vehicle_to_update['confidence']=new_vehicle['confidence']
+    #         vehicle_to_update['label']=new_vehicle['label']
     
-        vehicle_to_update['image']=new_vehicle['image']
-        vehicle_to_update['key_points']=new_vehicle['key_points']
-        vehicle_to_update['description']=new_vehicle['description']
-        vehicle_to_update['center_xy']=new_vehicle['center_xy']
-        vehicle_to_update['status']=new_vehicle['status']
-        x,y,w,h =new_vehicle['bbox_xywh'] 
-        if  math.fabs(y+h-self.tracking_y_end_position)<10 and  h <=150:
-            vehicle_to_update['status']='OUT'
+    #     vehicle_to_update['image']=new_vehicle['image']
+    #     vehicle_to_update['key_points']=new_vehicle['key_points']
+    #     vehicle_to_update['description']=new_vehicle['description']
+    #     vehicle_to_update['center_xy']=new_vehicle['center_xy']
+    #     vehicle_to_update['status']=new_vehicle['status']
+    #     x,y,w,h =new_vehicle['bbox_xywh'] 
+    #     if  math.fabs(y+h-self.tracking_y_end_position)<10 and  h <=150:
+    #         vehicle_to_update['status']='OUT'
 
         # print(math.fabs(cnn_center_y- self.detection_y_end_position))
         # if math.fabs(cnn_center_y- self.detection_y_end_position)<50 : 
         #     vehicle_to_update['region']=SurveillanceRegionEnum.TRACKING_REGION
         #     vehicle_to_update['region']='tracking'
 
-    def register_to_DVR(self,new_vehicle,surveillance_region:SurveillanceRegionEnum):
-        # kps, des = self.orb.detectAndCompute(cnn_crop, None)
-        # cnn_crop = cv2.drawKeypoints(cnn_crop, kps, None)
-        # kps, des = self.sift.detectAndCompute(roi, None)
-        # new_vehicle={ 'id':id ,'bbox_xywh':bbox_xywh ,'confidence':confidence,'label':label, 'image':roi,'key_points':kps,'description':des, 'region':'detection'  }
+    # def register_to_DVR(self,new_vehicle,surveillance_region:SurveillanceRegionEnum):
+    #     # kps, des = self.orb.detectAndCompute(cnn_crop, None)
+    #     # cnn_crop = cv2.drawKeypoints(cnn_crop, kps, None)
+    #     # kps, des = self.sift.detectAndCompute(roi, None)
+    #     # new_vehicle={ 'id':id ,'bbox_xywh':bbox_xywh ,'confidence':confidence,'label':label, 'image':roi,'key_points':kps,'description':des, 'region':'detection'  }
 
 
-        # FIX THIS 
-        # print(new_vehicle['id'] )
-        # print(new_vehicle['region'] )
-        # print(new_vehicle['bbox_xywh'] )
-        # print(new_vehicle['center_xy'] )
+    #     # FIX THIS 
+    #     # print(new_vehicle['id'] )
+    #     # print(new_vehicle['region'] )
+    #     # print(new_vehicle['bbox_xywh'] )
+    #     # print(new_vehicle['center_xy'] )
 
-        if surveillance_region==SurveillanceRegionEnum.DETECTION_REGION:
-            similare_vehicle=self.check_for_similarity_in_detection_region(new_vehicle)
-            if similare_vehicle:
-                new_vehicle['status']='TRACKED_DET_REG'
-                self.update_DVR_properties(new_vehicle,similare_vehicle,SurveillanceRegionEnum.DETECTION_REGION)
-            else:
-                new_vehicle['status']='DETECTED'
-                self.DVR_temp.append(new_vehicle)
-                self.unique_vehicle_index=self.unique_vehicle_index+1
-            return new_vehicle
+    #     if surveillance_region==SurveillanceRegionEnum.DETECTION_REGION:
+    #         similare_vehicle=self.check_for_similarity_in_detection_region(new_vehicle)
+    #         if similare_vehicle:
+    #             new_vehicle['status']='TRACKED_DET_REG'
+    #             self.update_DVR_properties(new_vehicle,similare_vehicle,SurveillanceRegionEnum.DETECTION_REGION)
+    #         else:
+    #             new_vehicle['status']='DETECTED'
+    #             self.DVR_temp.append(new_vehicle)
+    #             self.unique_vehicle_index=self.unique_vehicle_index+1
+    #         return new_vehicle
 
-        if surveillance_region==SurveillanceRegionEnum.TRACKING_REGION:
+    #     if surveillance_region==SurveillanceRegionEnum.TRACKING_REGION:
 
-            similare_vehicle=self.check_for_similarity_in_tracking_region(new_vehicle)
-            if similare_vehicle:
-                new_vehicle['status']='TRACKED_TR_REG'
-                self.update_DVR_properties(new_vehicle,similare_vehicle,SurveillanceRegionEnum.TRACKING_REGION)
-            else:
-                new_vehicle['status']='MISSED'
+    #         similare_vehicle=self.check_for_similarity_in_tracking_region(new_vehicle)
+    #         if similare_vehicle:
+    #             new_vehicle['status']='TRACKED_TR_REG'
+    #             self.update_DVR_properties(new_vehicle,similare_vehicle,SurveillanceRegionEnum.TRACKING_REGION)
+    #         else:
+    #             new_vehicle['status']='MISSED'
 
     def check_for_similarity_in_tracking_region(self,current_vehicle):
         current_vehicle_image=current_vehicle['image']
