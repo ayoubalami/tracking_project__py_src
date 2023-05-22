@@ -6,8 +6,8 @@ import numpy as np
 class BackgroundSubtractorService():
    
     def __init__(self):
-        self.morphological_ex_iteration=3
-        self.morphological_kernel_size=7
+        self.morphological_ex_iteration=2
+        self.morphological_kernel_size=3
         self.blur_kernel_size=1
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(history=400,varThreshold=160,detectShadows=True)
         self.background_subtractor.setShadowValue(0)
@@ -49,7 +49,7 @@ class BackgroundSubtractorService():
         # self.max_side_size=40
         relative_img_height=(img_height*self.video_resolution_ratio)
         section_count=15
-        perspective_expension_ratio=0.65
+        perspective_expension_ratio=0.5
         # top_margin=200
         for contour in contours:
             (x, y, w, h) = cv2.boundingRect(contour)
