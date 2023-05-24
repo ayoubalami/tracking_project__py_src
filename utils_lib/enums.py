@@ -17,4 +17,5 @@ class ClientStreamTypeEnum(Enum):
 class SurveillanceRegionEnum(Enum):
     DETECTION_REGION = 1
     TRACKING_REGION = 2
+    PRETRACKING_REGION = 3
 

@@ -16,14 +16,28 @@ class BackgroundSubtractorService():
         self.max_fps=0
         self.min_fps=1000
         self.video_resolution_ratio=1
+        self.respective_expention_ration=None
+
+    def init_perspective_expention_scale(self,img_height):
+        if self.respective_expention_ration :
+            return
+        self.unite_side_size=30
+        self.section_count=15
+        self.perspective_expension_ratio=0.46
+        self.road_margin_top=150
+        self.respective_expention_ration=[]
+        for i in range(self.section_count):
+            self.respective_expention_ration.append(i*self.unite_side_size*self.perspective_expension_ratio)
+        self.relative_img_height=(img_height*self.video_resolution_ratio)  
 
     def reset(self):
         self.max_fps=0
         self.min_fps=1000
 
     def apply(self,frame,boxes_plotting=True): 
-
         img_height,img_width = frame.shape[:2] 
+        self.init_perspective_expention_scale(img_height)
+
         if self.video_resolution_ratio<1:
             resized_frame=cv2.resize(frame, (int(img_width*self.video_resolution_ratio) ,int(img_height*self.video_resolution_ratio) ))
         else:
@@ -43,35 +57,15 @@ class BackgroundSubtractorService():
             mask_frame = cv2.morphologyEx( mask_frame, cv2.MORPH_DILATE, kernel, iterations=self.morphological_ex_iteration)
         contours, _ = cv2.findContours(mask_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)        
         raw_detection_data=[]
-        
-        # print("__________________________________________")
-        self.min_side_size=30
-        # self.max_side_size=40
-        relative_img_height=(img_height*self.video_resolution_ratio)
-        section_count=15
-        perspective_expension_ratio=0.5
-        # top_margin=200
         for contour in contours:
             (x, y, w, h) = cv2.boundingRect(contour)
             if y<150:
                 continue
-            current_section=1+((y-150)*section_count)//relative_img_height
-            # print("self.min_box_size*up_ratio")
-            # print(img_height)
-            # print((x, y, w, h))
-            # print( current_section)
-            # print( w*h) 
-            # print( cv2.contourArea(contour))
-            # print(self.min_side_size*current_section*perspective_expension_ratio)
-            # print(self.max_side_size*current_section*perspective_expension_ratio)
-            # print( self.video_resolution_ratio)
- 
-            # print("______________")
- 
-            if  w >self.min_side_size*current_section*perspective_expension_ratio  :
+            current_section=int(1+((y-self.road_margin_top)*self.section_count)//self.relative_img_height)
+            
+            if  w >self.respective_expention_ration[current_section]  :
             # if  w*self.video_resolution_ratio >self.min_side_size*current_section and h*self.video_resolution_ratio>self.min_side_size*current_section:
             # if cv2.contourArea(contour) > self.min_box_size*section:
-                # print(str(self.min_box_size) , str(cv2.contourArea(contour)))
                 if boxes_plotting == False:
                     raw_detection_data.append((self.normalizedBBox([x, y, w, h]),1,'OBJ'))
                 else:

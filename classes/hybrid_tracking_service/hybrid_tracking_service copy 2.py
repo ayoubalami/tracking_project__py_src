@@ -27,6 +27,7 @@ class HybridTrackingService():
     is_region_initialization_done=False
     video_resolution_ratio=1
     objects_in_detection_region=[]
+    # objects_in_tracking_region=[]
     DVR=[]
     DVR_vehicle_id=0
     remained_active_detected_objects=[]
@@ -165,6 +166,7 @@ class HybridTrackingService():
             #     cv2.circle(frame, (center_x,center_y), radius=2, color=(0, 255, 255), thickness=-1)
 
     def process_tracking_region(self,original_frame,frame,raw_detection_data,tracking_region):     
+        # self.objects_in_tracking_region=[]
         self.current_tracked_objects=[]
         for dd in raw_detection_data:
             (x, y, w, h) = dd[0]
@@ -175,7 +177,9 @@ class HybridTrackingService():
 
                 near_center_condidate=False
                 if math.fabs(y-self.detection_y_start_position)<self.additional_marge_of_large_objects+1:
+                    print(f"math.fabs(y-self.detection_y_start_position) : {math.fabs(y-self.detection_y_start_position)}" )
                     near_center_condidate=True
+                # self.objects_in_tracking_region.append((x, y, w, h))
                 bb_blob = original_frame[y:y+h, x:x+w]
                 kps, des = self.sift.detectAndCompute(bb_blob, None)
                 new_vehicle={ 'id':-1 ,'center_xy':(center_x,center_y), 'bbox_xywh':(x, y, w, h) ,'confidence':-1,'label':None, 'image':bb_blob,'key_points':kps,'description':des, 'region_blob':  SurveillanceRegionEnum.PRETRACKING_REGION if near_center_condidate else SurveillanceRegionEnum.TRACKING_REGION }
@@ -287,31 +291,6 @@ class HybridTrackingService():
         cv2.putText(img, f'Det. time: {round(detection_time*1000)}ms', (int(width-190),52), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
         # cv2.putText(img, f'Tra. time: {round(tracking_time*1000)}ms', (int(width-190),73), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
 
-
-    # =============================== [TRACKING PROCESS] ==================================
-    # =============(assigne_newly_tracked_objects , assigne_tracked_objects)===============
-
-    def assigne_newly_tracked_objects(self):
-        if len(self.DVR)==0:
-            return
-
-        only_condidate_vehicles_to_tracked_from_DVR=[v for v in self.remained_pretracked_from_DVR if v['status']=='PRE_TRACKED' or v['status']=='MISSED' ]
-        if len(only_condidate_vehicles_to_tracked_from_DVR)==0:
-            return
-
-        score_matrix=self.generate_matrix_of_scores(only_condidate_vehicles_to_tracked_from_DVR,self.current_tracked_objects)
-        # self.remained_active_tracked_objects=self.current_tracked_objects.copy()
-        self.remained_DVR=only_condidate_vehicles_to_tracked_from_DVR.copy()
-       
-        if len(score_matrix)>0:
-            score_matrix=-np.array(score_matrix)
-            row_ind, col_ind =linear_sum_assignment(score_matrix )
-            for i in range(len(score_matrix) ):
-                if (score_matrix[row_ind[i]][col_ind[i]]<self.INF ):
-                    if ( score_matrix[row_ind[i]][col_ind[i]]<-self.similarity_threshold):
-                        self.update_newly_tracked_vehicle_properties(only_condidate_vehicles_to_tracked_from_DVR[col_ind[i]],self.current_tracked_objects[row_ind[i]])
-       
-
     def assigne_tracked_objects(self):
         if len(self.DVR)==0:
             return
@@ -323,7 +302,8 @@ class HybridTrackingService():
         score_matrix=self.generate_matrix_of_scores(only_vehicles_already_tracked_from_DVR,self.current_tracked_objects)
 
         if len(score_matrix)>0:
-            score_matrix=-np.array(score_matrix)
+            score_matrix=np.array(score_matrix)
+            score_matrix = -score_matrix
             row_ind, col_ind =linear_sum_assignment(score_matrix )
             for i in range(len(score_matrix) ):
                 if (score_matrix[row_ind[i]][col_ind[i]]<self.INF ):
@@ -335,8 +315,27 @@ class HybridTrackingService():
                         self.remained_tracked_from_DVR.remove(next(filter(lambda vehicle: vehicle['id'] == registred_vehicle['id'], self.remained_tracked_from_DVR)))
         self.process_exited_tracked_vehicles()
         
+    def assigne_newly_tracked_objects(self):
+        if len(self.DVR)==0:
+            return
 
-    
+        only_condidate_vehicles_to_tracked_from_DVR=[v for v in self.remained_pretracked_from_DVR if v['status']=='PRE_TRACKED'  or  v['status']=='MISSED' ]
+        if len(only_condidate_vehicles_to_tracked_from_DVR)==0:
+            return
+
+        score_matrix=self.generate_matrix_of_scores(only_condidate_vehicles_to_tracked_from_DVR,self.current_tracked_objects)
+        self.remained_active_tracked_objects=self.current_tracked_objects.copy()
+        self.remained_DVR=only_condidate_vehicles_to_tracked_from_DVR.copy()
+       
+        if len(score_matrix)>0:
+            score_matrix=np.array(score_matrix)
+            score_matrix = -score_matrix
+            row_ind, col_ind =linear_sum_assignment(score_matrix )
+            for i in range(len(score_matrix) ):
+                if (score_matrix[row_ind[i]][col_ind[i]]<self.INF ):
+                    if ( score_matrix[row_ind[i]][col_ind[i]]<-self.similarity_threshold):
+                        self.update_newly_tracked_vehicle_properties(only_condidate_vehicles_to_tracked_from_DVR[col_ind[i]],self.current_tracked_objects[row_ind[i]])
+       
     def assigne_pre_tracked_objects(self):
         if len(self.DVR)==0:
             self.init_DVR_with_active_detections()
@@ -348,7 +347,8 @@ class HybridTrackingService():
         self.remained_pretracked_from_DVR=pre_tracked_vehicles_from_DVR.copy()
         score_matrix=self.generate_matrix_of_scores(pre_tracked_vehicles_from_DVR,self.current_detected_objects)
         if len(score_matrix)>0:
-            score_matrix=-np.array(score_matrix)
+            score_matrix=np.array(score_matrix)
+            score_matrix = -score_matrix
             row_ind, col_ind =linear_sum_assignment(score_matrix )
             for i in range(len(score_matrix) ):
                 if (score_matrix[row_ind[i]][col_ind[i]]<self.INF ):
@@ -372,7 +372,8 @@ class HybridTrackingService():
         score_matrix=self.generate_matrix_of_scores(non_tracked_vehicles_from_DVR,self.current_detected_objects)
         
         if len(score_matrix)>0:
-            score_matrix=-np.array(score_matrix)
+            score_matrix=np.array(score_matrix)
+            score_matrix = -score_matrix
             row_ind, col_ind =linear_sum_assignment(score_matrix )
             for i in range(len(score_matrix) ):
                 if (score_matrix[row_ind[i]][col_ind[i]]<self.INF ):
@@ -383,13 +384,23 @@ class HybridTrackingService():
                         self.remained_DVR.remove(next(filter(lambda vehicle: vehicle['id'] == registred_vehicle['id'], self.remained_DVR)))
                         self.update_detected_vehicle_properties(registred_vehicle,current_detected_vehicle,status='DETECTED')
                         self.check_if_vehicle_enter_tracking_region(registred_vehicle)
-                    else:                        
+                    else:
+                        # if self.is_larger_current_vehicle_already_tracked(current_detected_vehicle):
+                        #     continue
                         self.register_new_vehicle(self.current_detected_objects[row_ind[i]])
+                        # self.set_registerd_vehicle_state(non_tracked_vehicles_from_DVR[col_ind[i]],"MISSED")
                         self.set_vehicle_state_as_missed(non_tracked_vehicles_from_DVR[col_ind[i]])
-                      
+                        # print(f">> insert active vehicle {self.active_detected_objects[row_ind[i]]['id']}")
+            # else:
+            #     print(f"###### active vehicle {row_ind[i]} is assigned active_ {col_ind[i]} : cost{score_matrix[row_ind[i]][col_ind[i]]}")
+
         self.update_DVR_remained_undetected_vehicles_state()
         self.register_remaining_active_vehicles()
 
+        # print(len(self.remained_active_detected_objects))
+        # print(len(self.remained_DVR))
+        # print("||||=====>>>>\n")
+                
         
     def register_remaining_active_vehicles(self):
         for v in self.remained_active_detected_objects:
@@ -455,7 +466,10 @@ class HybridTrackingService():
         registred_vehicle['description']=active_vehicle['description']
         registred_vehicle['center_xy']=active_vehicle['center_xy']
         registred_vehicle['status']='TRACKED'
+        # registred_vehicle['confidence']=active_vehicle['confidence']
+        # registred_vehicle['label']=active_vehicle['label']
         registred_vehicle['speed']=self.calculate_vehicle_speed(registred_vehicle)
+        # self.check_if_vehicle_exit_tracking_region(active_vehicle)
         
     def update_already_tracked_vehicle_properties(self,registred_vehicle,active_vehicle):
         
@@ -554,6 +568,7 @@ class HybridTrackingService():
         self.DVR=[]
         self.DVR_vehicle_id=0
         self.objects_in_detection_region=[]
+        # self.objects_in_tracking_region=[]
         self.debug_surveillance_section=[]
         self.remained_current_tracked_objects=[]
         self.remained_active_detected_objects=[]
@@ -579,6 +594,9 @@ class HybridTrackingService():
         # print( [str(obj['id'])+"-"+str(obj['center_xy']) for obj in self.active_detected_objects])
         # print( [str(obj['id'])+"-"+str(obj['center_xy']) for obj in non_tracked_vehicles_from_DVR])
         # print(score_matrix )
+
+        if len(score_matrix)==0:
+            return None
 
         return score_matrix
         
