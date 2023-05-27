@@ -96,8 +96,8 @@
           </div>
       </div>
         
-      <div class="row gx-5 pb-4">
-        <div class="form-group col-md-8 px-3 display-flex  align-self-center align-items-center text-align-last-justify">
+      <div class="row gx-5 px-4 pb-4">
+        <div class="form-group col-md-8 px-0 display-flex  align-self-center align-items-center text-align-last-justify">
           <div class="btn-group me-2" role="group" aria-label="First group">
             <button class="p-2 btn btn-success btn-lg " onclick="onClickToggleStopStart()" id="startStopButton"> Start
             </button>
@@ -123,6 +123,16 @@
           </div>
         </div>
       </div>
+      <div class="row gx-5 px-4 pb-3">
+        <div class="d-flex" style="align-items: baseline;">
+          <h5 class="me-3" style="align-self: cente">Video start from  </h5>
+          <code>
+            <h4 id="inputVideoSecond_ValueText"> 0%</h4>
+          </code>
+        </div>
+        <input type="range" onchange="onChangeVideoSecondSlider()"  min="0" max="100" value="0" step="1"
+          class="slider" id="inputVideoSecond_slider">
+      </div>  
 
       <ul class="nav nav-tabs">
         <li class="nav-item">
@@ -208,7 +218,7 @@
                           <div class="d-flex" style="align-items: baseline;">
                             <h5 class="me-3" style="align-self: cente">network input size : </h5>
                             <code>
-                              <h4 id="networkInputSize_ValueText"> 96 </h4>
+                              <h4 id="networkInputSize_ValueText"> 192 </h4>
                             </code>
                           </div>
                           <input type="range" onchange="updateCNNDetectorParamValue('networkInputSize')" min="32" max="640" value="416" step="32"
@@ -652,7 +662,16 @@
           </div>
         </div>
       </div>
-  
+      <!-- <div class="row gx-5 pb-4">
+        <div class="d-flex" style="align-items: baseline;">
+          <h5 class="me-3" style="align-self: cente">Video start from  </h5>
+          <code>
+            <h4 id="inputVideoSecond_ValueText"> 0%</h4>
+          </code>
+        </div>
+        <input type="range" onchange="onChangeVideoSecondSlider()"  min="0" max="100" value="100" step="1"
+          class="slider" id="inputVideoSecond_slider">
+      </div>   -->
     <div class="footer py-5"></div>
   </div>
 </body>

@@ -7,36 +7,41 @@ from utils_lib.enums import StreamSourceEnum
 class Buffer:
 
     cap=None
+    stream_reader=None
+    video_start_seconde=0
 
-    def init_params(self):
+    def init_params(self,starting_second=0):
         self.buffer_frames = []
         self.batch_size=50 # 200 frame 
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.frames_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
-        self.width  = self.cap.get(3)    
+        self.width  = self.cap.get(3)
         self.height = self.cap.get(4)
         print("VIDEO DIMENSION : " +str(self.width) +" x "+ str(self.height))
-         
+
+        # starting_second=60
+        self.set_buffer_starting_frame(starting_second)
+        
         self.frame_duration= 1/self.fps 
         self.video_duration = self.frames_count/ self.fps
         # self.last_loaded_frame_index=0
-        self.stream_reader=None
         self.current_batch=0
         self.last_batch=floor(self.frames_count/self.batch_size)
         self.last_frame_of_last_batch=floor(self.frames_count%self.batch_size)
         self.download_new_batch=True
         self.stop_buffring_event=threading.Event() 
 
-    def __init__(self, stream_source : StreamSourceEnum, video_src=None): 
+    def __init__(self, stream_source : StreamSourceEnum, video_src,stream_reader): 
         self.video_play=None
+        self.stream_reader=stream_reader
         if stream_source==StreamSourceEnum.FILE:
             self.reset_file_buffer(file_src=video_src)
             self.batch_size=50
         elif stream_source==StreamSourceEnum.YOUTUBE:
                 self.reset_youtube_buffer(youtube_url=video_src)
                 self.batch_size=150
-        
+
     def init_youtube_video_play(self,youtube_url):
         urlPafy = pafy.new(youtube_url)
         self.video_play = urlPafy.getbest(preftype="any")
@@ -53,14 +58,14 @@ class Buffer:
         print(self.video_play)
 
 
-    def reset_file_buffer(self, file_src=None):
+    def reset_file_buffer(self, file_src=None,starting_second=0):
         if self.cap != None:
             self.cap.release()
         if file_src != None:
             print("====>>>RESET LOCAL FILE ")
             print(self.cap)
             self.cap=self.load_from_local_video(file_src)
-            self.init_params()
+            self.init_params(starting_second=starting_second)
 
     def reset_youtube_buffer(self, youtube_url=None):
         if self.cap != None:
@@ -134,4 +139,23 @@ class Buffer:
             del self.cap
         if  self.buffer_frames != None:
             del self.buffer_frames
+
+
+    def  set_buffer_starting_frame(self,starting_second):
+
+        print(starting_second)
+        print(self.frames_count/self.fps)
+
+        starting_second=(int)((starting_second*(self.frames_count/self.fps))/100)
+
+        print("=====")
+        print(starting_second)
+
+        self.video_start_second=starting_second
+        frame_position = self.video_start_second*  self.fps # Replace with the desired frame number
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_position)
+        print(f"START VIDEO FROM FRAME NUMBER : {frame_position} , video_start_second : {self.video_start_second} ")
+        # if self.stream_reader:
+        self.stream_reader.current_sec= self.video_start_second
+        self.stream_reader.current_time= self.video_start_second
 

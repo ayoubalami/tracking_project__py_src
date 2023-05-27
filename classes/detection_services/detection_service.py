@@ -9,7 +9,7 @@ class IDetectionService:
     # network_input_size=416
     allowed_classes=[]
     colors_list=[]
-    threshold=0.4
+    threshold=0.5
     nms_threshold=0.5
 
     def init_selected_model(self):

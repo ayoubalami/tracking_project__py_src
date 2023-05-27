@@ -79,6 +79,20 @@ class AppService:
             self.hybrid_tracking_service.reset()
         return jsonify('reset stream')
   
+    def reset_buffer_starting_second(self,starting_second=0):
+        
+        # self.stop_stream()
+        if self.stream_reader:
+            self.stream_reader.reset(starting_second=starting_second)
+        if self.tracking_service:
+            self.tracking_service.reset()
+        if self.hybrid_tracking_service:
+            self.hybrid_tracking_service.reset()
+
+        # self.start_stream()
+        return jsonify('reset stream')
+
+
     def index(self):
         return render_template('index.html',api_server=self.host_server,stream_source=self.stream_source.name)
  
@@ -120,6 +134,9 @@ class AppService:
                 if self.tracking_service:
                     self.tracking_service.reset()
                
+
+            # self.stream_reader.buffer.set_buffer_starting_frame(50)
+
             # while(True):
             #     sleep(0.01)
                 # if self.stream_reader and (self.stream_reader.buffer or self.stream_source == StreamSourceEnum.WEBCAM)  :
@@ -354,3 +371,7 @@ class AppService:
         return jsonify(result=idx)
 
     
+    # def set_video_starting_second(self,second):
+    #     # self.stream_reader.set_starting_second(second)
+    #     # buffer.video_start_seconde=int(second)
+    #     return jsonify(result=second)

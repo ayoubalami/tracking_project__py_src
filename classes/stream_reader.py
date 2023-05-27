@@ -26,8 +26,9 @@ class StreamReader:
     nms_threshold=0.5
     threshold=0.5
     network_input_size=None
-
-    jpeg_compression_ratio=75
+    current_time=0
+    current_sec=0
+    jpeg_compression_ratio=100
     np.random.seed(123)
 
     def clean_memory(self):
@@ -45,7 +46,7 @@ class StreamReader:
         self.get_one_next_frame=False 
         self.save_detectors_results=save_detectors_results
         self.buffer :Buffer= None 
-        self.current_time=0
+     
         self.detection_service=detection_service
         self.detection_service.stream_reader=self
         self.current_frame_index=0
@@ -61,14 +62,14 @@ class StreamReader:
         self.activate_stream_simulation=True
 
         if self.stream_source==StreamSourceEnum.FILE:
-            self.buffer=Buffer(stream_source=StreamSourceEnum.FILE, video_src=video_src)
+            self.buffer=Buffer(stream_source=StreamSourceEnum.FILE, video_src=video_src,stream_reader=self)
             print("StreamReader From File .....")
-            self.buffer.stream_reader=self
+            # self.buffer.stream_reader=self
 
         if self.stream_source==StreamSourceEnum.YOUTUBE:
-            self.buffer=Buffer(stream_source=StreamSourceEnum.YOUTUBE, video_src=video_src)
+            self.buffer=Buffer(stream_source=StreamSourceEnum.YOUTUBE, video_src=video_src,stream_reader=self)
             print("StreamReader From Youtube .....") 
-            self.buffer.stream_reader=self
+            # self.buffer.stream_reader=self
 
         if self.stream_source==StreamSourceEnum.WEBCAM:
             self.webcam_stream = WebcamReader(src=self.video_src)
@@ -86,14 +87,14 @@ class StreamReader:
         del(self.buffer.cap)
         print("STREAM_READER : end clean_streamer")
 
-    def reset(self):
+    def reset(self,starting_second=0):
         if self.stream_source == StreamSourceEnum.YOUTUBE :
             self.buffer.reset_youtube_buffer(youtube_url=self.video_src)   
         if self.stream_source == StreamSourceEnum.FILE:
-            self.buffer.reset_file_buffer(file_src=self.video_src) 
+            self.buffer.reset_file_buffer(file_src=self.video_src,starting_second=starting_second) 
         self.background_subtractor_service.reset()  
-        self.current_time=0
-        self.current_sec=0
+        # self.current_time=0
+        # self.current_sec=0
         self.current_frame_index=0
 
     def read_stream(self):
@@ -132,7 +133,8 @@ class StreamReader:
     def read_stream_from_buffer(self):
         # delay for buffer to load some frame
         time.sleep(0.1)
-        self.current_sec=0
+        # self.current_sec=self.buffer.video_start_seconde
+        
         t1= time.perf_counter()
         current_fps=0
         jump_frame=0    
@@ -248,7 +250,6 @@ class StreamReader:
                 self.inference_time_records=[]
                 self.fps_records=[]
 
-                 
     def addFrameTime(self,frame):
         if self.stream_source!=StreamSourceEnum.WEBCAM :
             frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
@@ -261,8 +262,8 @@ class StreamReader:
         if self.stream_source == StreamSourceEnum.FILE:
             self.video_src=new_video_file
             self.buffer.reset_file_buffer(file_src=self.video_src)   
-            self.current_time=0
-            self.current_sec=0
+            # self.current_time=0
+            # self.current_sec=0
             self.current_frame_index=0
  
     def getNextFrame(self):
@@ -324,6 +325,8 @@ class StreamReader:
         img_bytes=buffer.tobytes()
         return  base64.b64encode(img_bytes).decode()
 
- 
+    
+    # def set_starting_second(self,second):
+
 
     # less /proc/cpuinfo

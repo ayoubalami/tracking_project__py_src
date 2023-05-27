@@ -234,6 +234,10 @@ def get_class_labels( ):
 def set_selected_classes( idx):
     return app_service.set_selected_classes(idx ) 
 
+@app.route('/set_video_starting_second/<second>', methods = ['POST'])
+def set_video_starting_second( second):
+    print(f" set starting_second to : {second}")
+    return app_service.reset_buffer_starting_second(starting_second= int(second) ) 
 
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)

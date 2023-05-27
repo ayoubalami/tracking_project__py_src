@@ -349,6 +349,8 @@ function sendStopVideoRequest(){
             $('#startStopButton').html( 'Start');
             $('#startStopButton').removeClass("btn-danger");
             $('#startStopButton').addClass("btn-success");
+            $("#inputVideoSecond_slider").attr("disabled", false);        
+
             toggleDisabledStartStopButton(false);
             // return e
         },
@@ -364,6 +366,22 @@ function onChangeVideoResolution(){
     $( "#inputVideoResolution_ValueText" ).text( selectedResolution+" %");
 }
 
+function onChangeVideoSecondSlider(){
+    var selectedSecond= $( "#inputVideoSecond_slider" )[0].value;
+    // $( "#inputVideoSecond_ValueText" ).text( selectedSecond+"%");
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/set_video_starting_second/'+selectedSecond,
+        dataType: "json",
+        success: function (data) {
+            console.log(" video_start_from_second "+selectedVideo)
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN inputVideoSecond_ValueText")
+        }
+    });    
+} 
+
 function sendStartVideoRequest(){
     selectedVideo=$('#inputVideoFile').find(":selected").val();
     var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
@@ -375,11 +393,11 @@ function sendStartVideoRequest(){
         dataType: "json",
         success: function (data) {
             console.log(" start_stream "+selectedVideo)
-            // intervalID = setInterval(update_values, 600);
             $('#startStopButton').html( 'Stop');
-            // $('#startStopButton').attr("class","btn btn-danger btn-lg w-25");
             $('#startStopButton').removeClass("btn-success");
             $('#startStopButton').addClass("btn-danger");
+            $("#inputVideoSecond_slider").attr("disabled", true);        
+
             toggleDisabledStartStopButton(false);
             // return data
         },
@@ -422,9 +440,12 @@ function toggleDisabledDetectionMethodSelect(setToDisabled){
 function toggleDisabledStartStopButton(setToDisabled){
     if (setToDisabled){
         $("#startStopButton").attr("disabled", true);
+        // $("#inputVideoSecond_slider").attr("disabled", true);        
         loadingStartStopButton=true;
     }else{
         $("#startStopButton").attr("disabled", false);
+        // $("#inputVideoSecond_slider").attr("disabled", false);
+
         loadingStartStopButton=false;
     }
 }
