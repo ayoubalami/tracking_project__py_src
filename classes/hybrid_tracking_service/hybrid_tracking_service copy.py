@@ -405,7 +405,7 @@ class HybridTrackingService():
         for registred_vehicle in self.DVR:
             if registred_vehicle['status']=='OUT':
                 continue
-            # ADD shape similarity (width, hight) comparison
+            # ADD shape similarity (width, height) comparison
             if registred_vehicle['region']!=SurveillanceRegionEnum.DETECTION_REGION :
                 continue
             registred_vehicle_image= cv2.resize(registred_vehicle['image'], (current_vehicle_image.shape[1], current_vehicle_image.shape[0]))

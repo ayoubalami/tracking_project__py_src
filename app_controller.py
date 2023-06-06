@@ -16,7 +16,8 @@ from classes.detection_services.tensorflow_lite_detection_service import Tensorf
 from classes.detection_services.opencv_detection_service import OpencvDetectionService
 from classes.detection_services.onnx_detection_service import OnnxDetectionService
 from classes.detection_services.yolov5_detection_service import Yolov5DetectionService
-# from classes.trash.yolov8_detection_service import Yolov8DetectionService
+from classes.detection_services.yolov6_detection_service import Yolov6DetectionService
+from classes.detection_services.yolov8_detection_service import Yolov8DetectionService
 
 def pars_args():
     file_src   =   "videos/highway2.mp4"
@@ -33,7 +34,7 @@ def pars_args():
     parser.add_argument("-hs", "--host_server", help = "host_server host remote raspberry of local pc")
     parser.add_argument("-ss", "--stream_source", help = "Select stream source FILE, REMOTE_WEBCAM, RASPBERRY_CAM")
     parser.add_argument("-ds", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
-    parser.add_argument("-rr", "--save_detectors_results", help = "save_detectors_results inference fps to results.csv")
+    parser.add_argument("-rr", "--save_detectors_results",  action="store_const", const=True, default=False, help = "save_detectors_results inference fps to results.csv")
     parser.add_argument("-webcam", "--webcam", help = "webcam ip server ")
 
     args = parser.parse_args()
@@ -50,8 +51,10 @@ def pars_args():
                 detection_service=TensorflowLiteDetectionService()
             elif args.detection_service in( 'YOLOV5' ,'yv5') :
                 detection_service=Yolov5DetectionService()
-            # elif args.detection_service in( 'YOLOV8' ,'yv8') :
-            #     detection_service=Yolov8DetectionService()
+            elif args.detection_service in( 'YOLOV6' ,'yv6') :
+                detection_service=Yolov6DetectionService()
+            elif args.detection_service in( 'YOLOV8' ,'yv8') :
+                detection_service=Yolov8DetectionService()
             else:
                 print("PARAM INCORRECT. LOADING DEFAULT DETECTION SERVICE ....")
                 detection_service=OpencvDetectionService()

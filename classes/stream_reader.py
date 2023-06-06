@@ -232,6 +232,8 @@ class StreamReader:
             csv_file = "results.csv"
             average_fps=0    
             average_inference_time=0    
+            max_inference_time=0    
+            min_inference_time=100000    
             with open(csv_file, 'a') as csvfile:
                 writer_object = writer(csvfile)                
                 for index, item in enumerate(self.fps_records):
@@ -243,10 +245,16 @@ class StreamReader:
                     if index==0:
                         continue
                     average_inference_time+=item
-
+                    if item<min_inference_time:
+                        min_inference_time=item
+                    
+                    if item>max_inference_time:
+                        max_inference_time=item
+                        
                 average_fps/=(len(self.fps_records)-1)
                 average_inference_time/=(len(self.inference_time_records)-1)
-                writer_object.writerow([self.detection_service.get_selected_model()['name'],average_fps,average_inference_time])
+
+                writer_object.writerow([self.detection_service.get_selected_model()['name'],average_fps,average_inference_time,max_inference_time,min_inference_time,self.detection_service.network_input_size])
                 self.inference_time_records=[]
                 self.fps_records=[]
 

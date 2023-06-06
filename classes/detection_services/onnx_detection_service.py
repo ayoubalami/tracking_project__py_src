@@ -82,15 +82,22 @@ class OnnxDetectionService(IDetectionService):
         img_width, img_height = img.shape[1], img.shape[0]
         x_scale = img_width/blob_size
         y_scale = img_height/blob_size
-        
-        for i in range(rows):
+        print(len(detections))
+        # print(detections[0])
+
+        new_detections=[ d for d in detections if max(d[5:])>=self.threshold]
+        print(len(new_detections))
+
+        # [v for v in self.DVR if v['status']=='DETECTED' or v['status']=='MISSED' ]
+        for i in range(len(new_detections)):
             row = detections[i]
+            # print(len(row))
             box_confidence = float(row[4]) 
-            if box_confidence > threshold:
+            if box_confidence > self.threshold:
                 classes_confidences = row[5:]
                 ind = np.argmax(classes_confidences)
                 object_confidence= classes_confidences[ind]
-                if object_confidence > threshold:
+                if object_confidence > self.threshold:
                     classes_ids.append(ind)
                     # confidence= classes_score[ind]*confidence
                     confidences.append(object_confidence)
@@ -101,7 +108,7 @@ class OnnxDetectionService(IDetectionService):
                     height = int(h * y_scale)
                     box = np.array([x1,y1,width,height])
                     boxes.append(box)              
-        indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=threshold,nms_threshold=nms_threshold)
+        indices = cv2.dnn.NMSBoxes(boxes,confidences,score_threshold=self.threshold,nms_threshold=self.nms_threshold)
         raw_detection_data=[]
 
         for i in indices:

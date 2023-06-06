@@ -69,11 +69,11 @@ class RaspberryCameraReader :
             self.frame_size=image.shape
 
             if self.zoom>1:
-                hight,width=image.shape[:2]
+                height,width=image.shape[:2]
                 x=int((width*.5)- (width/self.zoom)*.5)
-                y=int((hight*.5)- (hight/self.zoom)*.5)
+                y=int((height*.5)- (height/self.zoom)*.5)
                 w=int(width/self.zoom)
-                h=int(hight/self.zoom)
+                h=int(height/self.zoom)
                 image = image[y:y+h, x:x+w]
                 self.frame_size=image.shape
 
