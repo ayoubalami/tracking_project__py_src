@@ -2,7 +2,6 @@
 from math import floor
 import threading
 import cv2,time
-import pafy
 from utils_lib.enums import StreamSourceEnum
 class Buffer:
 
@@ -38,25 +37,7 @@ class Buffer:
         if stream_source==StreamSourceEnum.FILE:
             self.reset_file_buffer(file_src=video_src)
             self.batch_size=50
-        elif stream_source==StreamSourceEnum.YOUTUBE:
-                self.reset_youtube_buffer(youtube_url=video_src)
-                self.batch_size=150
-
-    def init_youtube_video_play(self,youtube_url):
-        urlPafy = pafy.new(youtube_url)
-        self.video_play = urlPafy.getbest(preftype="any")
-        streams = urlPafy.allstreams
-        self.video_play = urlPafy.getbestvideo(preftype="mp4")
-        resolution_by_priority=[480,360,720]
-
-        for res in resolution_by_priority:
-            indexes = [i for i in range(len(streams)) if res == streams[i]._dimensions[1] and streams[i]._mediatype == 'video' ]
-            if len(indexes)>0:
-                self.video_play = streams[indexes[0]]
-                break       
-        print("video_play")
-        print(self.video_play)
-
+ 
 
     def reset_file_buffer(self, file_src=None,starting_second=0):
         if self.cap != None:
@@ -66,16 +47,7 @@ class Buffer:
             print(self.cap)
             self.cap=self.load_from_local_video(file_src)
             self.init_params(starting_second=starting_second)
-
-    def reset_youtube_buffer(self, youtube_url=None):
-        if self.cap != None:
-            self.cap.release()
-        if youtube_url != None:
-            print("====>>>RESET YOUTUBE STREAM ")
-            print(self.cap)
-            self.cap=self.load_from_youtube(youtube_url)
-            self.init_params()
-
+ 
     def delete_last_batch(self,to_delete_batch):
         if self.buffer_frames:
             del self.buffer_frames[0:self.batch_size]
@@ -113,20 +85,7 @@ class Buffer:
                 break
         print(":::: END downloadBuffer LOOP")
 
-        
-
-
-    # TO REVIEW RESET YOUTUBE TO FIX
-    def load_from_youtube(self,youtube_url:str):
-        
-        if self.video_play==None:
-            print("=============>> init_youtube_video_play")
-            self.init_youtube_video_play(youtube_url)
-        else:
-            print("0000=============>> NO init_youtube_video_play")
-
-        return cv2.VideoCapture(self.video_play.url)
-
+         
 
     def load_from_local_video(self,video_src:str):
         return cv2.VideoCapture(video_src)
@@ -143,8 +102,8 @@ class Buffer:
 
     def  set_buffer_starting_frame(self,starting_second):
 
-        print(starting_second)
-        print(self.frames_count/self.fps)
+        # print(starting_second)
+        # print(self.frames_count/self.fps)
 
         starting_second=(int)((starting_second*(self.frames_count/self.fps))/100)
 

@@ -1,12 +1,17 @@
 flask
 flask-cors
 pyshine
-youtube-dl
-pafy
-torch==1.13.1+cpu
+numpy 
+# torch==2.0.0+cpu
+torch
 pandas
-IPython
-psutil
-torchvision==0.14.1+cpu
-tqdm
-matplotlib
+# IPython
+# psutil
+torchvision
+# torchvision==0.15.0+cpu
+# tqdm
+# matplotlib
+scipy
+scikit-image
+sklearn
+ultralytics

@@ -4,8 +4,8 @@ import math
 import pathlib
 import torch
 import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
+# from PIL import Image
+# import matplotlib.pyplot as plt
 
 from yolov6.layers.common import DetectBackend
 from yolov6.utils.nms import non_max_suppression
@@ -19,38 +19,38 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 CLASS_NAMES = load_yaml(str(PATH_YOLOv6/"data/coco.yaml"))['names']
 
 
-def visualize_detections(image,
-                         boxes,
-                         classes,
-                         scores,
-                         min_score=0.4,
-                         figsize=(16, 16),
-                         linewidth=2,
-                         color='lawngreen'
-                         ):
-    image = np.array(image, dtype=np.uint8)
-    fig = plt.figure(figsize=figsize)
-    plt.axis("off")
-    plt.imshow(image)
-    ax = plt.gca()
-    for box, name, score in zip(boxes, classes, scores):
-        if score >= min_score:
-            text = "{}: {:.2f}".format(name, score)
-            x1, y1, x2, y2 = box
-            w, h = x2 - x1, y2 - y1
-            patch = plt.Rectangle(
-                [x1, y1], w, h, fill=False, edgecolor=color, linewidth=linewidth
-            )
-            ax.add_patch(patch)
-            ax.text(
-                x1,
-                y1,
-                text,
-                bbox={"facecolor": color, "alpha": 0.8},
-                clip_box=ax.clipbox,
-                clip_on=True,
-            )
-    plt.show()
+# def visualize_detections(image,
+#                          boxes,
+#                          classes,
+#                          scores,
+#                          min_score=0.4,
+#                          figsize=(16, 16),
+#                          linewidth=2,
+#                          color='lawngreen'
+#                          ):
+#     image = np.array(image, dtype=np.uint8)
+#     # fig = plt.figure(figsize=figsize)
+#     # plt.axis("off")
+#     # plt.imshow(image)
+#     ax = plt.gca()
+#     for box, name, score in zip(boxes, classes, scores):
+#         if score >= min_score:
+#             text = "{}: {:.2f}".format(name, score)
+#             x1, y1, x2, y2 = box
+#             w, h = x2 - x1, y2 - y1
+#             patch = plt.Rectangle(
+#                 [x1, y1], w, h, fill=False, edgecolor=color, linewidth=linewidth
+#             )
+#             ax.add_patch(patch)
+#             ax.text(
+#                 x1,
+#                 y1,
+#                 text,
+#                 bbox={"facecolor": color, "alpha": 0.8},
+#                 clip_box=ax.clipbox,
+#                 clip_on=True,
+#             )
+#     plt.show()
 
 
 def check_img_size(img_size, s=32, floor=0):
@@ -130,18 +130,18 @@ class Detector(DetectBackend):
         out['classes'] = [self.class_names[i] for i in out['labels']]
         return out
 
-    def show_predict(self,
-                     img_path,
-                     min_score=0.5,
-                     figsize=(16, 16),
-                     color='lawngreen',
-                     linewidth=2):
-        prediction = self.predict(img_path)
-        boxes, scores, classes = prediction['boxes'], prediction['scores'], prediction['classes']
-        visualize_detections(Image.open(img_path),
-                             boxes, classes, scores,
-                             min_score=min_score, figsize=figsize,  color=color, linewidth=linewidth
-                             )
+    # def show_predict(self,
+    #                  img_path,
+    #                  min_score=0.5,
+    #                  figsize=(16, 16),
+    #                  color='lawngreen',
+    #                  linewidth=2):
+    #     prediction = self.predict(img_path)
+    #     boxes, scores, classes = prediction['boxes'], prediction['scores'], prediction['classes']
+    #     visualize_detections(Image.open(img_path),
+    #                          boxes, classes, scores,
+    #                          min_score=min_score, figsize=figsize,  color=color, linewidth=linewidth
+    #                          )
 
 
 def create_model(model_name, class_names=CLASS_NAMES, device=DEVICE,

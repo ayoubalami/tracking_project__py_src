@@ -57,10 +57,10 @@
         </div>
       </div>
          
-      <div id="videoFilesSelect" class="row gx-5 pb-4">
+      <div id="videoFilesSelect" class="row gx-5 pb-4" >
           <div class="col-md-4 ">
             <label for="inputVideoFile">Select a Video file</label>
-            <select id="inputVideoFile" class="form-select" aria-label="select video">
+            <select id="inputVideoFile" class="form-select" onchange="onVideoFileSelected(event)" aria-label="select video">
               <option value="highway1.mp4" title="">highway1.mp4</option>
               <option selected="selected" value="highway2.mp4" title="">highway2.mp4</option>
               <option value="highway3.mp4" title="">highway3.mp4</option>
@@ -101,7 +101,7 @@
           <div class="btn-group me-2" role="group" aria-label="First group">
             <button class="p-2 btn btn-success btn-lg " onclick="onClickToggleStopStart()" id="startStopButton"> Start
             </button>
-            <button class="p-2 btn btn-info btn-lg " disabled onclick="onClickGoToNextFrame()" id="goToNextFrameButton"> Next Frame
+            <button class="p-2 btn btn-info btn-lg " onclick="onClickGoToNextFrame()" id="goToNextFrameButton"> Next Frame
             </button>
           </div>
           <div class="btn-group me-2  " role="group" aria-label="First group">

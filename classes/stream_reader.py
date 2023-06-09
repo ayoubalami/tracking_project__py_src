@@ -65,12 +65,7 @@ class StreamReader:
             self.buffer=Buffer(stream_source=StreamSourceEnum.FILE, video_src=video_src,stream_reader=self)
             print("StreamReader From File .....")
             # self.buffer.stream_reader=self
-
-        if self.stream_source==StreamSourceEnum.YOUTUBE:
-            self.buffer=Buffer(stream_source=StreamSourceEnum.YOUTUBE, video_src=video_src,stream_reader=self)
-            print("StreamReader From Youtube .....") 
-            # self.buffer.stream_reader=self
-
+ 
         if self.stream_source==StreamSourceEnum.WEBCAM:
             self.webcam_stream = WebcamReader(src=self.video_src)
             self.webcam_stream.start() 
@@ -87,9 +82,7 @@ class StreamReader:
         del(self.buffer.cap)
         print("STREAM_READER : end clean_streamer")
 
-    def reset(self,starting_second=0):
-        if self.stream_source == StreamSourceEnum.YOUTUBE :
-            self.buffer.reset_youtube_buffer(youtube_url=self.video_src)   
+    def reset(self,starting_second=0): 
         if self.stream_source == StreamSourceEnum.FILE:
             self.buffer.reset_file_buffer(file_src=self.video_src,starting_second=starting_second) 
         self.background_subtractor_service.reset()  
@@ -119,7 +112,7 @@ class StreamReader:
             
             frame=self.getNextFrame()
 
-            yield from self.ProcessAndYieldFrame(frame)
+            yield from self.ProcessAndYieldFrame(frame,time.perf_counter()-start_time)
             
             counter+=1
             if (time.perf_counter() - start_time) > refresh_rate :
@@ -163,7 +156,7 @@ class StreamReader:
             
             # RETURN FRAMES TO NAV
             frame=self.getNextFrame()
-            yield from self.ProcessAndYieldFrame(frame)
+            yield from self.ProcessAndYieldFrame(frame,time.perf_counter()-t1 )
             
             # ADD SECONDES
             self.current_time=self.current_time+self.buffer.frame_duration*(floor(jump_frame))
@@ -260,7 +253,10 @@ class StreamReader:
 
     def addFrameTime(self,frame):
         if self.stream_source!=StreamSourceEnum.WEBCAM :
-            frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
+            # frame =  ps.putBText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)),text_offset_x=20,text_offset_y=20,vspace=10,hspace=10, font_scale=1.4,text_RGB=(255,255,250))
+            frame = cv2.putText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)), (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (255,255,250), 2, cv2.LINE_AA)
+            frame = cv2.putText(frame,str( "{:02d}".format(self.current_sec//60))+":"+str("{:02d}".format(self.current_sec%60)), (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (255,255,250), 2, cv2.LINE_AA)
+
             # pass
     def addInferenceTime(self, frame, inferenceTime):
         color = 2**16-1
@@ -282,12 +278,13 @@ class StreamReader:
 
         return origin_frame
 
-    def ProcessAndYieldFrame(self,frame):
+    def ProcessAndYieldFrame(self,frame,duration):
         result={}
         copy_frame=frame.copy()
 
         if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
             # origin_frame,self.current_batch=self.getCurrentFrame() 
+            print(f" ==== ClientStreamTypeEnum.CNN_DETECTOR ====== DURATION : {1/duration} ")
             detection_frame,inference_time=self.applyDetection(copy_frame)
             if self.save_detectors_results:
                 self.inference_time_records.append(inference_time)

@@ -21,7 +21,6 @@ from classes.detection_services.yolov8_detection_service import Yolov8DetectionS
 
 def pars_args():
     file_src   =   "videos/highway2.mp4"
-    # youtube_url =   "https://www.youtube.com/watch?v=QuUxHIVUoaY"
     # webcam_src  =   'http://192.168.43.1:9000/video'
     local_webcam_src  =   'http://10.10.23.223:9000/video'
 #    webcam_src=0
@@ -38,6 +37,8 @@ def pars_args():
     parser.add_argument("-webcam", "--webcam", help = "webcam ip server ")
 
     args = parser.parse_args()
+    video_src=file_src
+
     if args:
         detection_service:IDetectionService=None
         if args.detection_service:
@@ -49,11 +50,11 @@ def pars_args():
                 detection_service=TensorflowDetectionService()
             elif args.detection_service in( 'TENSORFLOW LITE' ,'tflite','tensorflow-lite') :
                 detection_service=TensorflowLiteDetectionService()
-            elif args.detection_service in( 'YOLOV5' ,'yv5') :
+            elif args.detection_service in( 'YOLOv5' ,'yv5') :
                 detection_service=Yolov5DetectionService()
-            elif args.detection_service in( 'YOLOV6' ,'yv6') :
+            elif args.detection_service in( 'YOLOv6' ,'yv6') :
                 detection_service=Yolov6DetectionService()
-            elif args.detection_service in( 'YOLOV8' ,'yv8') :
+            elif args.detection_service in( 'YOLOv8' ,'yv8') :
                 detection_service=Yolov8DetectionService()
             else:
                 print("PARAM INCORRECT. LOADING DEFAULT DETECTION SERVICE ....")
@@ -108,11 +109,6 @@ detection_service,stream_source,video_src,save_detectors_results,host_server=par
 app_service=AppService(detection_service=detection_service,stream_source=stream_source,video_src=video_src,save_detectors_results=save_detectors_results,host_server=host_server)
 
 
-# def read_stream():
-#     print("read_stream")
-#     yield from app_service.read_stream()
-    # pass
-
 @app.route('/')
 def index():
     return app_service.index()
@@ -122,37 +118,41 @@ def main_video_stream():
     return app_service.main_video_stream()
 
 
-@app.route('/current_time', methods = ['GET'])
-def timer():
-    return app_service.timer()
+# @app.route('/current_time', methods = ['GET'])
+# def timer():
+#     return app_service.timer()
 
-@app.route('/video_duration', methods = ['GET'])
-def video_duration():
-    return app_service.video_duration()
+# @app.route('/video_duration', methods = ['GET'])
+# def video_duration():
+#     return app_service.video_duration()
 
-@app.route('/clean_memory', methods = ['POST'])
-def clean_memory():
-    return app_service.clean_memory()
+# @app.route('/clean_memory', methods = ['POST'])
+# def clean_memory():
+#     return app_service.clean_memory()
 
 @app.route('/stop_stream', methods = ['POST'])
 def stop_stream():
     return app_service.stop_stream()
 
-@app.route('/start_stream/<video_resolution_ratio>/<selected_video>', methods = ['POST'])
-def start_stream( selected_video,video_resolution_ratio):
-    return app_service.start_stream( selected_video,video_resolution_ratio)
+    
+# <video_resolution_ratio>/<selected_video>
+# def start_stream( selected_video,video_resolution_ratio):
+
+@app.route('/start_stream/<selected_video>', methods = ['POST'])
+def start_stream(selected_video):
+    return app_service.start_stream(selected_video)
 
 @app.route('/get_next_frame', methods = ['POST'])
 def get_next_frame():
-    return app_service.go_to_next_frame()
+    return app_service.one_next_frame()
 
-@app.route('/start_offline_detection/<selected_video>', methods = ['POST'])
-def start_offline_detection(selected_video):
-    return app_service.start_offline_detection(selected_video)
+# @app.route('/start_offline_detection/<selected_video>', methods = ['POST'])
+# def start_offline_detection(selected_video):
+#     return app_service.start_offline_detection(selected_video)
 
-@app.route('/start_offline_tracking/<selected_video>', methods = ['POST'])
-def start_offline_tracking(selected_video):
-    return app_service.start_offline_tracking(selected_video)
+# @app.route('/start_offline_tracking/<selected_video>', methods = ['POST'])
+# def start_offline_tracking(selected_video):
+#     return app_service.start_offline_tracking(selected_video)
 
 @app.route('/get_object_detection_list', methods = ['GET'])
 def get_object_detection_list():
@@ -180,54 +180,49 @@ def update_cnn_detector_param(param,value):
 def update_background_subtraction_param(param,value):
     return app_service.update_background_subtraction_param(param=param,value=value)
 
+# @app.route('/switch_client_stream/<stream>', methods = ['POST'])
+# def switch_client_stream(stream):
+#     return app_service.switch_client_stream(stream=stream)
 
-@app.route('/switch_client_stream/<stream>', methods = ['POST'])
-def switch_client_stream(stream):
-    return app_service.switch_client_stream(stream=stream)
-
-@app.route('/stream/reset', methods = ['POST'])
+@app.route('/reset_stream', methods = ['POST'])
 def reset_stream():
     return app_service.reset_stream() 
-    # return app_service.clean_memory() 
 
-@app.route('/track_with/<param>', methods = ['POST'])
-def track_with(param):
-    return app_service.track_with(param=param) 
-    # return app_service.clean_memory() 
+# @app.route('/track_with/<param>', methods = ['POST'])
+# def track_with(param):
+#     return app_service.track_with(param=param) 
 
-@app.route('/show_missing_tracks/<value>', methods = ['POST'])
-def show_missing_tracks(value):
-    return app_service.show_missing_tracks(value=value) 
+# @app.route('/show_missing_tracks/<value>', methods = ['POST'])
+# def show_missing_tracks(value):
+#     return app_service.show_missing_tracks(value=value) 
 
-@app.route('/activate_stream_simulation/<value>', methods = ['POST'])
-def activate_stream_simulation(value):
-    return app_service.activate_stream_simulation(value=value) 
+# @app.route('/activate_stream_simulation/<value>', methods = ['POST'])
+# def activate_stream_simulation(value):
+    # return app_service.activate_stream_simulation(value=value) 
 
-@app.route('/use_cnn_feature_extraction_on_tracking/<value>', methods = ['POST'])
-def use_cnn_feature_extraction_on_tracking(value):
-    return app_service.use_cnn_feature_extraction_on_tracking(value=value) 
+# @app.route('/use_cnn_feature_extraction_on_tracking/<value>', methods = ['POST'])
+# def use_cnn_feature_extraction_on_tracking(value):
+#     return app_service.use_cnn_feature_extraction_on_tracking(value=value) 
 
-@app.route('/activate_detection/<value>', methods = ['POST'])
-def activate_detection_for_tracking(value):
-    return app_service.activate_detection_for_tracking(value=value) 
+# @app.route('/activate_detection/<value>', methods = ['POST'])
+# def activate_detection_for_tracking(value):
+#     return app_service.activate_detection_for_tracking(value=value) 
 
-@app.route('/update_tracking_param/<param>/<value>', methods = ['POST'])
-def update_tracking_param_value(param,value):
-    return app_service.update_tracking_param_value(param=param,value=value) 
+# @app.route('/update_tracking_param/<param>/<value>', methods = ['POST'])
+# def update_tracking_param_value(param,value):
+#     return app_service.update_tracking_param_value(param=param,value=value) 
 
-@app.route('/rotate_servo_motor/<axis>/<value>', methods = ['POST'])
-def rotate_servo_motor(axis,value):
-    return app_service.rotate_servo_motor(axis=axis,value=value) 
+# @app.route('/rotate_servo_motor/<axis>/<value>', methods = ['POST'])
+# def rotate_servo_motor(axis,value):
+#     return app_service.rotate_servo_motor(axis=axis,value=value) 
 
+# @app.route('/update_raspberry_camera_zoom/<zoom>', methods = ['POST'])
+# def update_raspberry_camera_zoom(zoom):
+#     return app_service.update_raspberry_camera_zoom(zoom=zoom) 
 
-@app.route('/update_raspberry_camera_zoom/<zoom>', methods = ['POST'])
-def update_raspberry_camera_zoom(zoom):
-    return app_service.update_raspberry_camera_zoom(zoom=zoom) 
-
-
-@app.route('/update_tracked_coordinates/<x>/<y>', methods = ['POST'])
-def update_tracked_coordinates(x,y):
-    return app_service.update_tracked_coordinates(x,y) 
+# @app.route('/update_tracked_coordinates/<x>/<y>', methods = ['POST'])
+# def update_tracked_coordinates(x,y):
+    # return app_service.update_tracked_coordinates(x,y) 
 
 @app.route('/get_class_labels', methods = ['POST'])
 def get_class_labels( ):
@@ -237,20 +232,16 @@ def get_class_labels( ):
 def set_selected_classes( idx):
     return app_service.set_selected_classes(idx ) 
 
-@app.route('/set_video_starting_second/<second>', methods = ['POST'])
-def set_video_starting_second( second):
-    print(f" set starting_second to : {second}")
-    return app_service.reset_buffer_starting_second(starting_second= int(second) ) 
+@app.route('/change_video_file/<video_file>', methods = ['POST'])
+def change_video_file( video_file):
+    return app_service.change_video_file(video_file ) 
+
+# @app.route('/set_video_starting_second/<second>', methods = ['POST'])
+# def set_video_starting_second( second):
+#     print(f" set starting_second to : {second}")
+#     return app_service.reset_buffer_starting_second(starting_second= int(second) ) 
 
 if __name__=="__main__":
-    app.run(host='0.0.0.0', port=8000 ,debug=False,threaded=True)
+    app.run(host='0.0.0.0', port=7070 ,debug=False,threaded=True)
 
- 
-
-# youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
-# youtube_url = "https://www.youtube.com/watch?v=QuUxHIVUoaY"
-# youtube_url = "https://www.youtube.com/watch?v=nV2aXhxoJ0Y"
-# youtube_url = "https://www.youtube.com/watch?v=TW3EH4cnFZo"
-# youtube_url = "https://www.youtube.com/watch?v=7y2oOsucOdc"
-# youtube_url = "https://www.youtube.com/watch?v=nt3D26lrkho"
-# youtube_url = "https://www.youtube.com/watch?v=KBsqQez-O4w"
+  

@@ -8,7 +8,7 @@ class Yolov8DetectionService(IDetectionService):
 
     np.random.seed(123)
     model=None
-    default_model_input_size=320
+    default_model_input_size=192
     def clean_memory(self):
         print("CALL DESTRUCTER FROM Yolov8DetectionService")
         if self.model:
@@ -82,7 +82,7 @@ class Yolov8DetectionService(IDetectionService):
         start_time = time.perf_counter()
         if self.network_input_size!=None and self.network_input_size != self.default_model_input_size:
             self.default_model_input_size=self.network_input_size
-            print("UPDATE YOLOV8 NETWORK INPUT SIZE ... ")      
+            print(f"UPDATE YOLOV8 NETWORK INPUT SIZE ... : {self.default_model_input_size}")      
 
         results=self.model.predict(frame, verbose=False,imgsz =self.default_model_input_size,conf=self.threshold,iou=self.nms_threshold)[0]   
         inference_time=np.round(time.perf_counter()-start_time,3)

@@ -1,7 +1,7 @@
 
 
 // var $SCRIPT_ROOT = "http://Raspberrypi.local:8000/"
-var $SCRIPT_ROOT = "http://"+api_server+":8000"
+var $SCRIPT_ROOT = "http://"+api_server+":7070"
 // var $SCRIPT_ROOT = "http://192.168.137.226:8000"
 
 var secondApiIpChecked=false
@@ -166,10 +166,10 @@ function onClickReset(){
     videoInitialized=false;
     $.ajax({
         type: "POST",
-        url: $SCRIPT_ROOT + '/stream/reset',
+        url: $SCRIPT_ROOT + '/reset_stream',
         dataType: "json",
         success: function (data) {
-            console.log("/stream/reset")
+            console.log("/reset_stream")
             stopStreamOnReset()
             // if (videoInitialized==false)
             //     initVideoStreamFrame()
@@ -236,6 +236,7 @@ function onClickToggleStopStart(){
         toggleDisabledLoadingModelButton(false);
         toggleDisabledResetButton(false);
         toggleDisabledNextFrameButton(false)
+        toggleDisabledVideoFileButton(false)
         sendStopVideoRequest();
     }else{
         toggleDisabledStartStopButton(true);
@@ -243,6 +244,7 @@ function onClickToggleStopStart(){
         toggleDisabledLoadingModelButton(true,showSpinner=false);
         toggleDisabledResetButton(true);
         toggleDisabledNextFrameButton(true)
+        toggleDisabledVideoFileButton(true)
         sendStartVideoRequest();
 
         // toggleDisabledResetButton(false)
@@ -384,12 +386,12 @@ function onChangeVideoSecondSlider(){
 
 function sendStartVideoRequest(){
     selectedVideo=$('#inputVideoFile').find(":selected").val();
-    var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
+    // var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
     // $( "#"+param+"ValueText" ).text( selectedResolution+" %");
 
     $.ajax({
         type: "POST",
-        url: $SCRIPT_ROOT + '/start_stream/'+selectedResolution+'/'+selectedVideo,
+        url: $SCRIPT_ROOT + '/start_stream/'+selectedVideo,
         dataType: "json",
         success: function (data) {
             console.log(" start_stream "+selectedVideo)
@@ -424,6 +426,14 @@ function toggleDisabledResetButton(setToDisabled){
         $("#resetButton").prop('disabled', true);
     }else{
         $("#resetButton").prop('disabled', false);
+    }
+}
+
+function toggleDisabledVideoFileButton(setToDisabled){
+    if(setToDisabled){
+        $("#inputVideoFile").prop('disabled', true);
+    }else{
+        $("#inputVideoFile").prop('disabled', false);
     }
 }
 
@@ -843,4 +853,20 @@ function onClickMultiSelectClasses(id){
     });  
 }
 
+
+function onVideoFileSelected(event){
+    // selectedVideo=$('#inputVideoFile').find(":selected").val();
+    // alert(event.target.value)
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/change_video_file/'+event.target.value,
+        dataType: "json",
+        success: function () {
+            console.log(" /set_selected_classes is done")
+        },
+        error: function () {
+            console.log(" ERROR /set_selected_classes ")
+        }
+    });  
+}
  

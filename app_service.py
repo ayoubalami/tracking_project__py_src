@@ -15,13 +15,13 @@ from classes.offline_detector import OfflineDetector
 from classes.stream_reader import StreamReader, StreamSourceEnum
 from classes.tracking_service.tracking_service import TrackingService
 from classes.hybrid_tracking_service.hybrid_tracking_service import HybridTrackingService
-
+from classes.stream_processor import StreamProcessor
 from classes.tracking_service.offline_tracker import OfflineTracker
 from utils_lib.enums import ClientStreamTypeEnum
 
 class AppService:  
 
-    stream_reader :StreamReader = None
+    stream_processor :StreamProcessor = None
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
     tracking_service: TrackingService=None
@@ -32,15 +32,14 @@ class AppService:
     host_server='localhost'
 
     def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str,save_detectors_results:bool,host_server:str):
-        
+                
+        self.stream_processor=StreamProcessor(self)
         self.detection_service=detection_service
         self.stream_source=stream_source
         self.video_src=video_src
         self.save_detectors_results=save_detectors_results
         self.host_server=host_server
-        
         print("AppService from "+str(self.stream_source) +" Starting ...")
-        
         self.background_subtractor_service=BackgroundSubtractorService()
         self.tracking_service=TrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
         self.hybrid_tracking_service=HybridTrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
@@ -48,6 +47,7 @@ class AppService:
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
             print( "Service name : ",self.detection_service.service_name())
+            # self.stream_processor.video_stream.detection_service=self.detection_service
         else :
             print( " No detection_module To load")
         print("AppService Started.")
@@ -57,134 +57,27 @@ class AppService:
             self.raspberry_camera :RaspberryCameraReader = None
             self.raspberry_camera=RaspberryCameraReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service,tracking_service=self.tracking_service)
            
-
-        # self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src)        
-
-    def clean_memory(self):
-        print(" START clean_memory ")
-        if self.stream_reader:
-            self.stream_reader.clean_memory()
-        if self.detection_service:
-            self.detection_service.clean_memory()
-            self.detection_service.init_selected_model()
-            # del self.detection_service
-        return jsonify(result='clean_memory OK')
-
-    def reset_stream(self):
-        if self.stream_reader:
-            self.stream_reader.reset()
-        if self.tracking_service:
-            self.tracking_service.reset()
-        if self.hybrid_tracking_service:
-            self.hybrid_tracking_service.reset()
-        return jsonify('reset stream')
-  
-    def reset_buffer_starting_second(self,starting_second=0):
-        
-        # self.stop_stream()
-        if self.stream_reader:
-            self.stream_reader.reset(starting_second=starting_second)
-        if self.tracking_service:
-            self.tracking_service.reset()
-        if self.hybrid_tracking_service:
-            self.hybrid_tracking_service.reset()
-
-        # self.start_stream()
-        return jsonify('reset stream')
-
-
     def index(self):
         return render_template('index.html',api_server=self.host_server,stream_source=self.stream_source.name)
- 
-    def return_stream(self):
-        yield from self.stream_reader.read_stream()
-        # yield from self.webcam_stream.read_from_camera()
-
+         
     def stop_stream(self):
-        if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
-            if self.raspberry_camera.start_reading_action  :
-                self.raspberry_camera.start_reading_action=False
-                print("SET CAMERA MODULE STOP")
-                return jsonify(result='rasp stream stoped')
-        else:
-            if self.save_detectors_results:
-                self.stream_reader.save_records()
-            if  not self.stream_reader.stop_reading_from_user_action :
-                self.stream_reader.stop_reading_from_user_action=True
-                return jsonify(result='stream stoped')
-            return jsonify(result='error server in stream stoped')
+        self.stream_processor.video_stream.stop()
+        return jsonify(result='error server in stream stoped')
+           
+    def reset_stream(self):
+        self.stream_processor.video_stream.reset()
+        return jsonify(result='stream reset')
 
-    def start_stream(self,selected_video,video_resolution_ratio):
-        if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
-            if self.raspberry_camera.start_reading_action ==False:
-                self.raspberry_camera.start_reading_action=True
-                print("SET CAMERA MODULE START")
-                return jsonify(result='rasp stream started')
-        else:
-            selected_video="videos/"+selected_video
-            video_resolution_ratio=float(video_resolution_ratio)/100
-            if video_resolution_ratio>1:
-                video_resolution_ratio=1
+    def start_stream(self,selected_video):
+        if (self.stream_processor.video_stream.video_file!=selected_video):
+            self.stream_processor.video_stream.video_file=selected_video
+        self.stream_processor.video_stream.start()
+        return jsonify(result='stream started')
 
-            self.background_subtractor_service.video_resolution_ratio = video_resolution_ratio
-
-            if (selected_video!= self.stream_reader.video_src):
-                self.video_src=selected_video
-                self.stream_reader.change_video_file(selected_video)
-                if self.tracking_service:
-                    self.tracking_service.reset()
-               
-
-            # self.stream_reader.buffer.set_buffer_starting_frame(50)
-
-            # while(True):
-            #     sleep(0.01)
-                # if self.stream_reader and (self.stream_reader.buffer or self.stream_source == StreamSourceEnum.WEBCAM)  :
-            print("SET TO START °°")
-            if self.stream_reader.stop_reading_from_user_action :
-                self.stream_reader.stop_reading_from_user_action=False
-                print("SET TO START")
-                return jsonify(result='stream started')
-
-
-    def go_to_next_frame(self):
+    def one_next_frame(self):
         print("GET NEXT FRAME START °°")
-        if self.stream_reader.stop_reading_from_user_action :
-            self.stream_reader.get_one_next_frame=True 
-            self.stream_reader.stop_reading_from_user_action=False
-            print("SET TO NEXT FRAME START")
-            return jsonify(result='stream started  +1')
+        self.stream_processor.video_stream.one_next_frame=True
         return jsonify(result='error getting  NEXT FRAME ')
-
-
-    def start_offline_detection(self,selected_video):
-        # wait for streamer to be created before starting
-        print(" START OfflineDetection")
-        selected_video="videos/"+selected_video
-        if (selected_video!= self.stream_reader.video_src):
-            self.video_src=selected_video
-            self.stream_reader.change_video_file(selected_video)
-        self.offline_detector=OfflineDetector(self.detection_service,stream_source=self.stream_source ,video_src=self.video_src ) 
-        self.offline_detector.threshold= self.stream_reader.threshold  
-        self.offline_detector.nms_threshold=self.stream_reader.nms_threshold
-        self.offline_detector.start()
-        return jsonify(result='OfflineDetector started')
-
-    def start_offline_tracking(self,selected_video):
-        # wait for streamer to be created before starting
-        print(" START OfflineTracker")
-        selected_video="videos/"+selected_video
-        if (selected_video!= self.stream_reader.video_src):
-            self.video_src=selected_video
-            self.stream_reader.change_video_file(selected_video)
-            if self.tracking_service:
-                self.tracking_service.reset()
-        self.offline_tracker=OfflineTracker(tracking_service=self.tracking_service,stream_source=self.stream_source ,video_src=self.video_src ) 
-        self.offline_tracker.threshold= self.stream_reader.threshold  
-        self.offline_tracker.nms_threshold=self.stream_reader.nms_threshold
-        self.offline_tracker.network_input_size=self.detection_service.network_input_size
-        self.offline_tracker.start()
-        return jsonify(result='OfflineDetector started')
     
     def get_object_detection_list(self):
         if self.detection_service!=None :
@@ -194,7 +87,6 @@ class AppService:
         if self.detection_service!=None :
             self.detection_service.load_model(model=model)
             try:
-                # self.detection_service.load_model(model=model)
                 return jsonify(result='DONE LOADING SUCCESS')
             except:
                 return jsonify(error='ERROR model throw exception')
@@ -207,19 +99,6 @@ class AppService:
             self.detection_service.threshold=float(value)
         elif param=='nmsThreshold':
             self.detection_service.nms_threshold=float(value)
-
-        # else :
-        #     if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
-        #         if param=='threshold':
-        #             self.raspberry_camera.threshold=float(value)
-        #         if param=='nmsThreshold':
-        #             self.raspberry_camera.nms_threshold=float(value)
-        #     else:
-        #         if param=='threshold':
-        #             self.stream_reader.threshold=float(value)
-        #         if param=='nmsThreshold':
-        #             self.stream_reader.nms_threshold=float(value)
-                
         return jsonify(result=param+' updated ')
 
     def update_background_subtraction_param(self,param,value):
@@ -235,88 +114,12 @@ class AppService:
             self.background_subtractor_service.morphological_kernel_size=int(value)
         if param=='minBoxSize':
             self.background_subtractor_service.min_box_size=int(value)
-
         return jsonify(result=param+' updated ')
 
-    def main_video_stream(self):
+    def main_video_stream(self): 
+        print("=======> main_video_stream")
+        return Response(self.stream_processor.return_stream(),mimetype='text/event-stream')
 
-        if self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
-            print("=======> main_raspberry_camera_stream")        
-            return Response(self.raspberry_camera.read_camera_stream(),mimetype='text/event-stream')
-
-        else:
-            print("=======> main_video_stream")
-            self.stream_reader=StreamReader(detection_service=self.detection_service, stream_source=self.stream_source ,video_src=self.video_src,save_detectors_results=self.save_detectors_results)        
-            self.stream_reader.background_subtractor_service=self.background_subtractor_service
-            self.stream_reader.tracking_service=self.tracking_service
-            self.stream_reader.hybrid_tracking_service=self.hybrid_tracking_service
-
-            if self.stream_reader.buffer :
-                self.stream_reader.startBuffering()
-            return Response(self.return_stream(),mimetype='text/event-stream')
- 
-
-    def switch_client_stream(self, stream):
-        if self.stream_reader!=None:
-            if stream == 'CNN_DETECTOR':
-                self.stream_reader.current_selected_stream= ClientStreamTypeEnum.CNN_DETECTOR
-            elif  stream == 'BACKGROUND_SUBTRACTION':
-                self.stream_reader.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
-            elif stream == 'TRACKING_STREAM':
-                self.stream_reader.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
-            elif stream == 'HYBRID_TRACKING_STREAM':
-                self.stream_reader.current_selected_stream= ClientStreamTypeEnum.HYBRID_TRACKING_STREAM
-        
-        elif self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
-            if self.raspberry_camera!=None:
-                if stream == 'CNN_DETECTOR':
-                    self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.CNN_DETECTOR
-                elif  stream == 'BACKGROUND_SUBTRACTION':
-                    self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.BACKGROUND_SUBTRACTION
-                elif stream == 'TRACKING_STREAM':
-                    self.raspberry_camera.current_selected_stream= ClientStreamTypeEnum.TRACKING_STREAM
-
-        return jsonify(result=stream)
-
-    def track_with(self, param):
-        self.tracking_service.reset()
-        if param=='background_subtraction':
-            self.tracking_service.track_object_by_background_sub=True
-            self.tracking_service.track_object_by_cnn_detection=False
-        if param=='cnn_detection':
-            self.tracking_service.track_object_by_background_sub=False
-            self.tracking_service.track_object_by_cnn_detection=True      
-        return jsonify(result=param)
-
-    def show_missing_tracks(self, value):
-        if value=='true':
-            self.tracking_service.show_missing_tracks=True
-        else:
-            self.tracking_service.show_missing_tracks=False
-        return jsonify(result=value)
-
-    def activate_stream_simulation(self, value):
-        if value=='true':
-            self.stream_reader.activate_stream_simulation=True
-        else:
-            self.stream_reader.activate_stream_simulation=False
-        return jsonify(result=value)
- 
-    def use_cnn_feature_extraction_on_tracking(self,value):
-        if value=='true':
-            self.tracking_service.use_cnn_feature_extraction=True
-        else:
-            self.tracking_service.use_cnn_feature_extraction=False
-        self.tracking_service.reset()
-        return jsonify(result=value)
-        
-    def activate_detection_for_tracking(self,value):
-        if value=='true':
-            self.tracking_service.activate_detection_for_tracking=True
-        else:
-            self.tracking_service.activate_detection_for_tracking=False
-        return jsonify(result=value)
- 
     def update_tracking_param_value(self,param,value):
         if self.tracking_service:
             if param == 'maxCosDistance':
@@ -328,7 +131,6 @@ class AppService:
     def rotate_servo_motor(self,axis,value):
         if self.stream_source==StreamSourceEnum.RASPBERRY_CAM:
             self.raspberry_camera.rotateServoMotor(axis=axis,angle=int(value),speed=0.005)
-
         return jsonify(result=value)
 
     def update_raspberry_camera_zoom(self,zoom):
@@ -347,7 +149,6 @@ class AppService:
             else:
                 self.raspberry_camera.terminate_tracking=True
                 print("NO OBJECT FOUNDED FROM APP_SERVICE")
-
         return jsonify(result=x)
 
     def get_class_labels(self):
@@ -360,7 +161,6 @@ class AppService:
                 classLables.append({'id':i,'label': lable })
                 i+=1
         return jsonify(classLables)
- 
 
     def set_selected_classes( self,idx):
         idx=list(map(int, idx.split(",")))
@@ -370,8 +170,6 @@ class AppService:
             self.detection_service.allowed_classes=[]
         return jsonify(result=idx)
 
-    
-    # def set_video_starting_second(self,second):
-    #     # self.stream_reader.set_starting_second(second)
-    #     # buffer.video_start_seconde=int(second)
-    #     return jsonify(result=second)
+    def change_video_file(self,video_file):
+        self.stream_processor.video_stream.change_video_file(video_file)
+        return jsonify(result="video changed")
