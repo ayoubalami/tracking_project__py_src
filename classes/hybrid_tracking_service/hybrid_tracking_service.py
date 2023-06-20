@@ -11,8 +11,6 @@ from classes.background_subtractor_service import BackgroundSubtractorService
 from skimage.metrics import structural_similarity
 import math
 from scipy.optimize import linear_sum_assignment
-from utils_lib.deep_sort.tools import generate_detections as gdet
-from sklearn.metrics.pairwise import cosine_similarity
 
 class HybridTrackingService():
     
@@ -70,7 +68,7 @@ class HybridTrackingService():
         self.detection_service=detection_service
         pass
     
-    def apply(self,frame,threshold=0.5,nms_threshold=0.5): 
+    def apply(self,frame): 
         start_time=time.perf_counter()
         if not self.is_region_initialization_done:
             self.init_regions(frame.shape)

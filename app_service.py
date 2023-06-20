@@ -17,32 +17,30 @@ from classes.tracking_service.tracking_service import TrackingService
 from classes.hybrid_tracking_service.hybrid_tracking_service import HybridTrackingService
 from classes.stream_processor import StreamProcessor
 from classes.tracking_service.offline_tracker import OfflineTracker
-from utils_lib.enums import ClientStreamTypeEnum
+from utils_lib.enums import  ProcessingTaskEnum,DetectorForTrackEnum
 
 class AppService:  
-
     stream_processor :StreamProcessor = None
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
     tracking_service: TrackingService=None
     hybrid_tracking_service: HybridTrackingService=None
     stream_source: StreamSourceEnum=None
-    buffering_thread=None   
     save_detectors_results=False
     host_server='localhost'
 
     def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str,save_detectors_results:bool,host_server:str):
                 
-        self.stream_processor=StreamProcessor(self)
-        self.detection_service=detection_service
         self.stream_source=stream_source
         self.video_src=video_src
         self.save_detectors_results=save_detectors_results
         self.host_server=host_server
         print("AppService from "+str(self.stream_source) +" Starting ...")
+        self.detection_service=detection_service
         self.background_subtractor_service=BackgroundSubtractorService()
         self.tracking_service=TrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
         self.hybrid_tracking_service=HybridTrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
+        self.stream_processor=StreamProcessor(self.detection_service,self.background_subtractor_service,self.tracking_service,self.hybrid_tracking_service)
 
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
@@ -54,7 +52,7 @@ class AppService:
 
         if stream_source==StreamSourceEnum.RASPBERRY_CAM:
             from classes.raspberry_camera_reader import RaspberryCameraReader
-            self.raspberry_camera :RaspberryCameraReader = None
+            # self.raspberry_camera :RaspberryCameraReader = None
             self.raspberry_camera=RaspberryCameraReader(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service,tracking_service=self.tracking_service)
            
     def index(self):
@@ -65,7 +63,7 @@ class AppService:
         return jsonify(result='error server in stream stoped')
            
     def reset_stream(self):
-        self.stream_processor.video_stream.reset()
+        self.stream_processor.reset()
         return jsonify(result='stream reset')
 
     def start_stream(self,selected_video):
@@ -85,7 +83,9 @@ class AppService:
       
     def load_detection_model(self,model=None):
         if self.detection_service!=None :
+            self.stream_processor.processing_task=ProcessingTaskEnum.CNN_DETECTOR
             self.detection_service.load_model(model=model)
+
             try:
                 return jsonify(result='DONE LOADING SUCCESS')
             except:
@@ -118,7 +118,7 @@ class AppService:
 
     def main_video_stream(self): 
         print("=======> main_video_stream")
-        return Response(self.stream_processor.return_stream(),mimetype='text/event-stream')
+        return  Response(self.stream_processor.return_stream(),mimetype='text/event-stream')      
 
     def update_tracking_param_value(self,param,value):
         if self.tracking_service:
@@ -141,11 +141,9 @@ class AppService:
     def update_tracked_coordinates(self,x,y):
         if  self.stream_source==StreamSourceEnum.RASPBERRY_CAM and self.tracking_service:
             tracked_object=self.tracking_service.returnSelectedTrackedObject((float(x),float(y)))
-            
             if tracked_object:
                 print("AN OBJECT TO TRACK IS FOUNDED : " +str(tracked_object.track_id)+" - "+str(tracked_object.to_tlwh())) 
                 self.raspberry_camera.moveServoMotorToCoordinates(tracked_object)
-
             else:
                 self.raspberry_camera.terminate_tracking=True
                 print("NO OBJECT FOUNDED FROM APP_SERVICE")
@@ -173,3 +171,49 @@ class AppService:
     def change_video_file(self,video_file):
         self.stream_processor.video_stream.change_video_file(video_file)
         return jsonify(result="video changed")
+
+    def set_video_resolution(self,video_resolution_ratio):
+        self.stream_processor.video_resolution_ratio=(float)(video_resolution_ratio)/100
+        print(self.stream_processor.video_resolution_ratio)
+        return jsonify(result="video_resolution_ratio changed")
+
+    def switch_client_stream(self, stream):
+        if self.stream_processor!=None:
+            if stream == 'CNN_DETECTOR':
+                self.stream_processor.processing_task= ProcessingTaskEnum.CNN_DETECTOR
+            elif  stream == 'BACKGROUND_SUBTRACTION':
+                self.stream_processor.processing_task= ProcessingTaskEnum.BACKGROUND_SUBTRACTION
+            elif stream == 'TRACKING_STREAM':
+                self.stream_processor.processing_task= ProcessingTaskEnum.TRACKING_STREAM
+            elif stream == 'HYBRID_TRACKING_STREAM':
+                self.stream_processor.processing_task= ProcessingTaskEnum.HYBRID_TRACKING_STREAM
+        
+        elif self.stream_source== StreamSourceEnum.RASPBERRY_CAM:
+            if self.raspberry_camera!=None:
+                if stream == 'CNN_DETECTOR':
+                    self.raspberry_camera.processing_task= ProcessingTaskEnum.CNN_DETECTOR
+                elif  stream == 'BACKGROUND_SUBTRACTION':
+                    self.raspberry_camera.processing_task= ProcessingTaskEnum.BACKGROUND_SUBTRACTION
+                elif stream == 'TRACKING_STREAM':
+                    self.raspberry_camera.processing_task= ProcessingTaskEnum.TRACKING_STREAM
+
+        return jsonify(result=stream)
+
+    def track_with(self, param):
+        self.tracking_service.reset()
+        if param=='background_subtraction':
+            self.tracking_service.tracker_detector=DetectorForTrackEnum.BACKGROUND_SUBTRACTION
+            # self.tracking_service.track_object_by_background_sub=True
+            # self.tracking_service.track_object_by_cnn_detection=False
+        if param=='cnn_detection':
+            self.tracking_service.tracker_detector=DetectorForTrackEnum.CNN_DETECTOR
+            # self.tracking_service.track_object_by_background_sub=False
+            # self.tracking_service.track_object_by_cnn_detection=True      
+        return jsonify(result=param)
+
+    def activate_stream_simulation(self, value):
+        state=True if value=='true' else False
+        self.stream_processor.video_stream.activate_real_time_stream_simulation=state     
+        self.stream_processor.video_stream.init_start_time()
+
+        return jsonify(result=value)

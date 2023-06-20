@@ -4,7 +4,7 @@ import random
 import time
 import cv2
 import numpy as np
-from utils_lib.enums import SurveillanceRegionEnum
+from utils_lib.enums import DetectorForTrackEnum
 from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.detection_services.detection_service import IDetectionService
 
@@ -13,11 +13,10 @@ from utils_lib.deep_sort import nn_matching
 from utils_lib.deep_sort.detection import Detection
 from utils_lib.deep_sort.tracker import Tracker
 from _collections import deque
-from utils_lib.deep_sort.tools import generate_detections as gdet
+# from utils_lib.deep_sort.tools import generate_detections as gdet
 
 class TrackingService():
-    track_object_by_background_sub=False
-    track_object_by_cnn_detection=True
+    tracker_detector=DetectorForTrackEnum.CNN_DETECTOR
     # feature_detector = cv2.BRISK_create()
     show_missing_tracks=False
     pts = [deque(maxlen=50) for _ in range(10000)]
@@ -30,7 +29,8 @@ class TrackingService():
     threshold_feature_distance=0.2
     max_distance = 0.7
     feature_extractor_model_file='utils_lib/deep_sort/feature_extractors/mars-small128.pb'
-    encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
+    # encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
+    encoder=None
     colors = {}
     use_cnn_feature_extraction=False
     activate_detection_for_tracking=True
@@ -86,7 +86,8 @@ class TrackingService():
         scores = [raw_data[1] for raw_data  in raw_detection_data]       
         class_names = [raw_data[2] for raw_data  in raw_detection_data]       
         if self.use_cnn_feature_extraction:
-            features = self.encoder(detection_frame, bboxes)
+            # features = self.encoder(detection_frame, bboxes)
+            features = [np.array([]) for _  in bboxes] 
         else:
             features=  [np.array([]) for _  in bboxes] 
 
@@ -101,9 +102,9 @@ class TrackingService():
 
     def getRawDetections(self,origin_frame): 
         if self.activate_detection_for_tracking:
-            if self.track_object_by_cnn_detection==True and self.detection_service !=None and self.detection_service.get_selected_model() !=None:
+            if self.tracker_detector==DetectorForTrackEnum.CNN_DETECTOR and self.detection_service !=None and self.detection_service.get_selected_model() !=None:
                 return  self.detection_service.detect_objects(origin_frame,boxes_plotting=False)
-            if self.track_object_by_background_sub==True and self.background_subtractor_service !=None :
+            if self.tracker_detector==DetectorForTrackEnum.BACKGROUND_SUBTRACTION  and self.background_subtractor_service !=None :
                 return  self.background_subtractor_service.apply(origin_frame,boxes_plotting=False)
         return origin_frame,[]
 

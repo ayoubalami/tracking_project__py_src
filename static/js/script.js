@@ -139,7 +139,7 @@ window.onbeforeunload = function(event){
     }
     
 function initVideoStreamFrame(){
-    var eventSource = new EventSource('/main_video_stream');
+    var eventSource = new EventSource('/main_video_stream?cache=' + Date.now());
     eventSource.onmessage = function(event) {
         main_video_stream_error_count=0
         var result = JSON.parse(event.data);
@@ -363,9 +363,20 @@ function sendStopVideoRequest(){
     });
 }
 
-function onChangeVideoResolution(){
+function onChangeVideoResolutionSlider(){
     var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
     $( "#inputVideoResolution_ValueText" ).text( selectedResolution+" %");
+    $.ajax({
+        type: "POST",
+        url: $SCRIPT_ROOT + '/set_video_resolution/'+selectedResolution,
+        dataType: "json",
+        success: function (data) {
+            console.log(" video_resolution_from_second "+selectedResolution)
+        },
+        error: function (errMsg) {
+            console.log(" ERROR IN video_resolution_from_second")
+        }
+    });  
 }
 
 function onChangeVideoSecondSlider(){

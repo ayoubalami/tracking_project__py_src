@@ -3,7 +3,7 @@
 import json
 import time
 import cv2
-from utils_lib.enums import ClientStreamTypeEnum
+from utils_lib.enums import ProcessingTaskEnum
 import base64
 from servo_motor import ServoMotor
 
@@ -18,7 +18,7 @@ class RaspberryCameraReader :
         from picamera2 import Picamera2, Preview
         from picamera2.encoders import H264Encoder
         self.start_reading_action=False
-        self.current_selected_stream: ClientStreamTypeEnum=ClientStreamTypeEnum.CNN_DETECTOR
+        self.processing_task:ProcessingTaskEnum= ProcessingTaskEnum.CNN_DETECTOR
         self.jpeg_compression_ratio=75
         self.detection_service=detection_service
         self.background_subtractor_service=background_subtractor_service
@@ -94,17 +94,17 @@ class RaspberryCameraReader :
         # copy_frame=copy_frame[:,:,1:4]
         # copy_frame=copy_frame[:,:,:3]
 
-        if self.current_selected_stream== ClientStreamTypeEnum.CNN_DETECTOR:
+        if self.processing_task== ProcessingTaskEnum.CNN_DETECTOR:
             detection_frame,inference_time=self.applyDetection(copy_frame)
             result['detectorStream']=self.encodeStreamingFrame(frame=detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
 
-        elif self.current_selected_stream== ClientStreamTypeEnum.BACKGROUND_SUBTRACTION:
+        elif self.processing_task== ProcessingTaskEnum.BACKGROUND_SUBTRACTION:
             merged_foreground_detection_frame,resized_foreground_detection_frame,raw_mask_frame,inference_time=self.background_subtractor_service.apply(copy_frame)
             result['backgroundSubStream_1']=self.encodeStreamingFrame(frame=raw_mask_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
             # result['backgroundSubStream_2']=self.encodeStreamingFrame(frame=resized_foreground_detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
             result['backgroundSubStream_3']=self.encodeStreamingFrame(frame=merged_foreground_detection_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
 
-        elif self.current_selected_stream== ClientStreamTypeEnum.TRACKING_STREAM:
+        elif self.processing_task== ProcessingTaskEnum.TRACKING_STREAM:
             tracking_frame=self.tracking_service.apply(copy_frame)
             result['trackingStream_1']=self.encodeStreamingFrame(frame=tracking_frame,resize_ratio=1,jpeg_quality=self.jpeg_compression_ratio)
 

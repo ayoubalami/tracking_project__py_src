@@ -105,9 +105,8 @@ def pars_args():
 app=Flask(__name__)
 CORS(app)
 
-detection_service,stream_source,video_src,save_detectors_results,host_server=pars_args()
-app_service=AppService(detection_service=detection_service,stream_source=stream_source,video_src=video_src,save_detectors_results=save_detectors_results,host_server=host_server)
-
+# detection_service,stream_source,video_src,save_detectors_results,host_server=
+app_service=AppService(*pars_args())
 
 @app.route('/')
 def index():
@@ -115,8 +114,11 @@ def index():
 
 @app.route('/main_video_stream')
 def main_video_stream():
-    return app_service.main_video_stream()
-
+    response=app_service.main_video_stream()
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 # @app.route('/current_time', methods = ['GET'])
 # def timer():
@@ -134,7 +136,6 @@ def main_video_stream():
 def stop_stream():
     return app_service.stop_stream()
 
-    
 # <video_resolution_ratio>/<selected_video>
 # def start_stream( selected_video,video_resolution_ratio):
 
@@ -158,7 +159,6 @@ def get_next_frame():
 def get_object_detection_list():
     return app_service.get_object_detection_list()
     
-
 @app.route('/models/load/<model>', methods = ['POST'])
 def load_detection_model(model):
     return app_service.load_detection_model(model=model)
@@ -171,7 +171,6 @@ def load_detection_model(model):
 # def update_nms_threshold_value(nms_threshold):
 #     return app_service.update_nms_threshold_value(nms_threshold=nms_threshold)
 
-
 @app.route('/models/update_cnn_detector_param/<param>/<value>', methods = ['POST'])
 def update_cnn_detector_param(param,value):
     return app_service.update_cnn_detector_param(param=param,value=value)
@@ -180,25 +179,25 @@ def update_cnn_detector_param(param,value):
 def update_background_subtraction_param(param,value):
     return app_service.update_background_subtraction_param(param=param,value=value)
 
-# @app.route('/switch_client_stream/<stream>', methods = ['POST'])
-# def switch_client_stream(stream):
-#     return app_service.switch_client_stream(stream=stream)
+@app.route('/switch_client_stream/<stream>', methods = ['POST'])
+def switch_client_stream(stream):
+    return app_service.switch_client_stream(stream=stream)
 
 @app.route('/reset_stream', methods = ['POST'])
 def reset_stream():
     return app_service.reset_stream() 
 
-# @app.route('/track_with/<param>', methods = ['POST'])
-# def track_with(param):
-#     return app_service.track_with(param=param) 
+@app.route('/track_with/<param>', methods = ['POST'])
+def track_with(param):
+    return app_service.track_with(param=param) 
+
+@app.route('/activate_stream_simulation/<value>', methods = ['POST'])
+def activate_stream_simulation(value):
+    return app_service.activate_stream_simulation(value=value) 
 
 # @app.route('/show_missing_tracks/<value>', methods = ['POST'])
 # def show_missing_tracks(value):
 #     return app_service.show_missing_tracks(value=value) 
-
-# @app.route('/activate_stream_simulation/<value>', methods = ['POST'])
-# def activate_stream_simulation(value):
-    # return app_service.activate_stream_simulation(value=value) 
 
 # @app.route('/use_cnn_feature_extraction_on_tracking/<value>', methods = ['POST'])
 # def use_cnn_feature_extraction_on_tracking(value):
@@ -236,6 +235,10 @@ def set_selected_classes( idx):
 def change_video_file( video_file):
     return app_service.change_video_file(video_file ) 
 
+@app.route('/set_video_resolution/<video_resolution_ratio>', methods = ['POST'])
+def set_video_resolution( video_resolution_ratio):
+    return app_service.set_video_resolution(video_resolution_ratio ) 
+
 # @app.route('/set_video_starting_second/<second>', methods = ['POST'])
 # def set_video_starting_second( second):
 #     print(f" set starting_second to : {second}")
@@ -243,5 +246,3 @@ def change_video_file( video_file):
 
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=7070 ,debug=False,threaded=True)
-
-  
