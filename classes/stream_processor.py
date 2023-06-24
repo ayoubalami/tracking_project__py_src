@@ -2,7 +2,6 @@
 
 # from app_service  import AppService
 import cv2,time,os, numpy as np
-import pyshine as ps
 from classes.detection_services.detection_service import IDetectionService
 from  classes.webcam_reader import WebcamReader
 from  classes.buffer import Buffer
@@ -18,7 +17,6 @@ from utils_lib.enums import  ProcessingTaskEnum
 class StreamProcessor: 
 
     np.random.seed(123)
-
     detection_service :IDetectionService= None
     background_subtractor_service: BackgroundSubtractorService=None
     tracking_service: TrackingService=None
@@ -29,34 +27,54 @@ class StreamProcessor:
     video_resolution_ratio=1
     jpeg_quality=80
     current_fps=0
-    def __init__(self,detection_service,background_subtractor_service,tracking_service,hybrid_tracking_service):
-        self.stream_source=StreamSourceEnum.FILE
-        self.video_stream=VideoStream()
+    def __init__(self,stream_source:StreamSourceEnum,detection_service,background_subtractor_service,tracking_service,hybrid_tracking_service):
+        self.stream_source=stream_source        
+        if self.stream_source==StreamSourceEnum.FILE:
+            self.video_stream=VideoStream(self.stream_source)
+        elif self.stream_source==StreamSourceEnum.WEBCAM:
+            self.webcam_reader = WebcamReader(src="http://10.10.23.14:9000/video")
+     
         self.detection_service=detection_service
         self.background_subtractor_service=background_subtractor_service
         self.tracking_service=tracking_service
         self.hybrid_tracking_service=hybrid_tracking_service
         
     def return_stream(self):
-        result={}
+        if self.stream_source==StreamSourceEnum.FILE:
+            yield from self.return_video_stream()
+        elif self.stream_source==StreamSourceEnum.WEBCAM:
+            yield from self.return_webcam_stream()
+
+    def return_video_stream(self):
         self.start_time=time.perf_counter() 
         for frame in self.video_stream.get_frames():
             if not self.video_stream.stopped or self.video_stream.one_next_frame:
-                original_frame,resized_frame=self.resize_frame(frame)
-                if self.processing_task== ProcessingTaskEnum.RAW_STREAM:
-                    result['detectorStream']=self.encodeStreamingFrame(frame=resized_frame)
-                elif self.processing_task== ProcessingTaskEnum.CNN_DETECTOR:
-                    result= self.process_detection(resized_frame)
-                elif self.processing_task== ProcessingTaskEnum.BACKGROUND_SUBTRACTION:
-                    result= self.process_bs(resized_frame)
-                elif self.processing_task== ProcessingTaskEnum.TRACKING_STREAM:
-                    result= self.process_tracking(resized_frame)
-                elif self.processing_task== ProcessingTaskEnum.HYBRID_TRACKING_STREAM:
-                    result= self.process_hybrid_tracking(resized_frame)
-                self.current_fps=1/(time.perf_counter()-self.start_time+(1e-6)) 
-                self.start_time=time.perf_counter() 
+                result=self.process_frame(frame)
             yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
             
+    def return_webcam_stream(self):
+        self.start_time=time.perf_counter() 
+        while True:
+            ret,frame=self.webcam_reader.read()  
+            result=self.process_frame(frame)
+            yield 'event: message\ndata: ' + json.dumps(result) + '\n\n' 
+
+    def process_frame(self,frame):
+        result={}  
+        if self.processing_task== ProcessingTaskEnum.RAW_STREAM:
+            result['detectorStream']=self.encodeStreamingFrame(frame=frame)
+        elif self.processing_task== ProcessingTaskEnum.CNN_DETECTOR:
+            result= self.process_detection(frame)
+        elif self.processing_task== ProcessingTaskEnum.BACKGROUND_SUBTRACTION:
+            result= self.process_bs(frame)
+        elif self.processing_task== ProcessingTaskEnum.TRACKING_STREAM:
+            result= self.process_tracking(frame)
+        elif self.processing_task== ProcessingTaskEnum.HYBRID_TRACKING_STREAM:
+            result= self.process_hybrid_tracking(frame)
+        self.current_fps=1/(time.perf_counter()-self.start_time+(1e-6)) 
+        self.start_time=time.perf_counter() 
+        return result
+
     def process_detection(self,frame):
         result={}
         if self.detection_service !=None and self.detection_service.get_selected_model() !=None:
@@ -118,3 +136,17 @@ class StreamProcessor:
         self.video_resolution_ratio=1
         self.processing_task=ProcessingTaskEnum.RAW_STREAM
         self.video_stream.reset()
+
+    def start(self,selected_video):
+        if self.stream_source==StreamSourceEnum.FILE:
+            if (self.video_stream.video_file!=selected_video):
+                self.video_stream.video_file=selected_video
+            self.video_stream.start()
+        elif self.stream_source==StreamSourceEnum.WEBCAM:
+            self.webcam_reader = WebcamReader(src="http://10.10.23.14:9000/video")
+    
+    def stop(self):
+        if self.stream_source==StreamSourceEnum.FILE:
+            self.video_stream.stop()
+        elif self.stream_source==StreamSourceEnum.WEBCAM:
+            self.webcam_reader.stop()

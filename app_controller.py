@@ -34,7 +34,7 @@ def pars_args():
     parser.add_argument("-ss", "--stream_source", help = "Select stream source FILE, REMOTE_WEBCAM, RASPBERRY_CAM")
     parser.add_argument("-ds", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
     parser.add_argument("-rr", "--save_detectors_results",  action="store_const", const=True, default=False, help = "save_detectors_results inference fps to results.csv")
-    parser.add_argument("-webcam", "--webcam", help = "webcam ip server ")
+    parser.add_argument("-ws", "--webcam", help = "webcam ip server ")
 
     args = parser.parse_args()
     video_src=file_src

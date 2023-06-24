@@ -12,31 +12,24 @@ class WebcamReader:
                 self.stream = cv2.VideoCapture(src)
             if not self.stream.isOpened():
                 raise Exception("Couldn't open camera {}".format(src))
-
             self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            # self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 400)
-            # self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 600)
-
             (self.grabbed, self.frame) = self.stream.read()
             self.hasNew = self.grabbed
             self.condition = Condition()
+            Thread(target=self.update, args=()).start()
             print("DONE==")
        
     def start(self):
-
-        Thread(target=self.update, args=()).start()
-        return self
+        self.stopped=False
 
     def update(self,):
         while True:
             if self.stopped: return
-            
             (self.grabbed, self.frame) = self.stream.read()
             with self.condition:
                 self.hasNew = True
                 self.condition.notify_all()
             
-
     def read(self):
         try:
             if not self.hasNew:

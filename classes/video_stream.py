@@ -15,7 +15,7 @@ class VideoStream:
 
     def init_params(self):
         self.stopped = True
-        self.cap=cv2.VideoCapture("videos/"+self.video_file)
+       
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.frames_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
@@ -29,7 +29,12 @@ class VideoStream:
         self.frames_to_jump=0
         self.remain_after_frames_jump=0
 
-    def __init__(self): 
+    def __init__(self,stream_source:StreamSourceEnum): 
+        if stream_source==StreamSourceEnum.FILE:
+            self.cap=cv2.VideoCapture("videos/"+self.video_file)   
+        elif stream_source==StreamSourceEnum.WEBCAM:
+            self.cap=cv2.VideoCapture("http://10.10.23.14:9000/video")
+
         self.init_params()
         self.start_thread()
 
@@ -102,7 +107,6 @@ class VideoStream:
                 time.sleep(0.002)
             else:
                 time.sleep(0.03)
-
 
     def stop(self):
         self.stopped = True

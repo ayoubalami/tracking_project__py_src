@@ -40,7 +40,7 @@ class AppService:
         self.background_subtractor_service=BackgroundSubtractorService()
         self.tracking_service=TrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
         self.hybrid_tracking_service=HybridTrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
-        self.stream_processor=StreamProcessor(self.detection_service,self.background_subtractor_service,self.tracking_service,self.hybrid_tracking_service)
+        self.stream_processor=StreamProcessor(self.stream_source,self.detection_service,self.background_subtractor_service,self.tracking_service,self.hybrid_tracking_service)
 
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
@@ -59,7 +59,7 @@ class AppService:
         return render_template('index.html',api_server=self.host_server,stream_source=self.stream_source.name)
          
     def stop_stream(self):
-        self.stream_processor.video_stream.stop()
+        self.stream_processor.stop()
         return jsonify(result='error server in stream stoped')
            
     def reset_stream(self):
@@ -67,9 +67,7 @@ class AppService:
         return jsonify(result='stream reset')
 
     def start_stream(self,selected_video):
-        if (self.stream_processor.video_stream.video_file!=selected_video):
-            self.stream_processor.video_stream.video_file=selected_video
-        self.stream_processor.video_stream.start()
+        self.stream_processor.start(selected_video=selected_video)
         return jsonify(result='stream started')
 
     def one_next_frame(self):
