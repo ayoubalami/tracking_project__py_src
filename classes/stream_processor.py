@@ -134,8 +134,9 @@ class StreamProcessor:
 
     def reset(self):
         self.video_resolution_ratio=1
-        self.processing_task=ProcessingTaskEnum.RAW_STREAM
+        # self.processing_task=ProcessingTaskEnum.RAW_STREAM
         self.video_stream.reset()
+        self.hybrid_tracking_service.reset()
 
     def start(self,selected_video):
         if self.stream_source==StreamSourceEnum.FILE:

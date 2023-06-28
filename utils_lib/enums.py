@@ -28,5 +28,12 @@ class DetectorForTrackEnum(Enum):
 class SurveillanceRegionEnum(Enum):
     DETECTION_REGION = 1
     TRACKING_REGION = 2
-    PRETRACKING_REGION = 3
+    # PRETRACKING_REGION = 3
 
+
+class ObjectStatusEnum(Enum):
+    DETECTED = 1
+    TRACKED = 2
+    MISSED = 3
+    STOPPED = 4
+    EXITED=5
