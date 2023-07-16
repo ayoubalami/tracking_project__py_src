@@ -11,6 +11,7 @@ from classes.background_subtractor_service import BackgroundSubtractorService
 from skimage.metrics import structural_similarity
 import math
 from scipy.optimize import linear_sum_assignment
+from utils_lib.utils_functions import calculate_execution_time
 
 class HybridTrackingService():
     
@@ -71,20 +72,27 @@ class HybridTrackingService():
         self.detection_service=detection_service
         pass
     
+    # @calculate_execution_time
     def apply(self,frame): 
-        self.start_time=time.perf_counter()
+        self.start_time = time.perf_counter()
+        tracking_start_time=time.perf_counter()
+
+        self.cnn_time=0
         if not self.is_region_initialization_done:
             self.frame_shape=frame.shape
             self.init_regions()
             self.is_region_initialization_done=True
 
-        resized_frame  ,raw_detection_data=self.background_subtractor_service.apply(frame=frame,boxes_plotting=False,video_resolution_ratio=0.5)
+        # bs_start_time=time.perf_counter()
+        resized_frame  ,raw_detection_data=self.background_subtractor_service.apply(frame=frame,boxes_plotting=False)
+        # bs_time=time.perf_counter()-bs_start_time
+
         original_frame=resized_frame.copy()
         self.current_frame=resized_frame
 
-        detection_region , tracking_region=self.divide_draw_frame(resized_frame)
-        self.process_detection_region(original_frame,resized_frame,raw_detection_data,detection_region)
-        self.process_tracking_region(original_frame,resized_frame,raw_detection_data,tracking_region)
+        # 
+        self.process_detection_region(original_frame,resized_frame,raw_detection_data)
+        self.process_tracking_region(original_frame,resized_frame,raw_detection_data)
         self.remove_exited_vehicles()
 
         self.draw_vehicle_bboxes(resized_frame)
@@ -92,17 +100,43 @@ class HybridTrackingService():
 
         if self.debug_mode:
             resized_frame=self.add_debug_surveillance_section(original_frame,resized_frame)
+            detection_region , tracking_region=self.divide_draw_frame(resized_frame)
             self.debug_results(resized_frame,detection_region,tracking_region)
 
-        detection_time=round(time.perf_counter()-self.start_time,3)
-        if round(time.perf_counter()-self.start_time,3)>0:
-            detection_fps=1/round(time.perf_counter()-self.start_time,3)
-        else :
-            detection_fps=0
-        self.addTrackingAndDetectionTimeAndFPS(resized_frame,detection_time,detection_fps)
-        
-        # return foreground_detection_frame, 0 #inference_time
+        process_time=time.perf_counter()-tracking_start_time
+        self.addTrackingAndDetectionTimeAndFPS(resized_frame,process_time)
+        # process_time=time.perf_counter()-tracking_start_time
+
+        # if self.cnn_time>0:
+        #     self.dataTimePrepros.append(process_time-bs_time-self.cnn_time)
+        #     self.dataTimeCNN.append(self.cnn_time)
+        #     self.dataTimeBS.append(bs_time)
+        #     self.dataTimeTrack.append(process_time)
+
+        #     if len(self.dataTimePrepros)>0:
+        #         print(f"Moyen Propressing_time :{sum(self.dataTimePrepros)/len(self.dataTimePrepros)} / {len(self.dataTimePrepros)}")
+        #         print(f"Moyen dataTimeCNN :{sum(self.dataTimeCNN)/len(self.dataTimeCNN)} / {len(self.dataTimeCNN)} ")
+        #         print(f"Moyen BS_time :{sum(self.dataTimeBS)/len(self.dataTimeBS)} / {len(self.dataTimeBS)}")
+        #         print(f"Moyen Tracking_time :{sum(self.dataTimeTrack)/len(self.dataTimeTrack)} / {len(self.dataTimeTrack)}")
+        #         print(f"_____________")
+
+        # if self.cnn_time==0:
+        #     self.dataTimePrepros.append(process_time-bs_time)
+        #     self.dataTimeBS.append(bs_time)
+        #     self.dataTimeTrack.append(process_time)
+        #     if len(self.dataTimePrepros)>0:
+        #         print(f"Moyen Propressing_time :{sum(self.dataTimePrepros)/len(self.dataTimePrepros)} / {len(self.dataTimePrepros)}")
+        #         print(f"Moyen BS_time :{sum(self.dataTimeBS)/len(self.dataTimeBS)} / {len(self.dataTimeBS)}")
+        #         print(f"Moyen Tracking_time :{sum(self.dataTimeTrack)/len(self.dataTimeTrack)} / {len(self.dataTimeTrack)}")
+        #         print(f"_____________")
+
         return resized_frame #inference_time
+
+
+    dataTimePrepros=[]
+    dataTimeTrack=[]
+    dataTimeBS=[]
+    dataTimeCNN=[]
 
     def divide_draw_frame(self,frame):
         detection_region= frame[self.detection_y_start_position:self.detection_y_end_position, self.detection_x_start_position:self.detection_x_end_position]
@@ -180,23 +214,33 @@ class HybridTrackingService():
                 cv2.putText(cnn_section, "ID : "+str(cnn_object['id']), ((offset ) , ( bbox_h) + 44), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (250,125,50), 2)
                 cv2.putText(cnn_section, str(cnn_object['status'].name), ((offset ) , ( bbox_h) + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (250,125,150), 2)
                 cv2.putText(cnn_section, str(format(cnn_object['speed'][0], ".2f")+" ; "+format(cnn_object['speed'][1], ".2f")), ((offset ) , ( bbox_h) + 78), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,125,150), 2)
-                
                 offset+=bbox_w+35
-
+    
+    cnn_time=0
     def detect_ROI_with_CNN(self,object): 
         if self.detection_service !=None and self.detection_service.get_selected_model() !=None:
             self.cnn_inference_count+=1
-            print(f"CNN  inference_count : {self.cnn_inference_count}" )
-            return  self.detection_service.detect_objects(object,boxes_plotting=False)[1]
+            # print(f"CNN  inference_count : {self.cnn_inference_count}" )
+            cnn_start_time=time.perf_counter()
+            detection_results=  self.detection_service.detect_objects(object,boxes_plotting=False)[1]
+            self.cnn_time=time.perf_counter()-cnn_start_time
+            # print(f"cnn_time : {self.cnn_time}")
+            # self.dataTimeCNN.append( self.cnn_time)
+
+            return detection_results
         return []
     
-    def addTrackingAndDetectionTimeAndFPS(self,img,detection_time,detection_fps):
+    
+    def addTrackingAndDetectionTimeAndFPS(self,img,process_time):
         width=img.shape[1]
-        cv2.rectangle(img,(int(width-195),10),(int(width-10),85),color=(240,240,240),thickness=-1)
-        cv2.putText(img, f'FPS: {round(detection_fps,2)}', (int(width-190),30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (25,25,250), 2)
-        cv2.putText(img, f'Det. time: {round(detection_time*1000)}ms', (int(width-190),52), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
+        if process_time>0:
+            process_fps=1/process_time
+        else :
+            process_fps=0
+        cv2.rectangle(img,(int(width-205),10),(int(width-10),85),color=(240,240,240),thickness=-1)
+        cv2.putText(img, f'FPS: {round(process_fps,2)}', (int(width-200),30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (25,25,250), 2)
+        cv2.putText(img, f'process dT: {round(process_time*1000)}ms', (int(width-200),52), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
         # cv2.putText(img, f'Tra. time: {round(tracking_time*1000)}ms', (int(width-190),73), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (250,25,25), 2)
-
 
     def reset(self):
         self.DVR=[]
@@ -209,6 +253,12 @@ class HybridTrackingService():
         self.current_detected_objects=[]
         self.center_pts= [deque(maxlen=self.max_point) for _ in range(1000)]
         self.colors=[(255,255,255) for _ in range(1000)]
+        self.background_subtractor_service.reset()
+
+        self.dataTimePrepros=[]
+        self.dataTimeCNN=[]
+        self.dataTimeBS=[]
+        self.dataTimeTrack=[]
    
     def generateRandomTrackedColor(self):
         hue = random.random()
@@ -246,7 +296,7 @@ class HybridTrackingService():
 
 ######################################################
     
-    def process_tracking_region(self,original_frame,frame,raw_detection_data,tracking_region):     
+    def process_tracking_region(self,original_frame,frame,raw_detection_data):     
         self.current_tracked_objects=[]
         id=-1
         for dd in raw_detection_data:
@@ -265,7 +315,7 @@ class HybridTrackingService():
         self.assigne_tracked_objects()
 
 
-    def process_detection_region(self,original_frame,frame,raw_detection_data,detection_region):        
+    def process_detection_region(self,original_frame,frame,raw_detection_data):        
         self.objects_in_detection_region=[]
         self.current_detected_objects=[]
         some_blobs_founded_in_detection_zone=False

@@ -11,6 +11,7 @@ class IDetectionService:
     colors_list=[]
     threshold=0.5
     nms_threshold=0.5
+    CNN_video_resolution_ratio=1
 
     def init_selected_model(self):
         self.selected_model=None
@@ -37,6 +38,7 @@ class IDetectionService:
         return self.detection_method_list 
 
     def addFrameFps(self,img,detection_fps):
+        # pass
         width=img.shape[1] 
         cv2.putText(img, f'FPS: {round(detection_fps,2)}', (int(width/2)-20,50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255,25,50), 2)
         # cv2.putText(img, f'FPS: {round(detection_fps,2)}', (20,50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255,25,50), 2)
@@ -67,3 +69,9 @@ class IDetectionService:
         if len(allowed_condidats)>0:
             return allowed_condidats
         return None
+
+    def resize_frame(self,frame):
+        img_height,img_width = frame.shape[:2] 
+        if self.CNN_video_resolution_ratio<1:
+            return cv2.resize(frame, (int(img_width*self.CNN_video_resolution_ratio) ,int(img_height*self.CNN_video_resolution_ratio) ))
+        return frame

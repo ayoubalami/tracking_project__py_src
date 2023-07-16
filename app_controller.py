@@ -235,9 +235,13 @@ def set_selected_classes( idx):
 def change_video_file( video_file):
     return app_service.change_video_file(video_file ) 
 
-@app.route('/set_video_resolution/<video_resolution_ratio>', methods = ['POST'])
-def set_video_resolution( video_resolution_ratio):
-    return app_service.set_video_resolution(video_resolution_ratio ) 
+@app.route('/BS_set_video_resolution/<video_resolution_ratio>', methods = ['POST'])
+def BS_set_video_resolution( video_resolution_ratio):
+    return app_service.BS_set_video_resolution(video_resolution_ratio ) 
+
+@app.route('/CNN_set_video_resolution/<video_resolution_ratio>', methods = ['POST'])
+def CNN_set_video_resolution( video_resolution_ratio):
+    return app_service.CNN_set_video_resolution(video_resolution_ratio ) 
 
 # @app.route('/set_video_starting_second/<second>', methods = ['POST'])
 # def set_video_starting_second( second):

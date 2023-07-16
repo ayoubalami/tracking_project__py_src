@@ -104,11 +104,11 @@ class StreamProcessor:
         result['hybridTrackingStream_1']=self.encodeStreamingFrame(frame=hybrid_tracking_frame)
         return result
 
-    def resize_frame(self,frame):
-        if self.video_resolution_ratio!=1:
-            resized_frame=cv2.resize(frame.copy(), (int(self.video_stream.width*self.video_resolution_ratio) ,int(self.video_stream.height*self.video_resolution_ratio) ))
-            return frame,resized_frame
-        return frame,frame
+    # def resize_frame(self,frame):
+    #     if self.video_resolution_ratio!=1:
+    #         resized_frame=cv2.resize(frame.copy(), (int(self.video_stream.width*self.video_resolution_ratio) ,int(self.video_stream.height*self.video_resolution_ratio) ))
+    #         return frame,resized_frame
+    #     return frame,frame
 
     def encodeStreamingFrame(self,frame):
         resized_frame=frame
@@ -128,9 +128,10 @@ class StreamProcessor:
             cv2.putText(frame,time, ((int)(20*self.video_resolution_ratio), (int)(60*self.video_resolution_ratio)), cv2.FONT_HERSHEY_SIMPLEX, (float)(1.4*self.video_resolution_ratio), (255,255,250),  (2), cv2.LINE_AA)
 
     def add_fps(self,frame): 
-        if self.current_fps !=0 and self.stream_source==StreamSourceEnum.FILE :
-            fps=str("FPS : {:02.1f}".format(self.current_fps))
-            cv2.putText(frame,fps, ((int)(self.video_stream.width*self.video_resolution_ratio/2 -(100*self.video_resolution_ratio)), (int)(100*self.video_resolution_ratio)), cv2.FONT_HERSHEY_SIMPLEX, (float)(1.4*self.video_resolution_ratio), (255,55,50),  (2), cv2.LINE_AA)
+        pass
+        # if self.current_fps !=0 and self.stream_source==StreamSourceEnum.FILE  and self.processing_task!= ProcessingTaskEnum.RAW_STREAM:
+        #     fps=str("FPS : {:02.1f}".format(self.current_fps))
+        #     cv2.putText(frame,fps, ((int)(self.video_stream.width*self.video_resolution_ratio/2 -(100*self.video_resolution_ratio)), (int)(50*self.video_resolution_ratio)), cv2.FONT_HERSHEY_SIMPLEX, (float)(1.2*self.video_resolution_ratio), (255,55,50),  (2), cv2.LINE_AA)
 
     def reset(self):
         self.video_resolution_ratio=1

@@ -75,25 +75,26 @@
               <option value="highway12.mp4" title="">highway12.mp4</option>
             </select>
           </div>
-          <div class="col-md-8 ">
-               <div class="d-flex" style="align-items: baseline;">
-                <h5 class="me-3" style="align-self: cente">Select Video Resolution : </h5>
+          <div class="col-md-4 ">
+              <div class="d-flex" style="align-items: baseline;">
+                <h5 class="me-3" style="align-self: cente">BS Select Video Resolution : </h5>
                 <code>
-                  <h4 id="inputVideoResolution_ValueText"> 100 %</h4>
+                  <h4 id="BSinputVideoResolution_ValueText"> 100 %</h4>
                 </code>
               </div>
-              <input type="range" onchange="onChangeVideoResolutionSlider()"  min="25" max="100" value="100" step="5"
-                class="slider " id="inputVideoResolution_slider">
-             <!-- <label for="inputVideoResolution">Select Video Resolution</label>
-            <select id="inputVideoResolution" class="form-select" aria-label="select video">
-              <option selected="selected" value="1" title="">Default Resolution</option>
-              <option value="0.90" title="">75 % </option>
-              <option value="0.80" title="">75 % </option>
-              <option value="0.5" title="">50 % </option>
-              <option value="0.25" title="">25 % </option>
-            
-            </select> -->
+              <input type="range" onchange="onChangeVideoResolutionSlider('BS')"  min="25" max="100" value="100" step="5"
+                class="video_size_slider" id="BSinputVideoResolution_slider">
           </div>
+          <div class="col-md-4 ">
+            <div class="d-flex" style="align-items: baseline;">
+              <h5 class="me-3" style="align-self: cente">CNN Select Video Resolution : </h5>
+              <code>
+                <h4 id="CNNinputVideoResolution_ValueText"> 100 %</h4>
+              </code>
+            </div>
+            <input type="range" onchange="onChangeVideoResolutionSlider('CNN')"  min="25" max="100" value="100" step="5"
+              class="video_size_slider" id="CNNinputVideoResolution_slider">
+        </div>
       </div>
         
       <div class="row gx-5 px-4 pb-4">

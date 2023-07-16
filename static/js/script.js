@@ -363,12 +363,24 @@ function sendStopVideoRequest(){
     });
 }
 
-function onChangeVideoResolutionSlider(){
-    var selectedResolution= $( "#inputVideoResolution_slider" )[0].value;
-    $( "#inputVideoResolution_ValueText" ).text( selectedResolution+" %");
+function onChangeVideoResolutionSlider(detector_service){
+
+    sliderName=''
+    inputValueName=''
+    if (detector_service=='BS'){
+        sliderName='#BSinputVideoResolution_slider'
+        inputValueName='#BSinputVideoResolution_ValueText'
+    }
+    if  (detector_service=='CNN'){
+        sliderName='#CNNinputVideoResolution_slider'
+        inputValueName='#CNNinputVideoResolution_ValueText'
+    }
+
+    var selectedResolution= $( sliderName )[0].value;
+    $( inputValueName).text( selectedResolution+" %");
     $.ajax({
         type: "POST",
-        url: $SCRIPT_ROOT + '/set_video_resolution/'+selectedResolution,
+        url: $SCRIPT_ROOT + '/'+detector_service+'_set_video_resolution/'+selectedResolution,
         dataType: "json",
         success: function (data) {
             console.log(" video_resolution_from_second "+selectedResolution)

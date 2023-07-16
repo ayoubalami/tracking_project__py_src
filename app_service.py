@@ -170,10 +170,16 @@ class AppService:
         self.stream_processor.video_stream.change_video_file(video_file)
         return jsonify(result="video changed")
 
-    def set_video_resolution(self,video_resolution_ratio):
-        self.stream_processor.video_resolution_ratio=(float)(video_resolution_ratio)/100
-        print(self.stream_processor.video_resolution_ratio)
-        return jsonify(result="video_resolution_ratio changed")
+    def BS_set_video_resolution(self,BS_video_resolution_ratio):
+        self.background_subtractor_service.BS_video_resolution_ratio=(float)(BS_video_resolution_ratio)/100
+        print(self.background_subtractor_service.BS_video_resolution_ratio)
+        return jsonify(result="BSvideo_resolution_ratio changed")
+
+    def CNN_set_video_resolution(self,CNN_video_resolution_ratio):
+        self.detection_service.CNN_video_resolution_ratio=(float)(CNN_video_resolution_ratio)/100
+        print(self.detection_service.CNN_video_resolution_ratio)
+        return jsonify(result="CNNvideo_resolution_ratio changed")
+
 
     def switch_client_stream(self, stream):
         if self.stream_processor!=None:

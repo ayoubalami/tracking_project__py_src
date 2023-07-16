@@ -104,10 +104,11 @@ class OpencvDetectionService(IDetectionService):
             self.default_model_input_size=self.network_input_size
             print("UPDATE YOLO NETWORK INPUT SIZE ... ")
             self.model.setInputParams(size=(self.default_model_input_size, self.default_model_input_size), scale=1/255, swapRB=True)
-             
+            
+        frame=self.resize_frame(frame)
+        inference_start_time= time.perf_counter()
         classIdx,confidences,bboxs= self.model.detect(frame,confThreshold=self.threshold)
-
-        inference_time=np.round(time.perf_counter()-start_time,3)
+        inference_time=np.round(time.perf_counter()-inference_start_time,4)
         bboxs=list(bboxs)
         confidences=list(confidences)
         classIdx=list(classIdx)
@@ -127,24 +128,29 @@ class OpencvDetectionService(IDetectionService):
         bboxs,confidences,classIdx=list(zip(*allowed_condidats))
         bboxIdx=cv2.dnn.NMSBoxes(bboxs,confidences,score_threshold=self.threshold,nms_threshold=self.nms_threshold)
         if len(bboxIdx) !=0 :
-            for i in range (len(bboxIdx)):
-                x,y,w,h=bboxs[bboxIdx[i]]
-                classConfidence = confidences[bboxIdx[i]]
-                classLabelID=classIdx[bboxIdx[i]]
-                classLabel = self.classesList[classLabelID]
-                classColor  = self.colors_list[classLabelID]
-                displayText = '{}: {:.2f}'.format(classLabel, classConfidence)
-                if boxes_plotting :
+            if boxes_plotting:
+                for i in range (len(bboxIdx)):
+                    x,y,w,h=bboxs[bboxIdx[i]]
+                    classConfidence = confidences[bboxIdx[i]]
+                    classLabelID=classIdx[bboxIdx[i]]
+                    classLabel = self.classesList[classLabelID]
+                    classColor  = self.colors_list[classLabelID]
+                    displayText = '{}: {:.2f}'.format(classLabel, classConfidence)
                     cv2.rectangle(frame,(x,y),(x+w,y+h),color=classColor,thickness=2)
                     cv2.putText(frame, displayText, (x, y - 10), cv2.FONT_HERSHEY_PLAIN, 1, classColor, 2)
-                else:
+               
+                fps = 1 / np.round(time.perf_counter()-start_time,4)
+                self.addFrameFps(frame,fps)
+                return frame,inference_time
+            else:
+                for i in range (len(bboxIdx)):
+                    x,y,w,h=bboxs[bboxIdx[i]]
+                    classConfidence = confidences[bboxIdx[i]]
+                    classLabelID=classIdx[bboxIdx[i]]
+                    classLabel = self.classesList[classLabelID]
                     raw_detection_data.append(([x, y, w, h],classConfidence,classLabel))
-        if boxes_plotting :
-            fps = 1 / np.round(time.perf_counter()-start_time,3)
-            self.addFrameFps(frame,fps)
-            return frame,inference_time
-        else:
-            return frame,raw_detection_data
+                return frame,raw_detection_data
+    
 
 
       
