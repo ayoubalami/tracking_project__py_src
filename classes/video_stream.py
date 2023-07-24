@@ -12,6 +12,8 @@ class VideoStream:
     frames_Q = Queue(maxsize=128)
     interrepted_stream=True
     activate_real_time_stream_simulation=True
+    starting_second=0
+    stop_cv2reader=False
 
     def init_params(self):
         self.stopped = True
@@ -87,7 +89,7 @@ class VideoStream:
 
     def update(self):
         while True:            
-            if not self.frames_Q.full():
+            if not self.frames_Q.full() and not self.stop_cv2reader:
                 (grabbed, frame) = self.cap.read()
                 # print(self.frames_Q.qsize())
                 if not grabbed :
@@ -96,7 +98,7 @@ class VideoStream:
                     time.sleep(0.01)
                 self.frames_Q.put(frame)
             
-            if len(self.first_frame)==0:
+            if len(self.first_frame)==0 and not self.stop_cv2reader:
                 (grabbed, frame) = self.cap.read()
                 if grabbed :
                     print("set FIRST FRAME")
@@ -104,7 +106,7 @@ class VideoStream:
 
             # read from video quickly if its size is under 4 
             if self.frames_Q.qsize()<4:
-                time.sleep(0.002)
+                time.sleep(0.003)
             else:
                 time.sleep(0.03)
 
@@ -135,6 +137,20 @@ class VideoStream:
         # self.capture_first_frame=True
         self.current_video_time=0
         self.one_next_frame=True
+
+    def set_starting_second(self,second):
+        self.stop_cv2reader=True
+        # self.stopped = True
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, second*self.fps)
+        new_queue=Queue(maxsize=128)
+        (grabbed, frame) = self.cap.read()
+        if grabbed:
+            new_queue.put(frame)
+        self.frames_Q=new_queue
+        self.current_video_time=second
+        self.one_next_frame=True
+        self.stop_cv2reader=False
+
 
     def change_video_file(self,video_file):
         if self.video_file!=video_file:

@@ -243,10 +243,10 @@ def BS_set_video_resolution( video_resolution_ratio):
 def CNN_set_video_resolution( video_resolution_ratio):
     return app_service.CNN_set_video_resolution(video_resolution_ratio ) 
 
-# @app.route('/set_video_starting_second/<second>', methods = ['POST'])
-# def set_video_starting_second( second):
-#     print(f" set starting_second to : {second}")
-#     return app_service.reset_buffer_starting_second(starting_second= int(second) ) 
+@app.route('/set_video_starting_second/<second>', methods = ['POST'])
+def set_video_starting_second( second):
+    print(f" set starting_second to : {second}")
+    return app_service.set_video_starting_second( int(second) ) 
 
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=7070 ,debug=False,threaded=True)

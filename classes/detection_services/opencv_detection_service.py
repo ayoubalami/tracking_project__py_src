@@ -142,14 +142,14 @@ class OpencvDetectionService(IDetectionService):
                 fps = 1 / np.round(time.perf_counter()-start_time,4)
                 self.addFrameFps(frame,fps)
                 return frame,inference_time
-            else:
-                for i in range (len(bboxIdx)):
-                    x,y,w,h=bboxs[bboxIdx[i]]
-                    classConfidence = confidences[bboxIdx[i]]
-                    classLabelID=classIdx[bboxIdx[i]]
-                    classLabel = self.classesList[classLabelID]
-                    raw_detection_data.append(([x, y, w, h],classConfidence,classLabel))
-                return frame,raw_detection_data
+            # else:
+            for i in range (len(bboxIdx)):
+                x,y,w,h=bboxs[bboxIdx[i]]
+                classConfidence = confidences[bboxIdx[i]]
+                classLabelID=classIdx[bboxIdx[i]]
+                classLabel = self.classesList[classLabelID]
+                raw_detection_data.append(([x, y, w, h],classConfidence,classLabel))
+            return frame,raw_detection_data
     
 
 

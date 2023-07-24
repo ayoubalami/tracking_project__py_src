@@ -221,3 +221,7 @@ class AppService:
         self.stream_processor.video_stream.init_start_time()
 
         return jsonify(result=value)
+
+    def set_video_starting_second(self,second):
+        self.stream_processor.video_stream.set_starting_second(second)
+        return jsonify(result=second)

@@ -15,7 +15,7 @@ class BackgroundSubtractorService():
         self.deviation=0
         self.max_fps=0
         self.min_fps=1000
-        self.BS_video_resolution_ratio=1
+        self.BS_video_resolution_ratio=0.5
         self.respective_expention_ration=None
 
     # def init_perspective_expention_scale(self,img_height,BS_video_resolution_ratio):
@@ -33,7 +33,7 @@ class BackgroundSubtractorService():
     def reset(self):
         self.max_fps=0
         self.min_fps=1000
-        self.BS_video_resolution_ratio=1
+        self.BS_video_resolution_ratio=0.5
 
     def apply(self,frame,boxes_plotting=True): 
         img_height,img_width = frame.shape[:2] 
@@ -57,6 +57,15 @@ class BackgroundSubtractorService():
             mask_frame = cv2.morphologyEx( mask_frame, cv2.MORPH_DILATE, kernel, iterations=self.morphological_ex_iteration)
         contours, _ = cv2.findContours(mask_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)        
         raw_detection_data=[]
+       
+        if boxes_plotting == False:
+            for contour in contours:
+                (x, y, w, h) = cv2.boundingRect(contour)
+                if cv2.contourArea(contour) > self.min_box_size:
+                    raw_detection_data.append((self.normalizedBBox([x, y, w, h],self.BS_video_resolution_ratio),1,'OBJ'))
+            return frame,raw_detection_data      
+        
+        #else
         for contour in contours:
             (x, y, w, h) = cv2.boundingRect(contour)
             if cv2.contourArea(contour) > self.min_box_size:
@@ -67,28 +76,22 @@ class BackgroundSubtractorService():
                     cv2.rectangle(mask_frame, (x, y), (x + w, y + h), 2**16-1, int(2*self.BS_video_resolution_ratio))
                     self.drawForegroundObjectBBoxes(frame=resized_frame,xywh=(x, y, w, h))
                     self.drawForegroundObjectBBoxes(frame=frame,xywh=(x, y, w, h),readapt_bbox=True)
-        if boxes_plotting:
-            fps=1/round(time.perf_counter()-start_time,3)
-            if fps>self.max_fps:
-                self.max_fps=fps
-            if fps<self.min_fps:
-                self.min_fps=fps
-            self.addFrameFps(resized_frame,fps)
-            self.addFrameFps(frame,fps)
-            return frame,resized_frame,mask_frame, fps
-        else:
-            return frame,raw_detection_data
-
+    
+        fps=1/round(time.perf_counter()-start_time,3)
+        if fps>self.max_fps:
+            self.max_fps=fps
+        if fps<self.min_fps:
+            self.min_fps=fps
+        self.addFrameFps(resized_frame,fps)
+        self.addFrameFps(frame,fps)
+        return frame,resized_frame,mask_frame, fps
+        
     def normalizedBBox(self, xywh,BS_video_resolution_ratio):
         if BS_video_resolution_ratio==1:
             return xywh
         [x,y,w,h]=xywh
-        x=int(x/BS_video_resolution_ratio)
-        y=int(y/BS_video_resolution_ratio)
-        w=int(w/BS_video_resolution_ratio)
-        h=int(h/BS_video_resolution_ratio)
-        return [x,y,w,h]
-          
+        return [int(x/BS_video_resolution_ratio),int(y/BS_video_resolution_ratio),int(w/BS_video_resolution_ratio),int(h/BS_video_resolution_ratio)]
+ 
     def drawForegroundObjectBBoxes(self,frame,xywh,readapt_bbox=False):
         (x,y,w,h)=xywh
         if readapt_bbox:
