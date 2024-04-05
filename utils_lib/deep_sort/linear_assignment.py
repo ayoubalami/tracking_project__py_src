@@ -51,16 +51,21 @@ def min_cost_matching(
 
     if len(detection_indices) == 0 or len(track_indices) == 0:
         return [], track_indices, detection_indices  # Nothing to match.
-
-    # print("--------")
+ 
     cost_matrix = distance_metric(
         tracks, detections, track_indices, detection_indices)
+    
+    # print("STEP 2 =>>")
     # print(cost_matrix)
-    cost_matrix[cost_matrix > max_distance] = max_distance + 1e-5
-    # print(max_distance)
-    # print(cost_matrix)
-    # print("*********")
 
+    max_distance=0.6    
+    cost_matrix[cost_matrix > max_distance] = max_distance + 1e-5
+    # print("STEP 3 =>>")
+    # print(cost_matrix)
+    # print(">>>>>>>>>>>>>>>>>>>>>")
+    # print("====================")
+
+  
     indices = linear_sum_assignment(cost_matrix)
     indices = np.asarray(indices)
     indices = np.transpose(indices)
@@ -138,6 +143,7 @@ def matching_cascade(
         ]
         if len(track_indices_l) == 0:  # Nothing to match at this level
             continue
+ 
 
         matches_l, _, unmatched_detections = \
             min_cost_matching(
@@ -194,4 +200,5 @@ def gate_cost_matrix(
         gating_distance = kf.gating_distance(
             track.mean, track.covariance, measurements, only_position)
         cost_matrix[row, gating_distance > gating_threshold] = gated_cost
+
     return cost_matrix

@@ -1,5 +1,6 @@
 
 import colorsys
+from csv import writer
 import random
 import time
 import cv2
@@ -13,31 +14,34 @@ from utils_lib.deep_sort import nn_matching
 from utils_lib.deep_sort.detection import Detection
 from utils_lib.deep_sort.tracker import Tracker
 from _collections import deque
-# from utils_lib.deep_sort.tools import generate_detections as gdet
+from utils_lib.deep_sort.tools import generate_detections as gdet
 
 class TrackingService():
+    YOLO_FEATURE_EXTRACTOR=False
     tracker_detector=DetectorForTrackEnum.CNN_DETECTOR
     # feature_detector = cv2.BRISK_create()
     show_missing_tracks=False
-    pts = [deque(maxlen=50) for _ in range(10000)]
+    pts = [deque(maxlen=100) for _ in range(5000)]
     background_subtractor_service:BackgroundSubtractorService=None    
     detection_service:IDetectionService=None    
-    d_start,d_height,tr_start,tr_height= 200,100,300,500
+    # d_start,d_height,tr_start,tr_height= 200,100,300,500
     is_region_initialization_done=False   
-    n_init=3
-    max_age=30
+    n_init=5
+    max_age=8
     threshold_feature_distance=0.2
     max_distance = 0.7
     feature_extractor_model_file='utils_lib/deep_sort/feature_extractors/mars-small128.pb'
-    # encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=1)
-    encoder=None
+    encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=8)
+    # encoder=None
     colors = {}
-    use_cnn_feature_extraction=False
     activate_detection_for_tracking=True
     mouse_tracked_coordinates=None
     raspberry_camera=None
     activate_camera_tracking=True
     frame_size=None
+
+    use_cnn_feature_extraction=True
+
     # to rasp
     # tracked_object=None
 
@@ -46,31 +50,40 @@ class TrackingService():
         self.detection_service=detection_service
         nn_budget = None
         # nms_max_overlap = 0.8
-        # euclidean
+        # euclidean cosine
         self.metric = nn_matching.NearestNeighborDistanceMetric('cosine', self.threshold_feature_distance, nn_budget)
-        self.tracker = Tracker(self.metric,max_iou_distance=self.max_distance, max_age=self.max_age, n_init=self.n_init)
+        self.tracker = Tracker(self.metric,max_iou_distance=self.max_distance, max_age=self.max_age, n_init=self.n_init,use_cnn_feature_extraction=self.use_cnn_feature_extraction)
+         
 
     def apply(self,frame): 
-        start_time=time.perf_counter()
+
         self.frame_size=frame.shape
-        # width=frame.shape[1]
-        # heigth=frame.shape[0]
-        # # cv2.rectangle(frame, (int(width/2)-100, 50), (int(width/2)+100, heigth), (0,0,0), -1)
-        # cv2.rectangle(frame, (0, 0), (int(width), heigth), (255,255,255), -1)
-        # frame=cv2.resize(frame,(int(width/16),int(heigth/16)))
-        detection_frame  ,raw_detection_data=self.getRawDetections(frame)
+        start_time=time.perf_counter()
+        detection_data=self.getRawDetections(frame)
         detection_time=round(time.perf_counter()-start_time,3)
-        
+
+        # FOR TRACKING METHOD FOR OTHER DETECTION SERVICES OTHER THAN OPTIMIZED TOrCH
         tracking_time=time.perf_counter()
-        self.trackAndDrawBox(detection_frame,raw_detection_data)
+        if len(detection_data)==2:
+            detection_frame  ,raw_detection_data=detection_data
+            self.trackAndDrawBox(detection_frame,raw_detection_data)
+        else:
+            detection_frame,detected_objects,classesList=detection_data
+            processTime,detected_objects_=self.optimized_trackAndDrawBox(detection_frame,detected_objects,classesList)
+            self.process_times.append(processTime)
+        
         tracking_time=round(time.perf_counter()-tracking_time,4)
+
+        if detected_objects_>0:
+            csv_file = "results_tracktime_"+ time.perf_counter+".csv"
+            with open(csv_file, 'a') as csvfile:
+                writer(csvfile).writerow([tracking_time,detected_objects_])
 
         if round(time.perf_counter()-start_time,3)>0:
             tracking_fps=1/round(time.perf_counter()-start_time,3)
         else :
             tracking_fps=0
             
-
         if self.activate_camera_tracking and self.raspberry_camera :
             self.drawCenterLinesTarget(frame)
         #     self.raspberry_camera.tracked_object=self.returnSelectedTrackedObject(frame)
@@ -79,24 +92,70 @@ class TrackingService():
         #     print("raspberry_camera GO AFTER TRACKED : " +str(self.raspberry_camera.tracked_object.track_id)+" - "+self.raspberry_camera.tracked_object.to_tlwh())
 
         self.addTrackingAndDetectionTimeAndFPS(detection_frame,detection_time,tracking_time,tracking_fps)
+
+  
+
         return detection_frame
 
+    process_times=[]
+    def optimized_trackAndDrawBox(self,frame,detected_objects,classesList):
+        
+        start_time=time.perf_counter() 
+        bboxes=[]  
+        scores=[]
+        class_names=[]
+        H , W=frame.shape[:2]
+        x_ratio=self.detection_service.network_input_size/W
+        y_ratio=self.detection_service.network_input_size/H
+        for i  in range(len(detected_objects)):
+            if len(detected_objects[i])==0:
+                continue
+            anchor,_ = detected_objects[i][0]
+            x,y,w,h=anchor[1:5]
+            classConfidence = anchor[5]
+            classLabel = classesList[np.argmax(anchor[6:])]
+            w=(int)(w/x_ratio)
+            h=(int)(h/y_ratio)
+            x=(int)(x/x_ratio-w/2)
+            y=(int)(y/y_ratio-h/2)
+  
+            bboxes.append(np.array([x,y,w,h]))
+            scores.append(classConfidence)
+            class_names.append(classLabel)
+
+        if self.use_cnn_feature_extraction:
+            features = self.encoder(frame, bboxes)
+            # features = [np.array([]) for _  in bboxes] 
+            tracking_detections = [Detection(bbox, score, class_name, feature=feature) for bbox, score, class_name, feature in
+                  zip(bboxes, scores, class_names, features)]
+        else:
+            tracking_detections = [Detection(bbox, score, class_name,object_data=object_data) for bbox, score, class_name,  object_data in
+                zip(bboxes, scores, class_names, detected_objects)]
+
+        self.tracker.update(tracking_detections)
+
+        self.tracker.predict()  
+        tracking_time=time.perf_counter()-start_time
+
+        self.drawTrackedBBoxes(frame)
+        self.drawDetectedBBoxes(frame,bboxes)
+        return tracking_time,len(detected_objects)
+        # print("==optimized_trackAndDrawBox")
+        # pass
+ 
     def trackAndDrawBox(self,detection_frame,raw_detection_data):
         bboxes = [np.array(raw_data[0]) for raw_data  in raw_detection_data]       
         scores = [raw_data[1] for raw_data  in raw_detection_data]       
         class_names = [raw_data[2] for raw_data  in raw_detection_data]       
         if self.use_cnn_feature_extraction:
-            # features = self.encoder(detection_frame, bboxes)
-            features = [np.array([]) for _  in bboxes] 
+            features = self.encoder(detection_frame, bboxes)
         else:
             features=  [np.array([]) for _  in bboxes] 
 
         tracking_detections = [Detection(bbox, score, class_name, feature) for bbox, score, class_name, feature in
                   zip(bboxes, scores, class_names, features)]
-
         self.tracker.update(tracking_detections)
         self.tracker.predict()
-       
         self.drawTrackedBBoxes(detection_frame)
         self.drawDetectedBBoxes(detection_frame,bboxes)
 
@@ -132,7 +191,10 @@ class TrackingService():
             white_rect = np.zeros(sub_frame.shape, dtype=np.uint8) 
             white_rect[:, :, 1] = 200
             res = cv2.addWeighted(sub_frame, 0.5, white_rect, 0.2, 1.0)
-            frame[y:y+h, x:x+w]=res
+            try :
+                frame[y:y+h, x:x+w]=res
+            except:
+                pass
             # cv2.rectangle(frame, ( x,y), (x+w,y+h), (255,255,255), 3)
 
 
@@ -162,7 +224,7 @@ class TrackingService():
                 for j in range(1, len(self.pts[track.track_id])):
                     if self.pts[track.track_id][j-1] is None or self.pts[track.track_id][j] is None:
                         continue
-                    thickness = int(np.sqrt(64/float(j+1))*1.5)
+                    thickness = max(int(7-(j//15)),2)
                     cv2.line(frame, (self.pts[track.track_id][j-1]), (self.pts[track.track_id][j]), color, thickness)
 
     # def goToTrackedPosition(self,frame):

@@ -8,8 +8,8 @@ import cv2,time
 from utils_lib.enums import StreamSourceEnum
 
 class VideoStream:
-    video_file= "highway2.mp4"
-    frames_Q = Queue(maxsize=128)
+    video_file= "highway17.mp4"
+    frames_Q = Queue(maxsize=64)
     interrepted_stream=True
     activate_real_time_stream_simulation=True
     starting_second=0
@@ -17,11 +17,23 @@ class VideoStream:
 
     def init_params(self):
         self.stopped = True
-       
+        if  self.stream_source==StreamSourceEnum.FILE:
+            self.cap=cv2.VideoCapture("videos/"+self.video_file)   
+        elif self.stream_source==StreamSourceEnum.WEBCAM:
+            self.cap=cv2.VideoCapture("http://10.10.23.14:9000/video")
+
+        # self.cap=cv2.VideoCapture("videos/"+self.video_file)   
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.frames_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
+        # print(self.fps)
+
+        self.resize=False
         self.width,self.height  = self.cap.get(3),self.cap.get(4)
+        if self.resize:
+            self.width,self.height  = 960 , 540
+
+        # print("Static dimension")
         print("VIDEO DIMENSION : " +str(self.width) +" x "+ str(self.height))        
         self.frame_duration= 1/self.fps 
         self.video_duration = self.frames_count/ self.fps
@@ -31,20 +43,20 @@ class VideoStream:
         self.frames_to_jump=0
         self.remain_after_frames_jump=0
 
-    def __init__(self,stream_source:StreamSourceEnum): 
-        if stream_source==StreamSourceEnum.FILE:
-            self.cap=cv2.VideoCapture("videos/"+self.video_file)   
-        elif stream_source==StreamSourceEnum.WEBCAM:
-            self.cap=cv2.VideoCapture("http://10.10.23.14:9000/video")
 
+    def __init__(self,stream_source:StreamSourceEnum): 
+        self.stream_source=stream_source
         self.init_params()
         self.start_thread()
+
 
     def get_frames(self):  
         self.start_time=time.perf_counter() 
         while self.has_next() :
-            if not self.stopped or self.one_next_frame:
+            if (not self.stopped or self.one_next_frame ) and  not self.stop_cv2reader:
                 frame = self.get_next()
+                if self.resize:
+                    frame=cv2.resize(frame, (960 , 540))
                 yield frame 
                 if self.activate_real_time_stream_simulation:
                     self.synchronize_frame()
@@ -103,6 +115,7 @@ class VideoStream:
                 if grabbed :
                     print("set FIRST FRAME")
                     self.first_frame=frame
+ 
 
             # read from video quickly if its size is under 4 
             if self.frames_Q.qsize()<4:
@@ -131,7 +144,7 @@ class VideoStream:
     def reset(self):
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         self.stopped = True
-        new_queue=Queue(maxsize=128)
+        new_queue=Queue(maxsize=64)
         new_queue.put(self.first_frame)
         self.frames_Q=new_queue
         # self.capture_first_frame=True
@@ -142,7 +155,7 @@ class VideoStream:
         self.stop_cv2reader=True
         # self.stopped = True
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, second*self.fps)
-        new_queue=Queue(maxsize=128)
+        new_queue=Queue(maxsize=64)
         (grabbed, frame) = self.cap.read()
         if grabbed:
             new_queue.put(frame)
@@ -154,14 +167,23 @@ class VideoStream:
 
     def change_video_file(self,video_file):
         if self.video_file!=video_file:
+            print("<<<<self.video_file!=video_file>>>>")
+            print(video_file)
+            print(self.video_file)
+            
             self.video_file=video_file
             self.init_params()
+            # self.reset()
             # wait for update() to load a self.first_frame to put in frames_Q
             # while(len(self.first_frame)==0):
             #     time.sleep(.05)
             #     print("wait for first frame")
-            self.clean_frames_Q()
-            self.frames_Q.put(self.first_frame)
+            try:
+                self.clean_frames_Q()
+                self.frames_Q.put(self.first_frame)
+            except:
+                pass
+
             self.one_next_frame=True
 
     def clean_frames_Q(self):

@@ -6,11 +6,12 @@ class IDetectionService:
     stream_reader=None
     selected_model=None
     network_input_size=192
+    min_surface_area=2000
     # network_input_size=416
     allowed_classes=[]
     colors_list=[]
     threshold=0.4
-    nms_threshold=0.5
+    nms_threshold=0.3
     CNN_video_resolution_ratio=1
 
     def init_selected_model(self):

@@ -3,16 +3,17 @@ import threading
 from enum import Enum
 from time import sleep
 from unittest import result
+# from classes.tracking_service.optimized_tracking_service import OptimizedTrackingService
 
 import cv2
 from flask import (Flask, Response, jsonify, render_template,
                    stream_with_context)
 
 from classes.background_subtractor_service import BackgroundSubtractorService
-from classes.buffer import Buffer
+# from classes.buffer import Buffer
 from classes.detection_services.detection_service import IDetectionService
 from classes.offline_detector import OfflineDetector
-from classes.stream_reader import StreamReader, StreamSourceEnum
+from utils_lib.enums import StreamSourceEnum 
 from classes.tracking_service.tracking_service import TrackingService
 from classes.hybrid_tracking_service.hybrid_tracking_service import HybridTrackingService
 from classes.stream_processor import StreamProcessor
@@ -38,6 +39,7 @@ class AppService:
         print("AppService from "+str(self.stream_source) +" Starting ...")
         self.detection_service=detection_service
         self.background_subtractor_service=BackgroundSubtractorService()
+        # self.tracking_service=OptimizedTrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
         self.tracking_service=TrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
         self.hybrid_tracking_service=HybridTrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
         self.stream_processor=StreamProcessor(self.stream_source,self.detection_service,self.background_subtractor_service,self.tracking_service,self.hybrid_tracking_service)
@@ -49,6 +51,8 @@ class AppService:
         else :
             print( " No detection_module To load")
         print("AppService Started.")
+
+
 
         if stream_source==StreamSourceEnum.RASPBERRY_CAM:
             from classes.raspberry_camera_reader import RaspberryCameraReader
@@ -97,6 +101,11 @@ class AppService:
             self.detection_service.threshold=float(value)
         elif param=='nmsThreshold':
             self.detection_service.nms_threshold=float(value)
+        elif param=='minSurfaceArea':
+            self.detection_service.min_surface_area=float(value)
+        elif param=='anchorCount':
+            self.detection_service.max_anchor_count=float(value)
+
         return jsonify(result=param+' updated ')
 
     def update_background_subtraction_param(self,param,value):
@@ -225,3 +234,9 @@ class AppService:
     def set_video_starting_second(self,second):
         self.stream_processor.video_stream.set_starting_second(second)
         return jsonify(result=second)
+
+    def use_cnn_feature_extraction_for_deepsort(self,value):
+        state=True if value=='true' else False
+        self.tracking_service.use_cnn_feature_extraction=state
+        return jsonify(result=state)
+

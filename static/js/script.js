@@ -69,8 +69,9 @@ window.onbeforeunload = function(event){
 
     function updateCNNDetectorParamValue(param){
         var newParamValueFromSlider= $( "#"+param+"_Slider" )[0].value;
+        console.log(newParamValueFromSlider);
         $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
-
+        
         if (param.startsWith('tracking_')){
             $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
             param=param.substring(9)
@@ -78,8 +79,11 @@ window.onbeforeunload = function(event){
             $( "#"+param+"_Slider" )[0].value= newParamValueFromSlider;
         }else{
             $( "#"+param+"_ValueText" ).text( newParamValueFromSlider);
-            $( "#tracking_"+param+"_ValueText" ).text( newParamValueFromSlider);
-            $( "#tracking_"+param+"_Slider" )[0].value= newParamValueFromSlider;
+            if (param !='anchorCount'){
+                $( "#tracking_"+param+"_ValueText" ).text( newParamValueFromSlider);
+                $( "#tracking_"+param+"_Slider" )[0].value= newParamValueFromSlider;
+            }
+          
         }
          
         $.ajax({

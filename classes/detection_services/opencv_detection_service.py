@@ -44,7 +44,7 @@ class OpencvDetectionService(IDetectionService):
         model_url_cfg= self.selected_model['url_cfg']
         model_url_weights= self.selected_model['url_weights']
         self.modelName =self.selected_model['name']
-        cacheDir = os.path.join("","models","opencv_models", self.modelName)
+        cacheDir = os.path.join("","det_models","opencv_models", self.modelName)
         print( self.selected_model)
         if self.selected_model['type']=='yolo':
             if not os.path.exists(   os.path.join(cacheDir,  self.modelName+'.cfg'   )):
@@ -60,8 +60,8 @@ class OpencvDetectionService(IDetectionService):
                 runcmd("wget -P " + cacheDir + "   " + model_url_weights, verbose = True)
             else:
                 print("===> model weights already exist ")
-            self.configPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".cfg")
-            self.weightPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".weights")
+            self.configPath=os.path.join("","det_models","opencv_models",self.modelName,self.modelName+".cfg")
+            self.weightPath=os.path.join("","det_models","opencv_models",self.modelName,self.modelName+".weights")
         else : 
             if self.selected_model['type']=='ssd':
                 if not os.path.exists(   os.path.join(cacheDir, self.modelName+'.pbtxt'   )):
@@ -76,8 +76,8 @@ class OpencvDetectionService(IDetectionService):
                     runcmd("wget -P " + cacheDir + "   " + model_url_weights, verbose = True)
                 else:
                     print("===> model weights already exist ")
-            self.configPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".pbtxt")
-            self.weightPath=os.path.join("","models","opencv_models",self.modelName,"frozen_inference_graph.pb")
+            self.configPath=os.path.join("","det_models","opencv_models",self.modelName,self.modelName+".pbtxt")
+            self.weightPath=os.path.join("","det_models","opencv_models",self.modelName,"frozen_inference_graph.pb")
 
 
     def load_model(self,model=None):

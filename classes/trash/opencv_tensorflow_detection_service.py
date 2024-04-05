@@ -23,7 +23,7 @@ class OpencvTensorflowDetectionService(IDetectionService):
         self.perf = []
         self.classAllowed=[]
         self.colorList=[]
-        # self.classFile ="models/coco.names" 
+        # self.classFile ="det_models/coco.names" 
         self.classFile ="coco.names" 
         self.modelName=None
         # self.cacheDir=None
@@ -74,7 +74,7 @@ class OpencvTensorflowDetectionService(IDetectionService):
         # print( model_url_weights)
         fileName = os.path.basename(model_url_cfg)     
         self.modelName = fileName[:fileName.index('.')]
-        cacheDir = os.path.join("","models","opencv_models", self.modelName)
+        cacheDir = os.path.join("","det_models","opencv_models", self.modelName)
 
         # print(os.path.exists( os.path.join(cacheDir,  fileName    )))
         # print(  os.path.join(cacheDir,  fileName   ))
@@ -107,31 +107,31 @@ class OpencvTensorflowDetectionService(IDetectionService):
         print(self.modelName)
         self.download_model_if_not_exists()
 
-        configPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".cfg")
-        modelPath=os.path.join("","models","opencv_models",self.modelName,self.modelName+".weights")
+        configPath=os.path.join("","det_models","opencv_models",self.modelName,self.modelName+".cfg")
+        modelPath=os.path.join("","det_models","opencv_models",self.modelName,self.modelName+".weights")
 
         # =======================
 
-        # modelPb=os.path.join("","models","tensorflow_models","5","efficientdet-d0.pb")
-        # modelPbtxt=os.path.join("","models","tensorflow_models","5","efficientdet-d0.pbtxt")
+        # modelPb=os.path.join("","det_models","tensorflow_models","5","efficientdet-d0.pb")
+        # modelPbtxt=os.path.join("","det_models","tensorflow_models","5","efficientdet-d0.pbtxt")
   
-        # modelPb=os.path.join("","models","tensorflow_models","5","frozen_inference_graph.pb")
-        # modelPbtxt=os.path.join("","models","tensorflow_models","5","ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt")
+        # modelPb=os.path.join("","det_models","tensorflow_models","5","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","det_models","tensorflow_models","5","ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt")
   
-        # modelPb=os.path.join("","models","tensorflow_models","4","frozen_inference_graph.pb")
-        # modelPbtxt=os.path.join("","models","tensorflow_models","4","ssd_mobilenet_v1_ppn_coco.pbtxt")
+        # modelPb=os.path.join("","det_models","tensorflow_models","4","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","det_models","tensorflow_models","4","ssd_mobilenet_v1_ppn_coco.pbtxt")
   
-        # modelPb=os.path.join("","models","tensorflow_models","3","frozen_inference_graph.pb")
-        # modelPbtxt=os.path.join("","models","tensorflow_models","3","ssd_mobilenet_v1_coco_2017_11_17.pbtxt")
+        # modelPb=os.path.join("","det_models","tensorflow_models","3","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","det_models","tensorflow_models","3","ssd_mobilenet_v1_coco_2017_11_17.pbtxt")
 
-        # modelPb=os.path.join("","models","frozen_inference_graph.pb")
-        # modelPbtxt=os.path.join("","models","ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt")
+        # modelPb=os.path.join("","det_models","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","det_models","ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt")
 
-        # modelPb=os.path.join("","models","tensorflow_models","2","frozen_inference_graph.pb")
-        # modelPbtxt=os.path.join("","models","tensorflow_models","2","faster_rcnn_resnet50_coco_2018_01_28.pbtxt")
+        # modelPb=os.path.join("","det_models","tensorflow_models","2","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","det_models","tensorflow_models","2","faster_rcnn_resnet50_coco_2018_01_28.pbtxt")
 
-        # modelPb=os.path.join("","models","tensorflow_models","1","frozen_inference_graph.pb")
-        # modelPbtxt=os.path.join("","models","tensorflow_models","1","faster_rcnn_inception_v2_coco_2018_01_28.pbtxt")
+        # modelPb=os.path.join("","det_models","tensorflow_models","1","frozen_inference_graph.pb")
+        # modelPbtxt=os.path.join("","det_models","tensorflow_models","1","faster_rcnn_inception_v2_coco_2018_01_28.pbtxt")
         
         self.model = cv2.dnn.readNetFromTensorflow(modelPb,modelPbtxt)
         

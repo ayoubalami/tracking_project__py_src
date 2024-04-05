@@ -38,7 +38,7 @@ class HybridTrackingService():
     DVR_vehicle_id=0
     # debug_surveillance_section=[]
     debug_surveillance_section_height=170
-    debug_mode=False
+    debug_mode=True
     show_predicted_data=False
 
     max_timeout_of_missing=7
@@ -79,11 +79,14 @@ class HybridTrackingService():
     
     # @calculate_execution_time
     start_time_for_speed=0
-
+    frame_count=0
     def apply(self,frame): 
+        # print(self.frame_shape)
         tracking_start_time=time.perf_counter()
-        print(self.global_missing_count)
-        print(self.global_tracked_count)
+        self.frame_count+=1
+        # print(self.frame_count)
+        # print(self.global_missing_count)
+        # print(self.global_tracked_count)
         if self.start_time_for_speed==0:
             self.start_time_for_speed=time.perf_counter()
 
@@ -93,9 +96,9 @@ class HybridTrackingService():
             self.init_regions()
             self.is_region_initialization_done=True
 
-        # bs_start_time=time.perf_counter()
+        bs_start_time=time.perf_counter()
         _  ,raw_detection_data=self.background_subtractor_service.apply(frame=frame,boxes_plotting=False)
-        # bs_time=time.perf_counter()-bs_start_time
+        bs_time=time.perf_counter()-bs_start_time
 
         original_frame=frame.copy()
         self.current_frame=frame
@@ -109,7 +112,7 @@ class HybridTrackingService():
         detection_thread.join()
         tracking_thread.join()
 
-        # 
+        
         # self.process_detection_region(original_frame,raw_detection_data)
         # self.process_tracking_region(original_frame,raw_detection_data)
 
@@ -119,20 +122,21 @@ class HybridTrackingService():
         self.draw_tracking_points(frame)
 
         if self.debug_mode:
-            frame=self.add_debug_surveillance_section(original_frame,frame)
+            # frame=self.add_debug_surveillance_section(original_frame,frame)
             detection_region , tracking_region=self.divide_draw_frame(frame)
             self.debug_results(frame,detection_region,tracking_region)
  
         self.addTrackingAndDetectionTimeAndFPS(frame,tracking_start_time)
                
-        if self.cnn_time>0:
-            self.dataTimeTrack.append(time.perf_counter()-tracking_start_time)
-            print(f"Moyen Tracking_time :{sum(self.dataTimeTrack)/len(self.dataTimeTrack)} ")
+        if self.cnn_time==0:
             # self.dataTimeCNN.append(self.cnn_time)
-            # self.dataTimeBS.append(bs_time)
-       
-            # print(f"Moyen CNN :{sum(self.dataTimeCNN)/len(self.dataTimeCNN)} ")
-            # print(f"Moyen BS_time :{sum(self.dataTimeBS)/len(self.dataTimeBS)} ")
+            self.dataTimeBS.append(bs_time)
+            self.dataTimeTrack.append(time.perf_counter()-tracking_start_time)               
+            if self.frame_count>3900:
+
+                print(f"Moyen Tracking_time :{sum(self.dataTimeTrack)/len(self.dataTimeTrack)} ")
+                # print(f"Moyen CNN :{sum(self.dataTimeCNN)/len(self.dataTimeCNN)} ")
+                print(f"Moyen BS_time :{sum(self.dataTimeBS)/len(self.dataTimeBS)} ")
         
         return frame #inference_time
 

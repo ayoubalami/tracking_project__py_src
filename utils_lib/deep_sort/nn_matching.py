@@ -56,7 +56,13 @@ def _cosine_distance(a, b, data_is_normalized=False):
     # print("data_is_normalized")
     # print(a)
     # print(b)
-
+    # isf len(a)!=len(b):
+    #     # a=np.array(b)
+    #     print("====<<")
+    #     print(len(a))
+    #     print(len(b))
+    #     # a=np.array(b)
+        # return 1
     return 1. - np.dot(a, b.T)
 
 
@@ -171,6 +177,7 @@ class NearestNeighborDistanceMetric(object):
             if self.budget is not None:
                 self.samples[target] = self.samples[target][-self.budget:]
         self.samples = {k: self.samples[k] for k in active_targets}
+
 
     def distance(self, features, targets):
         """Compute distance between features and targets.

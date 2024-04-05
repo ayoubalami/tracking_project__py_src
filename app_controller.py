@@ -3,9 +3,10 @@
 from threading import Thread
 import threading,os
 from time import sleep,time
+from classes.detection_services.keras_detection_service import KerasDetectionService
 from flask import jsonify,stream_with_context,Flask,render_template,Response
-from classes.buffer import Buffer
-from classes.stream_reader import StreamSourceEnum, StreamReader
+from utils_lib.enums import StreamSourceEnum 
+
 from classes.detection_services.detection_service import IDetectionService
 from app_service import AppService
 from flask_cors import CORS
@@ -18,9 +19,10 @@ from classes.detection_services.onnx_detection_service import OnnxDetectionServi
 from classes.detection_services.yolov5_detection_service import Yolov5DetectionService
 from classes.detection_services.yolov6_detection_service import Yolov6DetectionService
 from classes.detection_services.yolov8_detection_service import Yolov8DetectionService
+from classes.detection_services.pytorch_detection_service import PytorchDetectionService
 
 def pars_args():
-    file_src   =   "videos/highway2.mp4"
+    file_src   =   "videos/highway17.mp4"
     # webcam_src  =   'http://192.168.43.1:9000/video'
     local_webcam_src  =   'http://10.10.23.223:9000/video'
 #    webcam_src=0
@@ -56,6 +58,12 @@ def pars_args():
                 detection_service=Yolov6DetectionService()
             elif args.detection_service in( 'YOLOv8' ,'yv8') :
                 detection_service=Yolov8DetectionService()
+            elif args.detection_service in( 'torch' ,'torch') :
+                detection_service=PytorchDetectionService()
+            elif args.detection_service in( 'keras' ,'keras') :
+                detection_service=KerasDetectionService()
+
+                
             else:
                 print("PARAM INCORRECT. LOADING DEFAULT DETECTION SERVICE ....")
                 detection_service=OpencvDetectionService()
@@ -199,9 +207,9 @@ def activate_stream_simulation(value):
 # def show_missing_tracks(value):
 #     return app_service.show_missing_tracks(value=value) 
 
-# @app.route('/use_cnn_feature_extraction_on_tracking/<value>', methods = ['POST'])
-# def use_cnn_feature_extraction_on_tracking(value):
-#     return app_service.use_cnn_feature_extraction_on_tracking(value=value) 
+@app.route('/use_cnn_feature_extraction_on_tracking/<value>', methods = ['POST'])
+def use_cnn_feature_extraction_for_deepsort(value):
+    return app_service.use_cnn_feature_extraction_for_deepsort(value=value) 
 
 # @app.route('/activate_detection/<value>', methods = ['POST'])
 # def activate_detection_for_tracking(value):
@@ -247,6 +255,7 @@ def CNN_set_video_resolution( video_resolution_ratio):
 def set_video_starting_second( second):
     print(f" set starting_second to : {second}")
     return app_service.set_video_starting_second( int(second) ) 
+
 
 if __name__=="__main__":
     app.run(host='0.0.0.0', port=7070 ,debug=False,threaded=True)

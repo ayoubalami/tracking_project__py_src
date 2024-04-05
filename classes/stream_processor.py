@@ -4,7 +4,7 @@
 import cv2,time,os, numpy as np
 from classes.detection_services.detection_service import IDetectionService
 from  classes.webcam_reader import WebcamReader
-from  classes.buffer import Buffer
+# from  classes.buffer import Buffer
 from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.tracking_service.tracking_service import TrackingService
 from classes.hybrid_tracking_service.hybrid_tracking_service import HybridTrackingService
@@ -27,7 +27,15 @@ class StreamProcessor:
     video_resolution_ratio=1
     jpeg_quality=80
     current_fps=0
+    saveOutputVideo=True
+    startRecording=False
+
     def __init__(self,stream_source:StreamSourceEnum,detection_service,background_subtractor_service,tracking_service,hybrid_tracking_service):
+       
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        output_filename='out_tracker'+str(time.perf_counter())+'.mp4'
+        self.video_writer = cv2.VideoWriter('/root/shared/out_video_tracker/'+output_filename, fourcc, 20, (1192, 848), True)
+ 
         self.stream_source=stream_source        
         if self.stream_source==StreamSourceEnum.FILE:
             self.video_stream=VideoStream(self.stream_source)
@@ -46,10 +54,19 @@ class StreamProcessor:
             yield from self.return_webcam_stream()
 
     def return_video_stream(self):
+        
         self.start_time=time.perf_counter() 
         for frame in self.video_stream.get_frames():
             if not self.video_stream.stopped or self.video_stream.one_next_frame:
                 result=self.process_frame(frame)
+
+                if self.saveOutputVideo:
+                    if self.video_stream.stopped and  self.startRecording :
+                        self.video_writer.release()
+                    else:
+                        self.video_writer.write(frame)
+                        self.startRecording=True
+
             yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
             
     def return_webcam_stream(self):
@@ -104,11 +121,11 @@ class StreamProcessor:
         result['hybridTrackingStream_1']=self.encodeStreamingFrame(frame=hybrid_tracking_frame)
         return result
 
-    # def resize_frame(self,frame):
-    #     if self.video_resolution_ratio!=1:
-    #         resized_frame=cv2.resize(frame.copy(), (int(self.video_stream.width*self.video_resolution_ratio) ,int(self.video_stream.height*self.video_resolution_ratio) ))
-    #         return frame,resized_frame
-    #     return frame,frame
+    def resize_frame(self,frame):
+        if self.video_resolution_ratio!=1:
+            resized_frame=cv2.resize(frame.copy(), (int(self.video_stream.width*self.video_resolution_ratio) ,int(self.video_stream.height*self.video_resolution_ratio) ))
+            return frame,resized_frame
+        return frame,frame
 
     def encodeStreamingFrame(self,frame):
         resized_frame=frame

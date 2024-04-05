@@ -20,7 +20,7 @@
 #         self.perf = []
 #         self.classAllowed=[]
 #         self.colorList=[]
-#         # self.classFile ="models/coco.names" 
+#         # self.classFile ="det_models/coco.names" 
 #         self.classFile ="coco.names" 
 #         self.modelName=None
 #         # self.cacheDir=None
@@ -54,7 +54,7 @@
 #     def load_model(self,model=None):
 #         self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)
 #         self.modelName= self.selected_model['name']
-#         modelgPath=os.path.join("","models","opencv_onnx_models",self.modelName+".onnx")
+#         modelgPath=os.path.join("","det_models","opencv_onnx_models",self.modelName+".onnx")
 #         self.model = cv2.dnn.readNetFromONNX(modelgPath)       
 #         self.readClasses()
 

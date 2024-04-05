@@ -21,7 +21,7 @@ class TensorflowDetectionService(IDetectionService):
         self.perf = []
         self.classAllowed=[]
         self.colorList=[]
-        # self.classFile ="models/coco.names" 
+        # self.classFile ="det_models/coco.names" 
         self.classFile ="coco.names" 
         self.modelName=None
         self.cacheDir=None
@@ -71,7 +71,7 @@ class TensorflowDetectionService(IDetectionService):
         print(self.modelURL)
         fileName = os.path.basename(self.modelURL)     
         self.modelName = fileName[:fileName.index('.')]
-        self.cacheDir = os.path.join("","models","tensorflow_models", self.modelName)
+        self.cacheDir = os.path.join("","det_models","tensorflow_models", self.modelName)
         os.makedirs(self.cacheDir, exist_ok=True)
         get_file(fname=fileName,origin=self.modelURL, cache_dir=self.cacheDir, cache_subdir="checkpoints",  extract=True)
         print("===> clear_session")

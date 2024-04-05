@@ -20,7 +20,7 @@ class Yolov8DetectionService(IDetectionService):
         self.perf = []
         self.classAllowed=[]
         self.colorList=[]
-        # self.classFile ="models/coco.names" 
+        # self.classFile ="det_models/coco.names" 
         self.classFile ="coco.names" 
         self.modelName=None
         # self.cacheDir=None

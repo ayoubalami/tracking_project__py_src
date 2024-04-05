@@ -1,6 +1,6 @@
 import cv2
 from classes.detection_services.detection_service import IDetectionService
-from utils_lib.enums import StreamSourceEnum
+from utils_lib.enums import StreamSourceEnum 
 import math
 
 class OfflineDetector:

@@ -45,7 +45,7 @@ class OnnxDetectionService(IDetectionService):
         print("===> download_model_if_not_exists  ")
         remote_onnx_file= self.selected_model['url']
         self.modelName =self.selected_model['name']
-        cacheDir = os.path.join("","models","opencv_onnx_models")
+        cacheDir = os.path.join("","det_models","opencv_onnx_models")
         print("downloading",remote_onnx_file," ..")
         if not os.path.exists(   os.path.join(cacheDir,  self.modelName+'.onnx'   )):
             print("===> download_model onnx")
@@ -53,7 +53,7 @@ class OnnxDetectionService(IDetectionService):
             runcmd("wget -P " + cacheDir + "   " + remote_onnx_file, verbose = True)   
         else:
             print("===> model onnx already exist ")
-        self.modelPath=os.path.join("","models","opencv_onnx_models",self.modelName+".onnx")
+        self.modelPath=os.path.join("","det_models","opencv_onnx_models",self.modelName+".onnx")
 
     def load_model(self,model=None):
         self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)

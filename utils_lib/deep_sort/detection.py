@@ -28,11 +28,12 @@ class Detection(object):
 
     """
 
-    def __init__(self, tlwh, confidence, class_name, feature):
+    def __init__(self, tlwh, confidence, class_name, feature=[],object_data=[]):
         self.tlwh = np.asarray(tlwh, dtype=np.float32)
         self.confidence = float(confidence)
         self.class_name = class_name
         self.feature = np.asarray(feature, dtype=np.float32)
+        self.object_data=object_data
 
     def get_class(self):
         return self.class_name

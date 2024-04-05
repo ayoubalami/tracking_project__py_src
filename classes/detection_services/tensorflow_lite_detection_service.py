@@ -46,7 +46,7 @@ class TensorflowLiteDetectionService(IDetectionService):
         self.selected_model = next(m for m in self.detection_method_list_with_url if m["name"] == model)
         self.modelName= self.selected_model['name']+'.tflite'
         self.const_network_input_size= self.selected_model['size']
-        self.cacheDir = os.path.join("","models","tensorflow_tflite_models", self.modelName)
+        self.cacheDir = os.path.join("","det_models","tensorflow_tflite_models", self.modelName)
         self.model = tf.lite.Interpreter(model_path=self.cacheDir)
         self.model.allocate_tensors()
         self.input_details = self.model.get_input_details()

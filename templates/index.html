@@ -62,7 +62,7 @@
             <label for="inputVideoFile">Select a Video file</label>
             <select id="inputVideoFile" class="form-select" onchange="onVideoFileSelected(event)" aria-label="select video">
               <option value="highway1.mp4" title="">highway1.mp4</option>
-              <option selected="selected" value="highway2.mp4" title="">highway2.mp4</option>
+              <option value="highway2.mp4" title="">highway2.mp4</option>
               <option value="highway3.mp4" title="">highway3.mp4</option>
               <option value="highway4.mp4" title="">highway4.mp4</option>
               <option value="highway5.mp4" title="">highway5.mp4</option>
@@ -73,6 +73,12 @@
               <option value="highway10.mp4" title="">highway10.mp4</option>
               <option value="highway11.mp4" title="">highway11.mp4</option>
               <option value="highway12.mp4" title="">highway12.mp4</option>
+              <option value="highway13.mp4" title="">highway13.mp4</option>
+              <option value="highway14.mp4" title="">highway14.mp4</option>
+              <option value="highway15.mp4" title="">highway15.mp4</option>
+              <option value="highway16.mp4" title="">highway16.mp4</option>
+              <option selected="selected" value="highway17.mp4" title="">highway17.mp4</option>
+              
             </select>
           </div>
           <div class="col-md-4 ">
@@ -98,7 +104,7 @@
       </div>
         
       <div class="row gx-5 px-4 pb-4">
-        <div class="form-group col-md-8 px-0 display-flex  align-self-center align-items-center text-align-last-justify">
+        <div class="form-group col-md-12 px-0 display-flex  align-self-center align-items-center text-align-last-justify">
           <div class="btn-group me-2" role="group" aria-label="First group">
             <button class="p-2 btn btn-success btn-lg " onclick="onClickToggleStopStart()" id="startStopButton"> Start
             </button>
@@ -122,6 +128,28 @@
             <input class="form-check-input" type="checkbox" id="streamStimulationCheckbox"  onclick="onCheckedActivateStreamSimulation()"  checked >
             <label class="form-check-label mx-2" for="streamStimulationCheckbox" >Real time stream simulation</label>
           </div>
+          
+          <!-- <div class="btn-group form-check form-switch">
+            <div class="d-flex" style="align-items: baseline;">
+              <h5 class="me-3" style="align-self: cente"> max anchor Count : </h5>
+              <code>
+                <h4 id="anchorCount_ValueText">10 </h4>
+              </code>
+            </div>
+            <input type="number" onchange="updateCNNDetectorParamValue('anchorCount')" min="1" max="50" value="10" step="1"
+              class="" id="anchorCount_Slider">
+          </div> -->
+          <div class="col-md-4 mt-3">
+            <div class="d-flex" style="align-items: baseline;">
+              <h5 class="me-3" style="align-self: cente">Max anchor Count : </h5>
+              <code>
+                <h4 id="anchorCount_ValueText">10 </h4>
+              </code>
+            </div>
+            <input type="range" onchange="updateCNNDetectorParamValue('anchorCount')"  min="1" max="50" value="10" step="1"
+              class="video_size_slider" id="anchorCount_Slider">
+        </div>
+
         </div>
       </div>
       <div class="row gx-5 px-4 pb-3">
@@ -207,10 +235,10 @@
                           <div class="d-flex" style="align-items: baseline;">
                             <h5 class="me-3" style="align-self: cente">nms_threshold : </h5>
                             <code>
-                              <h4 id="nmsThreshold_ValueText"> 0.5 </h4>
+                              <h4 id="nmsThreshold_ValueText"> 0.3 </h4>
                             </code>
                           </div>
-                          <input type="range" onchange="updateCNNDetectorParamValue('nmsThreshold')" min="0" max="1" value="0.5" step="0.05"
+                          <input type="range" onchange="updateCNNDetectorParamValue('nmsThreshold')" min="0" max="1" value="0.3" step="0.05"
                             class="slider w-100" id="nmsThreshold_Slider">
                         </div>
                       </div>
@@ -225,8 +253,17 @@
                           <input type="range" onchange="updateCNNDetectorParamValue('networkInputSize')" min="32" max="640" value="416" step="32"
                             class="slider w-100" id="networkInputSize_Slider">
                         </div>
+                        <div class="col-md-6 py-1">
+                          <div class="d-flex" style="align-items: baseline;">
+                            <h5 class="me-3" style="align-self: cente">Min Surface area : </h5>
+                            <code>
+                              <h4 id="minSurfaceArea_ValueText"> 2000 </h4>
+                            </code>
+                          </div>
+                          <input type="range" onchange="updateCNNDetectorParamValue('minSurfaceArea')" min="200" max="6000" value="2000" step="100"
+                            class="slider w-100" id="minSurfaceArea_Slider">
+                        </div> 
                         
-
                       </div> 
 
                  </div>
@@ -469,10 +506,10 @@
                       <div class="d-flex" style="align-items: baseline;">
                         <h5 class="me-3" style="align-self: cente">nms_threshold : </h5>
                         <code>
-                          <h4 id="tracking_nmsThreshold_ValueText"> 0.5 </h4>
+                          <h4 id="tracking_nmsThreshold_ValueText"> 0.3 </h4>
                         </code>
                       </div>
-                      <input type="range" onchange="updateCNNDetectorParamValue('tracking_nmsThreshold')" min="0" max="1" value="0.5" step="0.05"
+                      <input type="range" onchange="updateCNNDetectorParamValue('tracking_nmsThreshold')" min="0" max="1" value="0.3" step="0.05"
                         class="slider w-100" id="tracking_nmsThreshold_Slider">
                     </div> 
                   </div>
@@ -486,8 +523,19 @@
                       </div>
                       <input type="range" onchange="updateCNNDetectorParamValue('tracking_networkInputSize')" min="32" max="624" value="416" step="32"
                         class="slider w-100" id="tracking_networkInputSize_Slider">
-                      </div>
                     </div>
+                    
+                    <div class="col-md-6 py-1">
+                      <div class="d-flex" style="align-items: baseline;">
+                        <h5 class="me-3" style="align-self: cente">Min Surface area : </h5>
+                        <code>
+                          <h4 id="tracking_minSurfaceArea_ValueText"> 2000 </h4>
+                        </code>
+                      </div>
+                      <input type="range" onchange="updateCNNDetectorParamValue('tracking_minSurfaceArea')" min="200" max="6000" value="2000" step="100"
+                        class="slider w-100" id="tracking_minSurfaceArea_Slider">
+                    </div> 
+                  </div>
                   </div>
               </div>
             </div>
