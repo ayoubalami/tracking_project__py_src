@@ -58,8 +58,9 @@ def min_cost_matching(
     # print("STEP 2 =>>")
     # print(cost_matrix)
 
-    max_distance=0.6    
-    cost_matrix[cost_matrix > max_distance] = max_distance + 1e-5
+    # max_distance=0.8    
+    # cost_matrix[cost_matrix > max_distance] = max_distance + 1e-5
+    
     # print("STEP 3 =>>")
     # print(cost_matrix)
     # print(">>>>>>>>>>>>>>>>>>>>>")

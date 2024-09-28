@@ -27,15 +27,18 @@ class StreamProcessor:
     video_resolution_ratio=1
     jpeg_quality=80
     current_fps=0
-    saveOutputVideo=True
+
+    saveOutputVideo=False
     startRecording=False
 
-    def __init__(self,stream_source:StreamSourceEnum,detection_service,background_subtractor_service,tracking_service,hybrid_tracking_service):
-       
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        output_filename='out_tracker'+str(time.perf_counter())+'.mp4'
-        self.video_writer = cv2.VideoWriter('/root/shared/out_video_tracker/'+output_filename, fourcc, 20, (1192, 848), True)
- 
+    def __init__(self,stream_source:StreamSourceEnum,detection_service,background_subtractor_service,tracking_service,hybrid_tracking_service, saveOutputVideo):
+        self.saveOutputVideo=saveOutputVideo
+        if self.saveOutputVideo:
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            output_filename='out_tracker'+str(time.perf_counter())+'.mp4'
+            # (1192, 848)
+            self.video_writer = cv2.VideoWriter('/root/shared/out_video_tracker/'+output_filename, fourcc, 20, (1200, 800), True)
+    
         self.stream_source=stream_source        
         if self.stream_source==StreamSourceEnum.FILE:
             self.video_stream=VideoStream(self.stream_source)
@@ -60,12 +63,16 @@ class StreamProcessor:
             if not self.video_stream.stopped or self.video_stream.one_next_frame:
                 result=self.process_frame(frame)
 
-                if self.saveOutputVideo:
-                    if self.video_stream.stopped and  self.startRecording :
-                        self.video_writer.release()
-                    else:
-                        self.video_writer.write(frame)
-                        self.startRecording=True
+            if self.saveOutputVideo:
+                if self.video_stream.stopped and  self.startRecording :
+                    # print("self.video_writer.release()")
+                    self.video_writer.release()
+                else:
+                    # print("self.video_writer.write(frame)")
+                    frame=cv2.resize(frame, ( 1200, 800))
+
+                    self.video_writer.write(frame)
+                    self.startRecording=True
 
             yield 'event: message\ndata: ' + json.dumps(result) + '\n\n'
             

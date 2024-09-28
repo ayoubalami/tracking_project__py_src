@@ -8,13 +8,13 @@ import cv2,time
 from utils_lib.enums import StreamSourceEnum
 
 class VideoStream:
-    video_file= "highway17.mp4"
+    video_file= "highway16.mp4"
     frames_Q = Queue(maxsize=64)
     interrepted_stream=True
-    activate_real_time_stream_simulation=True
+    activate_real_time_stream_simulation=False
     starting_second=0
     stop_cv2reader=False
-
+    
     def init_params(self):
         self.stopped = True
         if  self.stream_source==StreamSourceEnum.FILE:
@@ -24,6 +24,10 @@ class VideoStream:
 
         # self.cap=cv2.VideoCapture("videos/"+self.video_file)   
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+        frame_number = 0
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number )
+
         self.frames_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         # print(self.fps)

@@ -2,6 +2,12 @@
 from enum import Enum
 
 
+class TrackingMethodEnum(Enum):
+    DEEP_SORT=0
+    SORT=1
+    ANCHOR_BASED=2
+    
+
 class StreamSourceEnum(Enum):
     FILE = 1
     WEBCAM = 2

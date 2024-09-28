@@ -30,19 +30,25 @@ class AppService:
     save_detectors_results=False
     host_server='localhost'
 
-    def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str,save_detectors_results:bool,host_server:str):
+    def __init__(self,detection_service:IDetectionService,stream_source:StreamSourceEnum,video_src:str,save_detectors_results:bool,host_server:str,save_output_video:False,active_evaluation=False,anchors_number=10,trackingMethodEnum=-1,skip_detection_rate=0):
                 
         self.stream_source=stream_source
         self.video_src=video_src
         self.save_detectors_results=save_detectors_results
         self.host_server=host_server
+        self.save_output_video=save_output_video
+        self.active_tracking_evaluation=active_evaluation
+        self.anchors_number=anchors_number
+        self.trackingMethodEnum=trackingMethodEnum
+
         print("AppService from "+str(self.stream_source) +" Starting ...")
         self.detection_service=detection_service
+ 
         self.background_subtractor_service=BackgroundSubtractorService()
         # self.tracking_service=OptimizedTrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
-        self.tracking_service=TrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
+        self.tracking_service=TrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service,active_tracking_evaluation=self.active_tracking_evaluation,trackingMethodEnum=self.trackingMethodEnum,anchors_number=self.anchors_number,skip_detection_rate=skip_detection_rate)
         self.hybrid_tracking_service=HybridTrackingService(detection_service=self.detection_service,background_subtractor_service=self.background_subtractor_service)
-        self.stream_processor=StreamProcessor(self.stream_source,self.detection_service,self.background_subtractor_service,self.tracking_service,self.hybrid_tracking_service)
+        self.stream_processor=StreamProcessor(self.stream_source,self.detection_service,self.background_subtractor_service,self.tracking_service,self.hybrid_tracking_service,saveOutputVideo=save_output_video)
 
         if self.detection_service!=None :
             print( " detection_module loaded succesufuly")
@@ -104,7 +110,7 @@ class AppService:
         elif param=='minSurfaceArea':
             self.detection_service.min_surface_area=float(value)
         elif param=='anchorCount':
-            self.detection_service.max_anchor_count=float(value)
+            self.detection_service.anchors_number=float(value)
 
         return jsonify(result=param+' updated ')
 

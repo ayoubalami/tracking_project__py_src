@@ -5,15 +5,16 @@ import random
 class IDetectionService:
     stream_reader=None
     selected_model=None
-    network_input_size=192
-    min_surface_area=2000
+    network_input_size=416
+    # min_surface_area=2500
     # network_input_size=416
     allowed_classes=[]
     colors_list=[]
     threshold=0.4
     nms_threshold=0.3
     CNN_video_resolution_ratio=1
-
+    # max_anchor_count=10
+    
     def init_selected_model(self):
         self.selected_model=None
 

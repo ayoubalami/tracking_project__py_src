@@ -1,3 +1,4 @@
+# python app_controller.py -ds torch  -anch_nb 20 -skip_rate .0 -track_meth 2
 # from turtle import shape
 # ps aux
 from threading import Thread
@@ -5,7 +6,7 @@ import threading,os
 from time import sleep,time
 from classes.detection_services.keras_detection_service import KerasDetectionService
 from flask import jsonify,stream_with_context,Flask,render_template,Response
-from utils_lib.enums import StreamSourceEnum 
+from utils_lib.enums import * 
 
 from classes.detection_services.detection_service import IDetectionService
 from app_service import AppService
@@ -29,19 +30,41 @@ def pars_args():
     stream_source: StreamSourceEnum=StreamSourceEnum.FILE
     parser = argparse.ArgumentParser()
     save_detectors_results=False
+    save_output_video=False
+    active_evaluation=False
     host_server='localhost'
-    # host_server='10.10.23.116'
+    anchors_number=10
+    trackingMethodEnum=TrackingMethodEnum.DEEP_SORT
+     # host_server='10.10.23.116'
     
     parser.add_argument("-hs", "--host_server", help = "host_server host remote raspberry of local pc")
     parser.add_argument("-ss", "--stream_source", help = "Select stream source FILE, REMOTE_WEBCAM, RASPBERRY_CAM")
     parser.add_argument("-ds", "--detection_service", help = "Select detection service OPENCV, PYTORCH, TENSORFLOW")
     parser.add_argument("-rr", "--save_detectors_results",  action="store_const", const=True, default=False, help = "save_detectors_results inference fps to results.csv")
     parser.add_argument("-ws", "--webcam", help = "webcam ip server ")
+    parser.add_argument("-sv", "--save_output_video", help = "save output video ")
+    parser.add_argument("-eval", "--active_evaluation", help = "active evaluation ")
+    parser.add_argument("-anch_nb", "--anchors_number", help = "evaluation ")
+    parser.add_argument("-track_meth", "--trackingMethodEnum", help = "trackingMethodEnum")
+    parser.add_argument("-skip_rate", "--skip_detection_rate", help = "skip_detection_rate")
 
     args = parser.parse_args()
     video_src=file_src
 
     if args:
+        skip_detection_rate=0
+        if args.skip_detection_rate:
+            skip_detection_rate=(float)(args.skip_detection_rate)
+        
+        if args.anchors_number:
+            anchors_number=args.anchors_number
+
+        if args.trackingMethodEnum:
+            for member in TrackingMethodEnum:
+                if member.value == (int)(args.trackingMethodEnum):
+                    trackingMethodEnum=member
+            # trackingMethodEnum=args.trackingMethodEnum
+
         detection_service:IDetectionService=None
         if args.detection_service:
             if args.detection_service in( 'OPENCV' ,'opencv') :
@@ -59,7 +82,7 @@ def pars_args():
             elif args.detection_service in( 'YOLOv8' ,'yv8') :
                 detection_service=Yolov8DetectionService()
             elif args.detection_service in( 'torch' ,'torch') :
-                detection_service=PytorchDetectionService()
+                detection_service=PytorchDetectionService(anchors_number=anchors_number)
             elif args.detection_service in( 'keras' ,'keras') :
                 detection_service=KerasDetectionService()
 
@@ -101,6 +124,9 @@ def pars_args():
         if args.save_detectors_results:
             save_detectors_results=True
 
+        if args.save_output_video:
+            save_output_video=True
+
         if args.host_server:
             if args.host_server in( 'r' ,'rasp','raspberry','raspberrypi') :
                 host_server='raspberrypi.local'
@@ -108,7 +134,11 @@ def pars_args():
             else :
                 host_server=args.host_server
 
-    return detection_service,stream_source,video_src,save_detectors_results,host_server
+        if args.active_evaluation:
+            active_evaluation=True
+
+
+    return detection_service,stream_source,video_src,save_detectors_results,host_server,save_output_video,active_evaluation,anchors_number,trackingMethodEnum,skip_detection_rate
 
 app=Flask(__name__)
 CORS(app)

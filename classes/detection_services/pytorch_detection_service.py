@@ -11,19 +11,21 @@ class PytorchDetectionService(IDetectionService):
 
     np.random.seed(123)
     model=None
-    default_model_input_size=320
-    # default_model_input_size=416
+    default_model_input_size=416
     show_all_classes=True
     use_pretrained_model=True
-    max_anchor_count=10
+    max_anchors_number=10
+    min_surface_area=1000
+    threshold=.35
 
     def clean_memory(self):
         print("CALL DESTRUCTER FROM PytorchDetectionService")
         if self.model:
             del self.model
                
-    def __init__(self):
+    def __init__(self,anchors_number):
 
+        self.max_anchors_number=(int)(anchors_number)
         if self.use_pretrained_model:
             self.classFile ="coco.names" 
         else:
@@ -39,11 +41,11 @@ class PytorchDetectionService(IDetectionService):
                         {'file':'yolov5s.pt','name': 'yolov5s' },
                         {'file':'yolov5n.pt','name': 'yolov5n' }
                       ]
-
         self.init_object_detection_models_list()
+
                
     def service_name(self):
-        return "PyTorch detection service V 1.0"
+        return f"PyTorch detection service V 1.0 |  max_anchors_number : { self.max_anchors_number} "
 
     def download_model_if_not_exists(self):
         pass
@@ -129,13 +131,18 @@ class PytorchDetectionService(IDetectionService):
         #     condition |= torch.argmax(predictions_array[:, 5:], axis=1) == class_num
         # condition &
          
-        surface_box = (predictions_array[:, 2] * predictions_array[:, 3])/(y_ratio*x_ratio)
-        surface_condition = (surface_box < 200000) & (surface_box > self.min_surface_area)
+        # print(predictions_array[:, 1])
+        # print(self.network_input_size)
 
+        surface_box = (predictions_array[:, 2] * predictions_array[:, 3])/(y_ratio*x_ratio)
+        surface_condition = (surface_box < 150000) & (surface_box > self.min_surface_area)
+        exited_box_condition=((predictions_array[:, 1]+predictions_array[:, 3]/2)/y_ratio<H-5 ) & ((predictions_array[:, 1]+predictions_array[:, 3]/2)/y_ratio>150 ) 
+ 
         condition= (
                 (torch.amax(predictions_array[:, 5:], axis=1) > threshold)
             &   (predictions_array[:, 4] > threshold)
             &   (surface_condition)
+            &   (exited_box_condition)
             )
 
         detections_data = predictions_array[condition]
@@ -144,7 +151,7 @@ class PytorchDetectionService(IDetectionService):
         #[NumberOFDetection,86] detections_id , 85 of detections_data
 
         result = torch.cat((detections_idx.unsqueeze(1), detections_data), dim=1)
-        result = sorted(result, key=lambda x: x [5], reverse=True)
+        result = sorted(result, key=lambda x: x [5] * max(x[6:]), reverse=True)
 
         # detected_features=None
         if  not return_only_detections :
@@ -166,7 +173,7 @@ class PytorchDetectionService(IDetectionService):
 
     def iou(self,detection_1, detection_2):
         box1=self.convert_to_xyXY(detection_1 )
-        box2=self.convert_to_xyXY(detection_2  )
+        box2=self.convert_to_xyXY(detection_2 )
         x1 = max(box1[0], box2[0])
         y1 = max(box1[1], box2[1])
         x2 = min(box1[2], box2[2])
@@ -202,30 +209,24 @@ class PytorchDetectionService(IDetectionService):
     ##################################
     def optimized_cluster_detections(self,detections, iou_threshold):
         clusters = []
-        order_clusters = []
-        print(f"=>Active Detections counts : {len(detections)}")
+        # order_clusters = []
+        # print(f"=>Active Detections counts : {len(detections)}")
         for det in detections:
             assigned = False
-            # for cluster in [x for x in clusters if len(x)<3]:
-            for cluster in clusters  :
+            for cluster  in clusters:
                 if self.iou(det[0][1:5], cluster[0][0][1:5]) >= iou_threshold:
                     assigned = True
-                    if len(cluster)>=self.max_anchor_count:
+                    if len(cluster)>self.max_anchors_number-1:
                         break
                     cluster.append(det)
                     break
-
             if not assigned :
                 clusters.append([det])
-     
-        for obj in clusters:
-            max_index = max(range(len(obj)), key=lambda i: obj[i][0][5])  # Find index of max element
-            obj[0], obj[max_index] = obj[max_index], obj[0] 
- 
-        # print(len(clusters))
-        # if len(clusters)>0:
-        #     print(len(clusters[0]))
 
+        # print(f"self.max_anchor_count : {self.max_anchor_count}")
+        # for i,obj in enumerate(clusters):
+        #     print(f"obj {i} : {[x[0][5] for x in obj]}")
+            
         return clusters
         
         # return order_clusters

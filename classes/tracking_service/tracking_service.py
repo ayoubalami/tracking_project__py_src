@@ -6,6 +6,7 @@ import time
 import cv2
 import numpy as np
 from utils_lib.enums import DetectorForTrackEnum
+from utils_lib.enums import TrackingMethodEnum
 from classes.background_subtractor_service import BackgroundSubtractorService
 from classes.detection_services.detection_service import IDetectionService
 
@@ -16,6 +17,9 @@ from utils_lib.deep_sort.tracker import Tracker
 from _collections import deque
 from utils_lib.deep_sort.tools import generate_detections as gdet
 
+
+# python app_controller.py -ds torch  -eval 1 -anch_nb 10 -skip_rate .0 -track_meth 2
+
 class TrackingService():
     YOLO_FEATURE_EXTRACTOR=False
     tracker_detector=DetectorForTrackEnum.CNN_DETECTOR
@@ -25,13 +29,14 @@ class TrackingService():
     background_subtractor_service:BackgroundSubtractorService=None    
     detection_service:IDetectionService=None    
     # d_start,d_height,tr_start,tr_height= 200,100,300,500
-    is_region_initialization_done=False   
-    n_init=5
-    max_age=8
+    is_region_initialization_done=False
+    n_init=3
+    max_age=15
     threshold_feature_distance=0.2
     max_distance = 0.7
     feature_extractor_model_file='utils_lib/deep_sort/feature_extractors/mars-small128.pb'
     encoder=gdet.create_box_encoder(model_filename=feature_extractor_model_file,batch_size=8)
+
     # encoder=None
     colors = {}
     activate_detection_for_tracking=True
@@ -40,20 +45,33 @@ class TrackingService():
     activate_camera_tracking=True
     frame_size=None
 
-    use_cnn_feature_extraction=True
-
+    # use_cnn_feature_extraction=True
+    
+    trackingMethodEnum:TrackingMethodEnum=TrackingMethodEnum.SORT
+    skip_detection_rate=0
+    save_time_results_csv=True
     # to rasp
     # tracked_object=None
 
-    def __init__(self,detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService):
+    def __init__(self,detection_service:IDetectionService,background_subtractor_service:BackgroundSubtractorService,active_tracking_evaluation:False,trackingMethodEnum:TrackingMethodEnum,anchors_number,skip_detection_rate):
         self.background_subtractor_service=background_subtractor_service
         self.detection_service=detection_service
         nn_budget = None
+        self.trackingMethodEnum=trackingMethodEnum
+        self.anchors_number=anchors_number
+        self.skip_detection_rate=skip_detection_rate
         # nms_max_overlap = 0.8
         # euclidean cosine
         self.metric = nn_matching.NearestNeighborDistanceMetric('cosine', self.threshold_feature_distance, nn_budget)
-        self.tracker = Tracker(self.metric,max_iou_distance=self.max_distance, max_age=self.max_age, n_init=self.n_init,use_cnn_feature_extraction=self.use_cnn_feature_extraction)
-         
+        self.active_tracking_evaluation=active_tracking_evaluation
+        self.tracker = Tracker(self.metric,max_iou_distance=self.max_distance, max_age=self.max_age, n_init=self.n_init,trackingMethodEnum=self.trackingMethodEnum,active_tracking_evaluation=self.active_tracking_evaluation)
+        self.file_name_time=str(time.perf_counter())
+ 
+        print(self.TrackerDetails())
+
+
+    def TrackerDetails(self):
+        return f"Tracker with trackingMethodEnum : {self.trackingMethodEnum} ; anchors_number {self.anchors_number} ; active_tracking_evaluation : {self.active_tracking_evaluation} ; skip_detection_rate : {self.skip_detection_rate}"
 
     def apply(self,frame): 
 
@@ -69,15 +87,19 @@ class TrackingService():
             self.trackAndDrawBox(detection_frame,raw_detection_data)
         else:
             detection_frame,detected_objects,classesList=detection_data
-            processTime,detected_objects_=self.optimized_trackAndDrawBox(detection_frame,detected_objects,classesList)
+
+            # print(self.TrackerDetails())
+            processTime,detected_objects_count=self.optimized_trackAndDrawBox(detection_frame,detected_objects,classesList)
             self.process_times.append(processTime)
         
         tracking_time=round(time.perf_counter()-tracking_time,4)
 
-        if detected_objects_>0:
-            csv_file = "results_tracktime_"+ time.perf_counter+".csv"
-            with open(csv_file, 'a') as csvfile:
-                writer(csvfile).writerow([tracking_time,detected_objects_])
+
+        if self.save_time_results_csv:
+            if detected_objects_count>0:
+                csv_file = "csv_results/results_tracktime_"+ str(self.trackingMethodEnum)+"_"+ str(self.anchors_number)+"_"+self.file_name_time+".csv"
+                with open(csv_file, 'a') as csvfile:
+                    writer(csvfile).writerow([tracking_time,detected_objects_count])
 
         if round(time.perf_counter()-start_time,3)>0:
             tracking_fps=1/round(time.perf_counter()-start_time,3)
@@ -92,9 +114,6 @@ class TrackingService():
         #     print("raspberry_camera GO AFTER TRACKED : " +str(self.raspberry_camera.tracked_object.track_id)+" - "+self.raspberry_camera.tracked_object.to_tlwh())
 
         self.addTrackingAndDetectionTimeAndFPS(detection_frame,detection_time,tracking_time,tracking_fps)
-
-  
-
         return detection_frame
 
     process_times=[]
@@ -123,16 +142,56 @@ class TrackingService():
             scores.append(classConfidence)
             class_names.append(classLabel)
 
-        if self.use_cnn_feature_extraction:
-            features = self.encoder(frame, bboxes)
-            # features = [np.array([]) for _  in bboxes] 
-            tracking_detections = [Detection(bbox, score, class_name, feature=feature) for bbox, score, class_name, feature in
-                  zip(bboxes, scores, class_names, features)]
-        else:
-            tracking_detections = [Detection(bbox, score, class_name,object_data=object_data) for bbox, score, class_name,  object_data in
-                zip(bboxes, scores, class_names, detected_objects)]
+        # if self.evaluate:
+        #     # features = [np.array([]) for _  in bboxes] 
 
-        self.tracker.update(tracking_detections)
+        #     # rate of disabling detection to simulate detection loses
+        #     random_disable_detection=.25
+        #     if random_disable_detection>0:
+        #         random_number = random.random()
+        #         if random_number <= random_disable_detection:
+        #             # detected_objects=[]
+        #             tracking_detections=[]
+        #     else:
+        #         # features = [np.array([]) for _  in bboxes] 
+        #         features = self.encoder(frame, bboxes)
+        #         tracking_detections = [Detection(bbox, score, class_name, feature=feature,object_data=object_data) for bbox, score, class_name, feature,object_data in
+        #             zip(bboxes, scores, class_names, features,detected_objects)]
+        # else:
+        if self.active_tracking_evaluation:
+            # random_disable_detection=.0
+            # if random_disable_detection>0:
+            random_number = random.random()
+            if random_number >= self.skip_detection_rate:
+                features = self.encoder(frame, bboxes)
+                tracking_detections = [Detection(bbox, score, class_name, feature=feature,object_data=object_data) for bbox, score, class_name, feature,object_data in
+                    zip(bboxes, scores, class_names, features,detected_objects)]
+                self.tracker.update(tracking_detections,W=W,H=H, x_ratio=x_ratio, y_ratio=y_ratio)
+
+        else:
+            if self.trackingMethodEnum==TrackingMethodEnum.DEEP_SORT:
+                features = self.encoder(frame, bboxes)
+                tracking_detections = [Detection(bbox, score, class_name, feature=feature) for bbox, score, class_name, feature in
+                    zip(bboxes, scores, class_names, features)]
+            elif self.trackingMethodEnum==TrackingMethodEnum.SORT:
+                features = [np.array([]) for _  in bboxes] 
+                tracking_detections = [Detection(bbox, score, class_name, feature=feature) for bbox, score, class_name, feature in
+                    zip(bboxes, scores, class_names, features)]
+            elif self.trackingMethodEnum==TrackingMethodEnum.ANCHOR_BASED:
+                tracking_detections = [Detection(bbox, score, class_name,object_data=object_data) for bbox, score, class_name,  object_data in
+                    zip(bboxes, scores, class_names, detected_objects)]
+
+            self.tracker.update(tracking_detections,W=W,H=H, x_ratio=x_ratio, y_ratio=y_ratio)
+
+            # if self.use_cnn_feature_extraction:
+            #     # features = self.encoder(frame, bboxes)
+            #     features = [np.array([]) for _  in bboxes] 
+            #     tracking_detections = [Detection(bbox, score, class_name, feature=feature) for bbox, score, class_name, feature in
+            #         zip(bboxes, scores, class_names, features)]
+            # else:
+            #     tracking_detections = [Detection(bbox, score, class_name,object_data=object_data) for bbox, score, class_name,  object_data in
+            #         zip(bboxes, scores, class_names, detected_objects)]
+
 
         self.tracker.predict()  
         tracking_time=time.perf_counter()-start_time
@@ -144,17 +203,19 @@ class TrackingService():
         # pass
  
     def trackAndDrawBox(self,detection_frame,raw_detection_data):
+        H,W=detection_frame.shape[:2]
         bboxes = [np.array(raw_data[0]) for raw_data  in raw_detection_data]       
         scores = [raw_data[1] for raw_data  in raw_detection_data]       
         class_names = [raw_data[2] for raw_data  in raw_detection_data]       
-        if self.use_cnn_feature_extraction:
+
+        if self.trackingMethodEnum==TrackingMethodEnum.DEEP_SORT:
             features = self.encoder(detection_frame, bboxes)
-        else:
+        if self.trackingMethodEnum==TrackingMethodEnum.SORT:
             features=  [np.array([]) for _  in bboxes] 
 
         tracking_detections = [Detection(bbox, score, class_name, feature) for bbox, score, class_name, feature in
                   zip(bboxes, scores, class_names, features)]
-        self.tracker.update(tracking_detections)
+        self.tracker.update(tracking_detections,H,W)
         self.tracker.predict()
         self.drawTrackedBBoxes(detection_frame)
         self.drawDetectedBBoxes(detection_frame,bboxes)
@@ -179,7 +240,7 @@ class TrackingService():
   
     def reset(self):
         self.tracker.tracks=[]
-        self.tracker=Tracker(self.metric,max_iou_distance=self.max_distance, max_age=self.max_age, n_init=self.n_init)
+        self.tracker=Tracker(self.metric,max_iou_distance=self.max_distance, max_age=self.max_age, n_init=self.n_init,trackingMethodEnum=self.trackingMethodEnum,active_tracking_evaluation=self.active_tracking_evaluation)
         self.pts = [deque(maxlen=30) for _ in range(10000)]
         self.colors={}
         # pass
@@ -196,7 +257,6 @@ class TrackingService():
             except:
                 pass
             # cv2.rectangle(frame, ( x,y), (x+w,y+h), (255,255,255), 3)
-
 
     def drawTrackedBBoxes(self,frame):
         for track in self.tracker.tracks:
